@@ -9,4 +9,5 @@ defaultTasks 'run'
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile 'com.github.rubenlagus:TelegramBots:v2.3.5'
+    compile 'org.postgresql:postgresql:9.4.1211.jre7'
 }
