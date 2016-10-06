@@ -10,6 +10,20 @@ class JdbcStore(val driverClass: String, val connectionString: String): UserStor
         connection = DriverManager.getConnection(connectionString)
     }
 
+    override fun createUserRecord(userData: UserData): Int? {
+        return connection.executeInsert("users",
+                "telegram_name" to userData.telegramName,
+                "telegram_id" to userData.telegramId,
+                "psn_name" to userData.psnName)
+                //"email" to userData.email,
+                //"psn_clan" to userData.psnClan,
+                //"created_at" to null,
+                //"updated_at" to null,
+                //"deleted_at" to null,
+                //"tokens" to userData.tokens,
+                //"pending_activation_code" to userData.pendingActivationCode
+    }
+
 //    override fun createFeed(data: FeedData): Int {
 //        return connection.executeInsert("users",
 //                "username" to data.userName,

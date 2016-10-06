@@ -9,6 +9,7 @@ import org.aeriagloris.telegram.services.Emoji
 import org.aeriagloris.telegram.commands.CancelCommand
 import org.aeriagloris.telegram.commands.HelpCommand
 import org.aeriagloris.telegram.commands.JoinCommand
+import org.aeriagloris.telegram.commands.PsnCommand
 import org.aeriagloris.telegram.commands.LfgCommand
 import org.aeriagloris.telegram.commands.LfmCommand
 import org.aeriagloris.telegram.commands.ListCommand
@@ -30,6 +31,7 @@ class AeglBot : TelegramLongPollingCommandBot()
         // Telegram Setup
         register(CancelCommand(jdbcStore))
         register(JoinCommand(jdbcStore))
+        register(PsnCommand(jdbcStore))
         register(LfgCommand(jdbcStore))
         register(LfmCommand(jdbcStore))
         register(ListCommand(jdbcStore))
