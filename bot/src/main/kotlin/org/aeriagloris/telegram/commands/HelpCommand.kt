@@ -8,12 +8,13 @@ import org.telegram.telegrambots.bots.AbsSender
 import org.telegram.telegrambots.bots.commands.BotCommand
 import org.telegram.telegrambots.bots.commands.ICommandRegistry
 import org.telegram.telegrambots.logging.BotLogger
+import org.aeriagloris.telegram.services.Emoji
 
 class HelpCommand(val commandRegistry: ICommandRegistry) : BotCommand("help", "List available commands")
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        val helpMessageBuilder = StringBuilder("<b>Help</b>\n")
+        val helpMessageBuilder = StringBuilder("<b>Help</b> " + Emoji.AMBULANCE + "\n")
         helpMessageBuilder.append("These are the registered commands for this Bot:\n\n")
 
         commandRegistry.getRegisteredCommands().forEach { botCommand: BotCommand ->

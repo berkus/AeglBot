@@ -5,7 +5,6 @@ import org.telegram.telegrambots.TelegramApiException
 import org.telegram.telegrambots.api.objects.Update
 import org.telegram.telegrambots.api.methods.send.SendMessage
 import org.telegram.telegrambots.logging.BotLogger
-import org.aeriagloris.telegram.services.Emoji
 import org.aeriagloris.telegram.commands.CancelCommand
 import org.aeriagloris.telegram.commands.HelpCommand
 import org.aeriagloris.telegram.commands.JoinCommand
@@ -36,19 +35,7 @@ class AeglBot : TelegramLongPollingCommandBot()
         register(LfmCommand(jdbcStore))
         register(ListCommand(jdbcStore))
         register(RaidCommand(jdbcStore))
-        val helpCommand = HelpCommand(this)
-
-        registerDefaultAction { absSender, message ->
-            val commandUnknownMessage = SendMessage()
-            commandUnknownMessage.setChatId(message.getChatId().toString())
-            commandUnknownMessage.setText("The command '" + message.getText() + "' is not known by this bot. Here comes some help " + Emoji.AMBULANCE)
-            try {
-                absSender.sendMessage(commandUnknownMessage)
-            } catch (e: TelegramApiException) {
-                BotLogger.error("MEINBOT", e)
-            }
-            helpCommand.execute(absSender, message.getFrom(), message.getChat(), arrayOf<String>())
-        }
+        register(HelpCommand(this))
     }
 
     override fun getBotToken(): String {
