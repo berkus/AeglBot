@@ -10,7 +10,7 @@ import org.telegram.telegrambots.bots.commands.ICommandRegistry
 import org.telegram.telegrambots.logging.BotLogger
 import org.aeriagloris.telegram.services.Emoji
 
-class HelpCommand(val commandRegistry: ICommandRegistry) : BotCommand("help", "List available commands")
+class HelpCommand(val commandRegistry: ICommandRegistry) : ExtendedCommand("help", "List available commands")
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
@@ -21,15 +21,6 @@ class HelpCommand(val commandRegistry: ICommandRegistry) : BotCommand("help", "L
             helpMessageBuilder.append(botCommand.toString()).append("\n\n")
         }
 
-        val helpMessage = SendMessage()
-        helpMessage.setChatId(chat.getId().toString())
-        helpMessage.enableHtml(true)
-        helpMessage.setText(helpMessageBuilder.toString())
-
-        try {
-            absSender.sendMessage(helpMessage)
-        } catch (e: TelegramApiException) {
-            BotLogger.error("HELPCOMMAND", e)
-        }
+        sendReply(absSender, chat, helpMessageBuilder.toString(), true)
     }
 }
