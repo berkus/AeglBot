@@ -16,6 +16,10 @@ import org.aeriagloris.telegram.commands.RaidCommand
 import org.aeriagloris.persistence.JdbcStore
 import com.typesafe.config.ConfigFactory
 
+// https://destinytrialsreport.com/ps/Kayouga
+// destinytracker
+// guardian.gg
+
 class AeglBot : TelegramLongPollingCommandBot()
 {
     val telegramBotToken: String
