@@ -13,5 +13,11 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
         sendReply(absSender, chat, "This is a list\nblablab\nlong\nlist")
+
+// Sample output: (same output for List command)
+
+        // dozniak (@berkus) is looking for Iron Banner group Today at 23:00 MSK (starts in 3 hours)
+        // Enter /join 3 to join this group.
+
     }
 }
