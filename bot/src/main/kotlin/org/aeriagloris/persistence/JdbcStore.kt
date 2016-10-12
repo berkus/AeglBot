@@ -1,199 +1,211 @@
 package org.aeriagloris.persistence
 
-import java.sql.*
+import org.json.JSONObject
+import org.joda.time.DateTime
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.SchemaUtils.create
+import org.jetbrains.exposed.dao.*
+import org.aeriagloris.persistence.schema.*
 
-class JdbcStore(val driverClass: String, val connectionString: String): UserStore, PlannedActivityStore {
-    private val connection: Connection
-
+class JdbcStore(val driverClass: String, val connectionString: String) {
     init {
-        Class.forName(driverClass)
-        connection = DriverManager.getConnection(connectionString)
+        Database.connect(connectionString, driver = driverClass)
+
+        transaction {
+            logger.addLogger(StdOutSqlLogger())
+
+            create(Users, Activities, PlannedActivities, PlannedActivityMembers, PlannedActivityReminders)
+
+            if (Activity.count() == 0) {
+                transaction {
+                    Activity.new {
+                        name = "Vault of Glass"
+                        mode = "normal"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 200
+                        minLevel = 25
+                    }
+                    Activity.new {
+                        name = "Vault of Glass"
+                        mode = "hard"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 280
+                        minLevel = 30
+                    }
+                    Activity.new {
+                        name = "Crota's End"
+                        mode = "normal"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 200
+                        minLevel = 30
+                    }
+                    Activity.new {
+                        name = "Crota's End"
+                        mode = "hard"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 280
+                        minLevel = 33
+                    }
+                    Activity.new {
+                        name = "King's Fall"
+                        mode = "normal"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 290
+                        minLevel = 35
+                    }
+                    Activity.new {
+                        name = "King's Fall"
+                        mode = "hard"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 320
+                        minLevel = 40
+                    }
+                    Activity.new {
+                        name = "Wrath of the Machine"
+                        mode = "normal"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 360
+                        minLevel = 40
+                    }
+                    Activity.new {
+                        name = "Wrath of the Machine"
+                        mode = "hard"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 380
+                        minLevel = 40
+                    }
+                    Activity.new {
+                        name = "Vanguard"
+                        mode = "Patrols"
+                        minFireteamSize = 1
+                        maxFireteamSize = 3
+                    }
+                    Activity.new {
+                        name = "Vanguard"
+                        mode = "any"
+                        minFireteamSize = 1
+                        maxFireteamSize = 3
+                    }
+                    Activity.new {
+                        name = "Crucible"
+                        mode = "Private Matches"
+                        minFireteamSize = 1
+                        maxFireteamSize = 12
+                    }
+                    Activity.new {
+                        name = "Crucible"
+                        mode = "Trials of Osiris"
+                        minFireteamSize = 3
+                        maxFireteamSize = 3
+                        minLight = 370
+                        minLevel = 40
+                    }
+                    Activity.new {
+                        name = "Crucible"
+                        mode = "Iron Banner"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                        minLight = 350
+                        minLevel = 40
+                    }
+                    Activity.new {
+                        name = "Crucible"
+                        mode = "6v6"
+                        minFireteamSize = 1
+                        maxFireteamSize = 6
+                    }
+                    Activity.new {
+                        name = "Crucible"
+                        mode = "3v3"
+                        minFireteamSize = 1
+                        maxFireteamSize = 3
+                    }
+                    Activity.new {
+                        name = "Crucible"
+                        mode = "any"
+                        minFireteamSize = 1
+                        maxFireteamSize = 12
+                    }
+                }
+            }
+        }
     }
 
-    override fun createUserRecord(userData: UserData): Int? {
-        return connection.executeInsert("users",
-                "telegram_name" to userData.telegramName,
-                "telegram_id" to userData.telegramId,
-                "psn_name" to userData.psnName)
-                //"email" to userData.email,
-                //"psn_clan" to userData.psnClan,
-                //"created_at" to null,
-                //"updated_at" to null,
-                //"deleted_at" to null,
-                //"tokens" to userData.tokens,
-                //"pending_activation_code" to userData.pendingActivationCode
-    }
-
-//    override fun createFeed(data: FeedData): Int {
-//        return connection.executeInsert("users",
-//                "username" to data.userName,
-//                "screen_name" to data.screenName,
-//                "hashed_password" to data.hashedPassword,
-//                "email" to data.email,
-//                "is_private" to (if (data.private) 1 else 0),
-//                "type" to (if (data.feedType == FeedType.Group) "group" else "user"),
-//                "profile" to data.profile)
-//    }
-//
-//    override fun loadFeed(id: Int): FeedData? {
-//        return connection.executeQuery("select * from users where id=?", id) { rs ->
-//            FeedData(feedTypeFromString(rs.getString("type")),
-//                    rs.getString("username"),
-//                    rs.getString("email"),
-//                    rs.getString("hashed_password"),
-//                    rs.getString("screen_name"),
-//                    rs.getString("profile"),
-//                    rs.getInt("is_private") != 0)
+//    override fun lookupTelegramUserName(telegramUserName: String): Int? {
+//        return transaction {
+//            Users.select { Users.telegramName eq telegramUserName }.single()[Users.id]
 //        }
 //    }
 //
-//    private fun feedTypeFromString(s: String): FeedType = when(s) {
-//        "group" -> FeedType.Group
-//        else -> FeedType.User
+//    override fun loadUserData(id: Int): UserData? {
+//        val user = transaction { Users.select { Users.id eq id }.single() }
+//        return UserData(
+//            telegramName = user[Users.telegramName],
+//            telegramId = user[Users.telegramId],
+//            psnName = user[Users.psnName],
+//            email = user[Users.email],
+//            psnClan = user[Users.psnClan],
+//            createdAt = user[Users.createdAt],
+//            updatedAt = user[Users.updatedAt],
+//            deletedAt = user[Users.deletedAt],
+//            //tokens = (user[Users.tokens] ? JSONObject(user[Users.tokens]) : null),
+//            pendingActivationCode = user[Users.pendingActivationCode]
+//        )
 //    }
 //
-    override fun lookupTelegramUserName(telegramUserName: String): Int? {
-        return connection.executeQuery("select id from users where telegram_name=?", telegramUserName) { it.getInt("id") }
-    }
+//    override fun createPlannedActivity(data: PlannedActivityData): Int? {
+//        return transaction { 
+//            PlannedActivity.insert {
+//                it[authorId] = data.authorId
+//                it[activityId] = data.activityId
+//                it[details] = data.details
+//                it[start] = data.start
+//            } get PlannedActivity.id
+//        }
+//    }
 
-//    override fun createSubscription(fromUserId: Int, toFeedId: Int) {
-//        connection.executeInsert("subscriptions", "subscriber_id" to fromUserId, "subscription_id" to toFeedId)
-//    }
-//
-//    override fun removeSubscription(fromUserId: Int, toFeedId: Int) {
-//        connection.executeUpdate("delete from subscriptions where subscriber_id=? and subscription_id=?",
-//                fromUserId, toFeedId)
-//    }
-//
-//    override fun loadSubscriptions(userId: Int): List<Int> {
-//        return connection.executeListQuery(
-//                "select subscription_id from subscriptions where subscriber_id=?", userId) { it.getInt("subscription_id") }
-//    }
-//
-//    override fun loadSubscribers(feedId: Int): List<Int> {
-//        return connection.executeListQuery(
-//                "select subscriber_id from subscriptions where subscription_id=?", feedId) { it.getInt("subscriber_id") }
-//    }
-//
-//    override fun createBlock(fromUserId: Int, toUserId: Int) {
-//        connection.executeInsert("blocks", "blocker_id" to fromUserId, "target_id" to toUserId)
-//    }
-//
-//    override fun removeBlock(fromUserId: Int, toUserId: Int) {
-//        connection.executeUpdate("delete from blocks where blocker_id=? and target_id=?",
-//                fromUserId, toUserId)
-//    }
-//
-//    override fun loadBlocks(userId: Int): List<Int> {
-//        return connection.executeListQuery(
-//                "select target_id from blocks where blocker_id=?", userId) { it.getInt("target_id") }
-//    }
-//
-//    override fun createAdmin(groupId: Int, adminId: Int) {
-//        connection.executeInsert("group_admins", "group_id" to groupId, "admin_id" to adminId)
-//    }
-//
-//    override fun removeAdmin(groupId: Int, adminId: Int) {
-//        connection.executeUpdate("delete from group_admins where group_id=? and admin_id=?",
-//                groupId, adminId)
-//    }
-//
-//    override fun loadAdmins(groupId: Int): List<Int> {
-//        return connection.executeListQuery(
-//                "select admin_id from group_admins where group_id=?", groupId) { it.getInt("admin_id") }
-//    }
-//
-//    override fun createSubscriptionRequest(fromUserId: Int, toUserId: Int) {
-//        connection.executeInsert("subscription_requests", "subscriber_id" to fromUserId, "target_id" to toUserId)
-//    }
-//
-//    override fun removeSubscriptionRequest(fromUserId: Int, toUserId: Int) {
-//        connection.executeUpdate("delete from subscription_requests where subscriber_id=? and target_id=?",
-//                fromUserId, toUserId)
-//    }
-//
-//    override fun loadSubscriptionRequests(targetUser: Int): List<Int> {
-//        return connection.executeListQuery(
-//                "select subscriber_id from subscription_requests where target_id=? order by created_at desc", targetUser) { it.getInt("subscriber_id")}
-//    }
-//
-    override fun createPlannedActivity(data: PlannedActivityData): Int {
-        return connection.executeInsert("planned_activity",
-                "author_id" to data.authorId,
-                "activity_id" to data.activityId,
-                "details" to data.details,
-                "start" to Date(data.start))
-    }
-
-//    override fun updatePost(id: Int, data: PostData) {
-//        connection.executeUpdate("update posts set updated_at=? where id=?", Date(data.updatedAt), id)
-//    }
-//
-//    override fun createLike(userId: Int, postId: Int, timestamp: Long) {
-//        connection.executeInsert("likes",
-//                "user_id" to userId,
-//                "post_id" to postId,
-//                "created_at" to Date(timestamp))
-//    }
-//
-//    override fun removeLike(userId: Int, postId: Int) {
-//        connection.executeUpdate("delete from likes where user_id=? and post_id=?", userId, postId)
-//    }
-//
-//    override fun deletePostWithLikes(postId: Int) {
-//        connection.executeUpdate("delete from comments where post_id=?", postId)
-//        connection.executeUpdate("delete from likes where post_id=?", postId)
-//        connection.executeUpdate("delete from posts where id=?", postId)
-//    }
-//
-//    override fun createComment(commentData: CommentData): Int {
-//        return connection.executeInsert("comments",
-//                "user_id" to commentData.author,
-//                "post_id" to commentData.postId,
-//                "body" to commentData.body,
-//                "created_at" to Date(commentData.createdAt))
-//    }
-//
-//    override fun deleteComment(commentId: Int) {
-//        connection.executeUpdate("delete from comments where id=?", commentId)
-//    }
-//
-//    override fun loadUserPostIds(author: Int): List<Int> {
-//        return connection.executeListQuery("select id from posts where user_id=?", author) { it.getInt("id") }
-//    }
-//
-//    override fun loadPost(postId: Int): PostData? {
-//        return connection.executeQuery("select * from posts where id=?", postId) { rs ->
-//            PostData(rs.getDate("created_at").time,
-//                    rs.getDate("updated_at").time,
-//                    rs.getInt("user_id"),
-//                    intArrayOf(rs.getInt("user_id")),
-//                    rs.getString("body"))
+//    override fun addUserToPlannedActivity(user: Int, activity: Int): Bool {
+//        return transaction {
+//            PlannedActivityMembers.insert {
+//                it[activityId] = activity
+//                it[userId] = user
+//            }
 //        }
 //    }
 //
-//    override fun loadLikesSortedByTimestamp(postId: Int): List<Int> {
-//        return connection.executeListQuery("select user_id from likes where post_id=? order by created_at desc", postId) { it.getInt("user_id")}
+//    override fun loadActivityData(id: Int): ActivityData? {
+//        val row = transaction { Activity.select { Activity.id eq id }.single() }
+//        return ActivityData(
+//            id = row[Activity.id],
+//            name = row[Activity.name],
+//            mode = row[Activity.mode],
+//            minFireteamSize = row[Activity.minFireteamSize],
+//            maxFireteamSize = row[Activity.maxFireteamSize],
+//            minLight = row[Activity.minLight],
+//            minLevel = row[Activity.minLevel]
+//        )
 //    }
 //
-//    override fun loadComments(postId: Int): List<Pair<Int, CommentData>> {
-//        return connection.executeListQuery("select * from comments where post_id=?", postId) { rs ->
-//            rs.getInt("id") to CommentData(postId,
-//                    rs.getDate("created_at").time,
-//                    rs.getInt("user_id"),
-//                    rs.getString("body"))
+//    // Lookup activity using short code
+//    override fun lookupActivity(code: String): Int? {
+//        val lookup = Activities.map[code]
+//        if (lookup == null) {
+//            return null
 //        }
-//    }
 //
-//    override fun loadUserLikesSortedByTimestamp(userId: Int): List<Int> {
-//        return connection.executeListQuery("select post_id from likes where user_id=? order by created_at desc", userId) {
-//            it.getInt("post_id")
-//        }
-//    }
-//
-//    override fun loadUserCommentedPosts(userId: Int): List<Int> {
-//        return connection.executeListQuery("select distinct post_id, created_at from comments where user_id=? order by created_at desc", userId) {
-//            it.getInt("post_id")
+//        return transaction {
+//            Activity.select {
+//                Activity.name.eq(lookup.first) and Activity.mode.eq(lookup.second)
+//            }.single()[Activity.id]
 //        }
 //    }
 }
