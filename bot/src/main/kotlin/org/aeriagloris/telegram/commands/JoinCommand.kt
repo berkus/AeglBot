@@ -12,6 +12,14 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
+        if (arguments.size != 1) {
+            sendReply(absSender, chat, "To join a fireteam provide fireteam id\n"
+            + "Fireteam IDs are available from output of /list command.")
+            return
+        }
+
+        
+
         sendReply(absSender, chat, "You are joining - please provide fireteam id in arguments")
     }
 }
