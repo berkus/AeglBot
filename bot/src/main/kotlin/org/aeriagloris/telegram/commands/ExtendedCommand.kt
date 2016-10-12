@@ -6,6 +6,8 @@ import org.telegram.telegrambots.api.objects.Chat
 import org.telegram.telegrambots.bots.AbsSender
 import org.telegram.telegrambots.bots.commands.BotCommand
 import org.telegram.telegrambots.logging.BotLogger
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text)
 {
@@ -20,5 +22,12 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         } catch (e: TelegramApiException) {
             BotLogger.error("COMMAND", e)
         }
+    }
+
+    fun formatStartTime(time: DateTime): String {
+        val fmt = DateTimeFormat.forStyle("SS");
+        //if (time.startOf(TimeUnit.DAY) == utc().startOf(TimeUnit.DAY)) { "Today" }
+        //return "Today at 23:00 MSK (starts in 3 hours)"
+        return fmt.print(time) //+ " (starts in " + (time - utc()).hours + " hours)"
     }
 }
