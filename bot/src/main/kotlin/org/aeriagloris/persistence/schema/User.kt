@@ -25,6 +25,6 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var psnName by Users.psnName
 
     // Synthetics
-    val ownedActivities by Activity referrersOn PlannedActivities.authorId
-    val allActivities by Activity referrersOn PlannedActivityMembers.userId
+    //val ownedActivities by Activity backReferenceOn PlannedActivities.authorId
+    //val allActivities by Activity optionalReferrersOn PlannedActivityMembers.userId
 }
