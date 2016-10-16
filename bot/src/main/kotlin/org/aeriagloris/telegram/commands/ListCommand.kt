@@ -16,15 +16,19 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
     override fun execute(absSender: AbsSender, user: TelegramUser, chat: Chat, arguments: Array<String>)
     {
         transaction {
-            val activs = PlannedActivity.all()
-            //.map {
-            //    "<b>"+it.id+"</b>: "+it.members.joinToString { it.user.psnName + " (@" + it.user.telegramName + ")" }+
-            //    " going to " + it.activity.name + " " + it.activity.mode +
-            //    " at <b>" + formatStartTime(it.start) + "</b>"
-            //}
+            val activs = StringBuilder()
+
+            val objs = PlannedActivity.all().map { it } // force eval
+
+            objs.forEach { act ->
+                activs.append("<b>"+act.id+"</b>: "+
+                    act.members.joinToString { memb -> memb.user.psnName + " (@" + memb.user.telegramName + ")" }+
+                    " going to " + act.activity.name + " " + act.activity.mode +
+                    " at <b>" + formatStartTime(act.start) + "</b>\n")
+            }
 
             sendReply(absSender, chat,
-                "Planned activities:\n"+activs
+                "Planned activities:\n"+activs.toString()
                 + "Enter /join <b>id</b> to join group.", true)
 
         }
