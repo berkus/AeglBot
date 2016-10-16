@@ -52,6 +52,8 @@ class LfgCommand(val store: JdbcStore)
         }
 
         transaction {
+            logger.addLogger(StdOutSqlLogger())
+
             val dbUser = User.find { Users.telegramName eq user.getUserName() }.singleOrNull()
 
             if (dbUser == null) {

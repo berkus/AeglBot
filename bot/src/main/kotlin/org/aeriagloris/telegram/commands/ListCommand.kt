@@ -16,6 +16,8 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
     override fun execute(absSender: AbsSender, user: TelegramUser, chat: Chat, arguments: Array<String>)
     {
         transaction {
+            logger.addLogger(StdOutSqlLogger())
+
             val activs = StringBuilder()
 
             val objs = PlannedActivity.all().map { it } // force eval
