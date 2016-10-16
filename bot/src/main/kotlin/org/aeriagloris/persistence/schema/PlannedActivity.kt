@@ -17,4 +17,6 @@ class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
     var activity by Activity referencedOn PlannedActivities.activityId
     var start by PlannedActivities.start
     var details by PlannedActivities.details
+
+    val members by PlannedActivityMember referrersOn PlannedActivityMembers.plannedActivityId
 }
