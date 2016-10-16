@@ -12,6 +12,7 @@ dependencies {
     compile 'org.postgresql:postgresql:9.4.1211.jre7'
     compile 'com.typesafe:config:1.3.1'
     compile 'org.jetbrains.exposed:exposed:0.7.0'
+    compile 'org.springframework.kotlin:spring-kotlin:0.2.1'
     // add joda-time
 }
 
