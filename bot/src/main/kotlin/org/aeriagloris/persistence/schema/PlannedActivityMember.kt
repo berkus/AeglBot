@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 
 object PlannedActivityMembers : IntIdTable() {
     val plannedActivityId = reference("planned_activity_id", PlannedActivities)
-    val userId = reference("user_id", Users)
+    val userId = reference("user_id", Guardians)
     val added = datetime("added").default(DateTime.now())
 
     init {
@@ -17,7 +17,7 @@ object PlannedActivityMembers : IntIdTable() {
 class PlannedActivityMember(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<PlannedActivityMember>(PlannedActivityMembers)
 
-    var user by User referencedOn PlannedActivityMembers.userId
+    var user by Guardian referencedOn PlannedActivityMembers.userId
     var activity by PlannedActivity referencedOn PlannedActivityMembers.plannedActivityId
     var added by PlannedActivityMembers.added
 }

@@ -15,7 +15,7 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
         transaction {
             logger.addLogger(StdOutSqlLogger())
 
-            create(Users, Activities, PlannedActivities, PlannedActivityMembers, PlannedActivityReminders)
+            create(Guardians, Activities, PlannedActivities, PlannedActivityMembers, PlannedActivityReminders)
 
             if (Activity.count() == 0) {
                 transaction {

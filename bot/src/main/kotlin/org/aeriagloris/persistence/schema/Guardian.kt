@@ -4,7 +4,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.dao.*
 import org.joda.time.DateTime
 
-object Users : IntIdTable() {
+object Guardians : IntIdTable() {
     val telegramName = text("telegram_name").uniqueIndex()
     val telegramId = integer("telegram_id").uniqueIndex()
     val psnName = text("psn_name").uniqueIndex()
@@ -17,12 +17,12 @@ object Users : IntIdTable() {
     val pendingActivationCode = text("pending_activation_code").nullable()
 }
 
-class User(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<User>(Users)
+class Guardian(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<Guardian>(Guardians)
 
-    var telegramName by Users.telegramName
-    var telegramId by Users.telegramId
-    var psnName by Users.psnName
+    var telegramName by Guardians.telegramName
+    var telegramId by Guardians.telegramId
+    var psnName by Guardians.psnName
 
     // Synthetics
     //val ownedActivities by Activity backReferenceOn PlannedActivities.authorId
