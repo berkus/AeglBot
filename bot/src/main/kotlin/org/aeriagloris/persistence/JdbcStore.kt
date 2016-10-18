@@ -91,6 +91,18 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                     }
                     Activity.new {
                         name = "Vanguard"
+                        mode = "Archon's Forge"
+                        minFireteamSize = 1
+                        maxFireteamSize = 3
+                    }
+                    Activity.new {
+                        name = "Vanguard"
+                        mode = "Court of Oryx"
+                        minFireteamSize = 1
+                        maxFireteamSize = 3
+                    }
+                    Activity.new {
+                        name = "Vanguard"
                         mode = "any"
                         minFireteamSize = 1
                         maxFireteamSize = 3

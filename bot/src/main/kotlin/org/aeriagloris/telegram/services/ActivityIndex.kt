@@ -20,6 +20,8 @@ object ActivityIndex {
         "ib" to Pair("Crucible", "Iron Banner"),
         "too" to Pair("Crucible", "Trials of Osiris"),
         "pve" to Pair("Vanguard", "any"),
-        "patrol" to Pair("Vanguard", "Patrols")
+        "patrol" to Pair("Vanguard", "Patrols"),
+        "coo" to Pair("Vanguard", "Court of Oryx"),
+        "forge" to Pair("Vanguard", "Archon's Forge")
     )
 }
