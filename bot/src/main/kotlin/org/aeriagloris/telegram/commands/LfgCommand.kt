@@ -74,8 +74,12 @@ class LfgCommand(val store: JdbcStore)
                             DateTimeFormat.forPattern("yyyy.MM.dd-HH:mm").withZone(DateTimeZone.UTC)
                         }
 
-                    val startTime = fmt.parseDateTime("2016."+arguments[1])
-                    sendReply(absSender, chat, "Defined moment to be "+startTime)
+                    val startTime = if (arguments[1] == "now") {
+                            DateTime.now()
+                        } else { 
+                            fmt.parseDateTime("2016."+arguments[1])
+                        }
+                    //sendReply(absSender, chat, "Defined moment to be "+startTime)
         
                     val plannedActivity = PlannedActivity.new {
                         author = dbUser
