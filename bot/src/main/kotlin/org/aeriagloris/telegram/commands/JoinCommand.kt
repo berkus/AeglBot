@@ -46,7 +46,7 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
                         dbUser.psnName + " (@" + dbUser.telegramName + ") is joining "
                         + planned.activity.name + " " + planned.activity.mode
                         +" group\n"
-                        +planned.members.joinToString { it.user.psnName }+" are going\n"
+                        +planned.members.toList().joinToString { it.user.psnName }+" are going\n"
                         + "Enter /join "+planned.id+" to join this group.")
                 }
             }
