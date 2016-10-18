@@ -19,6 +19,7 @@ class RaidCommand(val store: JdbcStore) : ExtendedCommand("raid", "Set up a raid
     // @AeglBot raid [same args with helper selectors]
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        sendReply(absSender, chat, "You are raiding!")
+        sendReply(absSender, chat, "NOT IMPLEMENTED")
+        //sendReply(absSender, chat, "You are raiding!")
     }
 }

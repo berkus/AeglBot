@@ -12,6 +12,7 @@ class LfmCommand(val store: JdbcStore) : ExtendedCommand("lfm", "Looking for mem
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        sendReply(absSender, chat, "Looking for member")
+        sendReply(absSender, chat, "NOT IMPLEMENTED")
+        //sendReply(absSender, chat, "Looking for member")
     }
 }
