@@ -18,27 +18,16 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
         transaction {
             logger.addLogger(StdOutSqlLogger())
 
-            val activs = StringBuilder()
-
-            val objs = PlannedActivity.all().map { it } // force eval
-
-            objs.forEach { act ->
-                activs.append("<b>"+act.id+"</b>: "+
-                    act.members.joinToString { memb -> memb.user.psnName + " (@" + memb.user.telegramName + ")" }+
+            val objs = PlannedActivity.all().toList().map { act ->
+                "<b>"+act.id+"</b>: "+
+                    act.members.toList().joinToString { memb -> memb.user.psnName + " (@" + memb.user.telegramName + ")" }+
                     " going to " + act.activity.name + " " + act.activity.mode +
-                    " at <b>" + formatStartTime(act.start) + "</b>\n")
-            }
+                    " at <b>" + formatStartTime(act.start) + "</b>\n" +
+                    "Enter <b>/join "+act.id+"</b> to join this group.\n"
+            }.joinToString("\n")
 
             sendReply(absSender, chat,
-                "Planned activities:\n"+activs.toString()
-                + "Enter /join <b>id</b> to join group.", true)
-
+                "Planned activities:\n\n"+objs, true)
         }
-
-// Sample output: (same output for List command)
-
-        // dozniak (@berkus) is looking for Iron Banner group Today at 23:00 MSK (starts in 3 hours)
-        // Enter /join 3 to join this group.
-
     }
 }
