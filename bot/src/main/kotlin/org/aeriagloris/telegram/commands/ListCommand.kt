@@ -11,6 +11,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.aeriagloris.persistence.schema.*
 import org.jetbrains.exposed.sql.*
 
+import org.joda.time.DateTime
+
 class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current lfg/lfm")
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
@@ -18,7 +20,9 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
         transaction {
             logger.addLogger(StdOutSqlLogger())
 
-            val objs = PlannedActivity.all().toList().map { act ->
+            val objs = PlannedActivity.all().filter {
+                    it.start > DateTime.now() - 3600
+                }.toList().map { act ->
                 "<b>"+act.id+"</b>: "+
                     act.members.toList().joinToString { memb -> memb.user.psnName + " (@" + memb.user.telegramName + ")" }+
                     " going to " + act.activity.name + " " + act.activity.mode +
