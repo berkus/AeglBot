@@ -30,7 +30,7 @@ class AeglBot : TelegramLongPollingCommandBot()
         telegramBotToken = config.getString("bot.token")
 
         // Database Setup
-        val jdbcStore = JdbcStore("org.postgresql.Driver", config.getString("bot.database"))
+        val jdbcStore = JdbcStore(config.getString("bot.driver"), config.getString("bot.database"))
 
         // Telegram Setup
         register(CancelCommand(jdbcStore))
