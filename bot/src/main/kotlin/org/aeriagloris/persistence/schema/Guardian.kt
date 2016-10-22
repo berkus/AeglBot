@@ -27,4 +27,11 @@ class Guardian(id: EntityID<Int>) : IntEntity(id) {
     // Synthetics
     //val ownedActivities by Activity backReferenceOn PlannedActivities.authorId
     //val allActivities by Activity optionalReferrersOn PlannedActivityMembers.userId
+
+    //var slot1Class: String?
+    //var slot1Light: Int?
+    //var slot2Class: String?
+    //var slot2Light: Int?
+    //var slot3Class: String?
+    //var slot3Light: Int?
 }
