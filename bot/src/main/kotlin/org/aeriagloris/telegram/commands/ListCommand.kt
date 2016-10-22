@@ -26,7 +26,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
                 "<b>"+act.id+"</b>: "+
                     act.members.toList().joinToString { memb -> memb.user.psnName + " (@" + memb.user.telegramName + ")" }+
                     " going to " + act.activity.name + " " + act.activity.mode +
-                    " at <b>" + formatStartTime(act.start) + "</b>\n" +
+                    " <b>" + formatStartTime(act.start) + "</b>\n" +
                     "Enter <b>/join "+act.id+"</b> to join this group.\n"
             }.joinToString("\n")
 
@@ -35,3 +35,5 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
         }
     }
 }
+
+// Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)
