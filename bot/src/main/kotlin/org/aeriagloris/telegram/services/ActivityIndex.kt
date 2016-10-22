@@ -19,9 +19,14 @@ object ActivityIndex {
         "6v6" to Pair("Crucible", "6v6"),
         "ib" to Pair("Crucible", "Iron Banner"),
         "too" to Pair("Crucible", "Trials of Osiris"),
+        "pvt" to Pair("Crucible", "Private Matches"),
+        "trn" to Pair("Crucible", "Private Tournament"),
         "pve" to Pair("Vanguard", "any"),
         "patrol" to Pair("Vanguard", "Patrols"),
         "coo" to Pair("Vanguard", "Court of Oryx"),
-        "forge" to Pair("Vanguard", "Archon's Forge")
+        "forge" to Pair("Vanguard", "Archon's Forge"),
+        "poe" to Pair("Vanguard", "Prison of Elders"),
+        "coe" to Pair("Vanguard", "Challenge of Elders")
+        // poe 41, etc
     )
 }

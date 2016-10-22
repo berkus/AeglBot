@@ -13,6 +13,7 @@ import org.aeriagloris.telegram.commands.LfgCommand
 import org.aeriagloris.telegram.commands.LfmCommand
 import org.aeriagloris.telegram.commands.ListCommand
 import org.aeriagloris.telegram.commands.RaidCommand
+import org.aeriagloris.telegram.commands.UpdateCommand
 import org.aeriagloris.persistence.JdbcStore
 import com.typesafe.config.ConfigFactory
 
@@ -39,6 +40,7 @@ class AeglBot : TelegramLongPollingCommandBot()
         register(LfmCommand(jdbcStore))
         register(ListCommand(jdbcStore))
         register(RaidCommand(jdbcStore))
+        register(UpdateCommand(jdbcStore))
         register(HelpCommand(this))
     }
 
