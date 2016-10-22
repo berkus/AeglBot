@@ -15,14 +15,14 @@ import org.jetbrains.exposed.sql.*
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.joda.time.format.DateTimeFormat
-import java.util.TimeZone
 
 class LfgCommand(val store: JdbcStore)
     : ExtendedCommand("lfg", "Looking for group (if you look for a fireteam)")
 {
     fun usage(absSender: AbsSender, chat: Chat) {
+//            "LFG usage: /lfg <b>activity</b> [class] <b>timespec</b>\n"+
         sendReply(absSender, chat,
-            "LFG usage: /lfg <b>activity</b> MM.DD-HH:MM <b>[additional description]</b>\n"+
+            "LFG usage: /lfg <b>activity</b> timespec\n"+
             "For a list of activity codes: /lfg activities\n"+
             "Example: /lfg kf 10.10-23:00\n"+
             "(NB: times are in MSK timezone)", true)
@@ -68,24 +68,14 @@ class LfgCommand(val store: JdbcStore)
                 if (act == null) {
                     sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
                 } else {
-                    val fmt = if (arguments[1].count() > 11) {
-                            DateTimeFormat.forPattern("yyyy.MM.dd-HH:mmzzz")
-                        } else {
-                            DateTimeFormat.forPattern("yyyy.MM.dd-HH:mm").withZone(DateTimeZone.UTC)
-                        }
+                    val startTime = parseTimeSpec(arguments.drop(1).joinToString(" "))
 
-                    val startTime = if (arguments[1] == "now") {
-                            DateTime.now()
-                        } else { 
-                            fmt.parseDateTime("2016."+arguments[1])
-                        }
-                    //sendReply(absSender, chat, "Defined moment to be "+startTime)
-        
                     val plannedActivity = PlannedActivity.new {
                         author = dbUser
                         activity = act
                         start = startTime
-                        details = arguments.drop(2).joinToString(" ")
+                        // set these using "/details id text" command
+                        details = ""
                     }
 
                     PlannedActivityMember.new {
@@ -93,17 +83,15 @@ class LfgCommand(val store: JdbcStore)
                         this.activity = plannedActivity
                     }
 
-                    sendReply(absSender, chat,
+                    sendReply(absSender, chat, // Todo: always post to lfg chat?
                         dbUser.psnName + " (@" + dbUser.telegramName + ") is looking for "
                         + act.name + " " + act.mode
                         +" group "+formatStartTime(startTime)+"\n"
                         + "Enter /join "+plannedActivity.id+" to join this group.")
+
+                    //sendReply(absSender, user, "Your lfg is added, to set additional details...")
                 }
             }
-//"Today at 23:00 MSK (starts in 3 hours)" = formatStartTime(time)
         }
     }
 }
-
-// Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)
-
