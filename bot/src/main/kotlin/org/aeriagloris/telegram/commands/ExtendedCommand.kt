@@ -6,8 +6,11 @@ import org.telegram.telegrambots.api.objects.Chat
 import org.telegram.telegrambots.bots.AbsSender
 import org.telegram.telegrambots.bots.commands.BotCommand
 import org.telegram.telegrambots.logging.BotLogger
+import java.util.concurrent.TimeUnit
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import com.joestelmach.natty.*
+import java.util.TimeZone
 
 abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text)
 {
@@ -24,10 +27,60 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         }
     }
 
+    fun parseTimeSpec(timespec: String): DateTime {
+        val parser = Parser(TimeZone.getTimeZone("Europe/Moscow"))
+        val groups = parser.parse(timespec)
+        return DateTime(groups[0].dates[0])
+    }
+
+    fun timeDiffString(duration: Long): String {
+        val times = arrayOf(
+            TimeUnit.DAYS.toMillis(365),
+            TimeUnit.DAYS.toMillis(30),
+            TimeUnit.DAYS.toMillis(1),
+            TimeUnit.HOURS.toMillis(1),
+            TimeUnit.MINUTES.toMillis(1)
+        )
+        val timesString = arrayOf("year","month","day","hour","minute")
+
+        var dur = duration
+        val res = times.zip(timesString).map { item ->
+            val (current, timesStr) = item
+            val temp = dur / current
+            if (temp > 0) {
+                dur -= temp * current
+                temp.toString() + " " + timesStr + if (temp != 1L) { "s" } else { "" }
+            } else {
+                ""
+            }
+        }.joinToString(" ").trim()
+
+        if ("".equals(res)) {
+            return "just now"
+        }
+        else {
+            if (duration > 0) {
+                return "in " + res
+            }
+            else {
+                return res + " ago"
+            }
+        }
+    }
+
     fun formatStartTime(time: DateTime): String {
-        val fmt = DateTimeFormat.forStyle("SS");
-        //if (time.startOf(TimeUnit.DAY) == utc().startOf(TimeUnit.DAY)) { "Today" }
-        //return "Today at 23:00 MSK (starts in 3 hours)"
-        return fmt.print(time) //+ " (starts in " + (time - utc()).hours + " hours)"
+        val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) { 
+            "Today"
+        } else {
+            "on " + DateTimeFormat.forStyle("S-").print(time)
+        }
+
+        val prefix2 = " at " + DateTimeFormat.forStyle("-S").print(time)
+
+        val timeDiff = time.getMillis() - DateTime.now().getMillis()
+        val infixStr = if (timeDiff <= 0) { " (started " } else { " (starts " }
+
+        return prefix + prefix2 + infixStr + timeDiffString(timeDiff) + ")"
+        //return "Today at 23:00 (starts in 3 hours)"
     }
 }

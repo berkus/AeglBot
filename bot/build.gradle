@@ -15,6 +15,7 @@ dependencies {
     compile 'org.springframework.kotlin:spring-kotlin:0.2.1'
     compile 'org.slf4j:slf4j-simple:1.7.21'
     // add joda-time
+    compile 'com.joestelmach:natty:0.12'
 }
 
 sourceSets {
