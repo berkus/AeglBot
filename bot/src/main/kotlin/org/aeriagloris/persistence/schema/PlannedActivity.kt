@@ -19,4 +19,8 @@ class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
     var details by PlannedActivities.details
 
     val members by PlannedActivityMember referrersOn PlannedActivityMembers.plannedActivityId
+
+    fun joinLink(): String = "/join "+id
+
+    fun membersFormatted(): String = members.toList().joinToString { memb -> memb.user.formatName() }
 }

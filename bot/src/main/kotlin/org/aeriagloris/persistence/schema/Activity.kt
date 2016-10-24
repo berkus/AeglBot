@@ -21,4 +21,6 @@ class Activity(id: EntityID<Int>) : IntEntity(id) {
     var maxFireteamSize by Activities.maxFireteamSize
     var minLight by Activities.minLight
     var minLevel by Activities.minLevel
+
+    fun formatName(): String = name + " " + mode
 }

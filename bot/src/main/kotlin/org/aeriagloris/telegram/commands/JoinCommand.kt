@@ -40,14 +40,14 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
                     PlannedActivityMember.new {
                         this.user = dbUser
                         this.activity = planned
-                    }
+                        }
 
-                    sendReply(absSender, chat,
-                        dbUser.psnName + " (@" + dbUser.telegramName + ") is joining "
-                        + planned.activity.name + " " + planned.activity.mode
-                        +" group\n"
-                        +planned.members.toList().joinToString { it.user.psnName }+" are going\n"
-                        + "Enter /join "+planned.id+" to join this group.")
+                        sendReply(absSender, chat,
+                            dbUser.formatName() + " has joined " + planned.activity.formatName()
+                            +" group\n"
+                            +planned.membersFormatted() +" are going\n"
+                            + "Enter "+planned.joinLink()+" to join this group.")
+                    }
                 }
             }
         }

@@ -84,10 +84,10 @@ class LfgCommand(val store: JdbcStore)
                     }
 
                     sendReply(absSender, chat, // Todo: always post to lfg chat?
-                        dbUser.psnName + " (@" + dbUser.telegramName + ") is looking for "
-                        + act.name + " " + act.mode
+                        dbUser.formatName() + " is looking for "
+                        + act.formatName()
                         +" group "+formatStartTime(startTime)+"\n"
-                        + "Enter /join "+plannedActivity.id+" to join this group.")
+                        + "Enter "+plannedActivity.joinLink()+" to join this group.")
 
                     //sendReply(absSender, user, "Your lfg is added, to set additional details...")
                 }

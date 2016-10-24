@@ -23,11 +23,10 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
             val objs = PlannedActivity.all().filter {
                     it.start > DateTime.now() - 3600
                 }.toList().map { act ->
-                "<b>"+act.id+"</b>: "+
-                    act.members.toList().joinToString { memb -> memb.user.psnName + " (@" + memb.user.telegramName + ")" }+
-                    " going to " + act.activity.name + " " + act.activity.mode +
+                    "<b>"+act.id+"</b>: "+
+                    act.membersFormatted() + " going to " + act.activity.formatName() +
                     " <b>" + formatStartTime(act.start) + "</b>\n" +
-                    "Enter <b>/join "+act.id+"</b> to join this group.\n"
+                    "Enter <b>"+act.joinLink()+"</b> to join this group.\n"
             }.joinToString("\n")
 
             sendReply(absSender, chat,

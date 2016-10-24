@@ -24,6 +24,8 @@ class Guardian(id: EntityID<Int>) : IntEntity(id) {
     var telegramId by Guardians.telegramId
     var psnName by Guardians.psnName
 
+    fun formatName(): String = psnName + " (@" + telegramName + ")"
+
     // Synthetics
     //val ownedActivities by Activity backReferenceOn PlannedActivities.authorId
     //val allActivities by Activity optionalReferrersOn PlannedActivityMembers.userId
