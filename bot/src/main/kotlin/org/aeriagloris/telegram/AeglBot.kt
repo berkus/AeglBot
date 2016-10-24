@@ -6,6 +6,7 @@ import org.telegram.telegrambots.api.objects.Update
 import org.telegram.telegrambots.api.methods.send.SendMessage
 import org.telegram.telegrambots.logging.BotLogger
 import org.aeriagloris.telegram.commands.CancelCommand
+import org.aeriagloris.telegram.commands.DetailsCommand
 import org.aeriagloris.telegram.commands.HelpCommand
 import org.aeriagloris.telegram.commands.JoinCommand
 import org.aeriagloris.telegram.commands.PsnCommand
@@ -37,12 +38,13 @@ class AeglBot : TelegramLongPollingCommandBot()
 
         // Telegram Setup
         register(CancelCommand(jdbcStore))
+        register(DetailsCommand(jdbcStore))
         register(JoinCommand(jdbcStore))
         register(PsnCommand(jdbcStore))
         register(LfgCommand(jdbcStore))
-        register(LfmCommand(jdbcStore))
+        //register(LfmCommand(jdbcStore))
         register(ListCommand(jdbcStore))
-        register(RaidCommand(jdbcStore))
+        //register(RaidCommand(jdbcStore))
         register(UpdateCommand(jdbcStore))
         register(HelpCommand(this))
     }
