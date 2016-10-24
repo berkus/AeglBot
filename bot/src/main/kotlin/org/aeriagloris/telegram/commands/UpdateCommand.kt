@@ -8,13 +8,13 @@ import org.aeriagloris.persistence.JdbcStore
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.aeriagloris.persistence.schema.Activity
 
-class UpdateCommand(val store: JdbcStore) : ExtendedCommand("update", "Update activity database")
+class UpdateCommand(val store: JdbcStore) : ExtendedCommand("update", "Update activity database (for admin)")
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
         transaction {
         }
 
-        sendReply(absSender, chat, "Database already updated.")
+        sendReply(absSender, chat, "Database already up to date.")
     }
 }
