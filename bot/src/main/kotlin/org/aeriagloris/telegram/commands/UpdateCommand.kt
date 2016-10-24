@@ -13,21 +13,8 @@ class UpdateCommand(val store: JdbcStore) : ExtendedCommand("update", "Update ac
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
         transaction {
-            Activity.new {
-                name = "Crucible"; mode = "Private Tournament"
-                minFireteamSize = 1; maxFireteamSize = 12
-            }
-            Activity.new {
-                name = "Vanguard"; mode = "Challenge of Elders"
-                minFireteamSize = 1; maxFireteamSize = 3
-                minLight = 320
-            }
-            Activity.new {
-                name = "Vanguard"; mode = "Prison of Elders"
-                minFireteamSize = 1; maxFireteamSize = 3
-            }
         }
 
-        sendReply(absSender, chat, "Database updated.")
+        sendReply(absSender, chat, "Database already updated.")
     }
 }
