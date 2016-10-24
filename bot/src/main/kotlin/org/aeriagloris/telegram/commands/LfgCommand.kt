@@ -87,7 +87,7 @@ class LfgCommand(val store: JdbcStore)
                         dbUser.formatName() + " is looking for "
                         + act.formatName()
                         +" group "+formatStartTime(startTime)+"\n"
-                        + "Enter "+plannedActivity.joinLink()+" to join this group.")
+                        +plannedActivity.joinPrompt())
 
                     //sendReply(absSender, user, "Your lfg is added, to set additional details...")
                 }

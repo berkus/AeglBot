@@ -16,11 +16,25 @@ class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
     var author by Guardian referencedOn PlannedActivities.authorId
     var activity by Activity referencedOn PlannedActivities.activityId
     var start by PlannedActivities.start
-    var details by PlannedActivities.details
+    var details  by PlannedActivities.details
 
     val members by PlannedActivityMember referrersOn PlannedActivityMembers.plannedActivityId
 
     fun joinLink(): String = "/join "+id
 
-    fun membersFormatted(): String = members.toList().joinToString { memb -> memb.user.formatName() }
+    fun membersFormatted(joiner: String): String = members.toList().joinToString(joiner) { it.user.formatName() }
+
+    fun membersFormattedList(): String = membersFormatted(", ")
+
+    fun membersFormattedColumn(): String = membersFormatted("\n")
+
+    fun requiresMoreMembers(): Boolean = members.count() < activity.minFireteamSize
+
+    fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
+
+    fun joinPrompt(): String = if (isFull()) { 
+            "This activity fireteam is full." 
+        } else {
+            "Enter "+joinLink()+" to join this group."
+        }
 }

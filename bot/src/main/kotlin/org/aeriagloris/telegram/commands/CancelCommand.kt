@@ -46,8 +46,8 @@ class CancelCommand(val store: JdbcStore) : ExtendedCommand("cancel", "Cancel jo
                     } else {
                         member.delete()
 
-                        var suffix = planned.membersFormatted() +" are going\n"+
-                                     "Enter "+planned.joinLink()+" to join this group."
+                        var suffix = planned.membersFormattedList() +" are going\n"+
+                                     planned.joinPrompt()
 
                         if (planned.members.count() == 0) {
                             planned.delete()
