@@ -1,5 +1,6 @@
 package org.aeriagloris.telegram.services
 
+// @todo Move this to DB "where arguments[0] in Activity.shortcuts"
 object ActivityIndex {
     public val map = mapOf(
         "kf" to Pair("King's Fall", "hard"),

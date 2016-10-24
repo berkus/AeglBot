@@ -21,7 +21,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
             logger.addLogger(StdOutSqlLogger())
 
             val objs = PlannedActivity.all().filter {
-                    it.start > DateTime.now() - 3600
+                    it.start > DateTime.now() - 3600 // @todo replace with sql where..
                 }.toList().map { act ->
                     "<b>"+act.id+"</b>: <b>"+act.activity.formatName()+"</b>\n" +
                         act.details + "\n" +

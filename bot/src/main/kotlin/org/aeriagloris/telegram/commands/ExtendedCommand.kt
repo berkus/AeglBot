@@ -19,6 +19,8 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         answer.setChatId(chat.getId().toString())
         answer.enableHtml(isHtml)
         answer.setText(message)
+        // @todo make some commands with enabled notifications?
+        // maybe make separate notifyMessage() for that
 
         try {
             absSender.sendMessage(answer)
@@ -68,6 +70,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         }
     }
 
+    // "Today at 23:00 (starts in 3 hours)"
     fun formatStartTime(time: DateTime): String {
         val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) { 
             "Today"
@@ -81,6 +84,5 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         val infixStr = if (timeDiff <= 0) { " (started " } else { " (starts " }
 
         return prefix + prefix2 + infixStr + timeDiffString(timeDiff) + ")"
-        //return "Today at 23:00 (starts in 3 hours)"
     }
 }
