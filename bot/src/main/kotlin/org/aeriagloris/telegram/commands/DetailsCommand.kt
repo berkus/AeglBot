@@ -7,18 +7,20 @@ import org.telegram.telegrambots.api.objects.User
 import org.telegram.telegrambots.bots.AbsSender
 import org.telegram.telegrambots.logging.BotLogger
 import org.aeriagloris.persistence.JdbcStore
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.aeriagloris.persistence.schema.*
+import org.jetbrains.exposed.sql.*
 
-class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set group details")
+class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set group details as freeform text")
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        sendReply(absSender, chat, "You are not going - please provide activity id in arguments")
         if (arguments.size < 2) {
-            sendReply(absSender, chat, "To join a fireteam provide fireteam id\n"
+            sendReply(absSender, chat, "To update fireteam details enter /details id freeform_text\n"
             + "Fireteam IDs are available from output of /list command.")
             return
         }
-/*
+
         transaction {
             logger.addLogger(StdOutSqlLogger())
 
@@ -34,20 +36,11 @@ class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set gro
                 if (planned == null) {
                     sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
                 } else {
+                    planned.details = arguments.drop(1).joinToString(" ")
 
-                    PlannedActivityMember.new {
-                        this.user = dbUser
-                        this.activity = planned
-                    }
-
-                    sendReply(absSender, chat,
-                        dbUser.psnName + " (@" + dbUser.telegramName + ") is joining "
-                        + planned.activity.name + " " + planned.activity.mode
-                        +" group\n"
-                        +planned.members.toList().joinToString { it.user.psnName }+" are going\n"
-                        + "Enter /join "+planned.id+" to join this group.")
+                    sendReply(absSender, chat, "Details updated.")
                 }
             }
-        }*/
+        }
     }
 }
