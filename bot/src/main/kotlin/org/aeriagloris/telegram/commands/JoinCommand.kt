@@ -36,10 +36,17 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
                 if (planned == null) {
                     sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
                 } else {
+                    val member = PlannedActivityMember.find {
+                        (PlannedActivityMembers.userId eq dbUser.id) and
+                        (PlannedActivityMembers.plannedActivityId eq planned.id)
+                    }.singleOrNull()
 
-                    PlannedActivityMember.new {
-                        this.user = dbUser
-                        this.activity = planned
+                    if (member != null) {
+                        sendReply(absSender, chat, "You are already part of this group.")
+                    } else {
+                        PlannedActivityMember.new {
+                            this.user = dbUser
+                            this.activity = planned
                         }
 
                         sendReply(absSender, chat,
