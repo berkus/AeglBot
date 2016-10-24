@@ -28,7 +28,8 @@ LFG bot
 
     Planned activities:
     
-    3: dozniak (@berkus), Hunny_Lang (@Hunny_Lang), Gera2159 (@Gera2159) going to Wrath of the Machine normal on 10/28/16 at 9:30 PM (starts in 4 days 8 hours 16 minutes)
+    3: dozniak (@berkus), Hunny_Lang (@Hunny_Lang), Gera2159 (@Gera2159) going to Wrath of the Machine normal
+    on 10/28/16 at 9:30 PM (starts in 4 days 8 hours 16 minutes)
     Enter /join 3 to join this group.
 
 
@@ -57,5 +58,5 @@ LFG bot
 
 Спецификация времени работает в свободной форме, понимаемой библотекой natty. Поэкспериментировать, как она поймет ваше предложение времени можно вот тут http://natty.joestelmach.com/try.jsp
 
-
+Время по-умолчанию стоит Московское!
 
