@@ -19,6 +19,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         answer.setChatId(chat.getId().toString())
         answer.enableHtml(isHtml)
         answer.setText(message)
+        answer.disableNotification()
         // @todo make some commands with enabled notifications?
         // maybe make separate notifyMessage() for that
 
