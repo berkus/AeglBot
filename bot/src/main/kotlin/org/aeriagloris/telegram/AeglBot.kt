@@ -16,6 +16,7 @@ import org.aeriagloris.telegram.commands.RaidCommand
 import org.aeriagloris.telegram.commands.UpdateCommand
 import org.aeriagloris.persistence.JdbcStore
 import com.typesafe.config.ConfigFactory
+import java.util.TimeZone
 
 // https://destinytrialsreport.com/ps/Kayouga
 // destinytracker
@@ -28,6 +29,8 @@ class AeglBot : TelegramLongPollingCommandBot()
     init {
         val config = ConfigFactory.load()
         telegramBotToken = config.getString("bot.token")
+
+        TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
 
         // Database Setup
         val jdbcStore = JdbcStore(config.getString("bot.driver"), config.getString("bot.database"))
