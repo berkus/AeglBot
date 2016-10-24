@@ -44,14 +44,17 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
                     if (member != null) {
                         sendReply(absSender, chat, "You are already part of this group.")
                     } else {
-                        PlannedActivityMember.new {
-                            this.user = dbUser
-                            this.activity = planned
-                        }
+                        if (planned.isFull()) {
+                            sendReply(absSender, chat, "This activity fireteam is full.")
+                        } else {
+                            PlannedActivityMember.new {
+                                this.user = dbUser
+                                this.activity = planned
+                            }
 
-                        sendReply(absSender, chat,
-                            dbUser.formatName() + " has joined " + planned.activity.formatName()
-                            +" group\n"
+                            sendReply(absSender, chat,
+                                dbUser.formatName() + " has joined " + planned.activity.formatName()
+                                +" group\n"
                                 +planned.membersFormattedList() +" are going\n" + planned.joinPrompt())
                         }
                     }
