@@ -24,8 +24,8 @@ class LfgCommand(val store: JdbcStore)
         sendReply(absSender, chat,
             "LFG usage: /lfg <b>activity</b> timespec\n"+
             "For a list of activity codes: /lfg activities\n"+
-            "Example: /lfg kf 10.10-23:00\n"+
-            "(NB: times are in MSK timezone)", true)
+            "Example: /lfg kf tomorrow 23:00\n"+
+            "(NB: times are in MSK timezone by default)", true)
     }
 
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
