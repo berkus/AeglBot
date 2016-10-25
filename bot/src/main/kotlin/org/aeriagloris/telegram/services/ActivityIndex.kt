@@ -27,7 +27,8 @@ object ActivityIndex {
         "coo" to Pair("Vanguard", "Court of Oryx"),
         "forge" to Pair("Vanguard", "Archon's Forge"),
         "poe" to Pair("Vanguard", "Prison of Elders"),
-        "coe" to Pair("Vanguard", "Challenge of Elders")
         // poe 41, etc
+        "coe" to Pair("Vanguard", "Challenge of Elders"),
+        "nf" to Pair("Vanguard", "Nightfall")
     )
 }

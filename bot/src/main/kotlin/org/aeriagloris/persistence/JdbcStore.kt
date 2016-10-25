@@ -114,6 +114,11 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "Vanguard"; mode = "Prison of Elders"
                         minFireteamSize = 1; maxFireteamSize = 3
                     }
+                    Activity.new {
+                        name = "Vanguard"; mode = "Nightfall"
+                        minFireteamSize = 1; maxFireteamSize = 3
+                        minLight = 380
+                    }
                 }
             }
         }
