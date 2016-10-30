@@ -46,7 +46,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         )
         val timesString = arrayOf("year","month","day","hour","minute")
 
-        var dur = duration
+        var dur = Math.abs(duration)
         val res = times.zip(timesString).map { item ->
             val (current, timesStr) = item
             val temp = dur / current
