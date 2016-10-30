@@ -35,6 +35,7 @@ class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
     fun joinPrompt(): String = if (isFull()) { 
             "This activity fireteam is full." 
         } else {
-            "Enter "+joinLink()+" to join this group."
+            val count = activity.maxFireteamSize - members.count()
+            "Enter "+joinLink()+" to join this group. Up to " + count + " more can join."
         }
 }
