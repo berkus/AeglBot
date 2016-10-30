@@ -26,10 +26,12 @@ import java.util.TimeZone
 class AeglBot : TelegramLongPollingCommandBot()
 {
     val telegramBotToken: String
+    val telegramBotName: String
 
     init {
         val config = ConfigFactory.load()
         telegramBotToken = config.getString("bot.token")
+        telegramBotName = config.getString("bot.name")
 
         TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
 
@@ -54,7 +56,7 @@ class AeglBot : TelegramLongPollingCommandBot()
     }
 
     override fun getBotUsername(): String {
-        return "AeglBot"
+        return telegramBotName
     }
 
     override fun processNonCommandUpdate(update: Update) {
