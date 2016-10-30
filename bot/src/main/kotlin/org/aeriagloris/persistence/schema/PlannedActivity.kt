@@ -32,6 +32,8 @@ class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
 
     fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
 
+    fun detailsFormatted(): String = if ("".equals(details)) { "" } else { details + "\n" }
+
     fun joinPrompt(): String = if (isFull()) { 
             "This activity fireteam is full." 
         } else {

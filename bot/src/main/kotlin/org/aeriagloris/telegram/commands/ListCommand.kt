@@ -24,7 +24,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
                     it.start > DateTime.now() - 3600 // @todo replace with sql where..
                 }.toList().map { act ->
                     "<b>"+act.id+"</b>: <b>"+act.activity.formatName()+"</b>\n" +
-                        act.details + "\n" +
+                        act.detailsFormatted() +
                         act.membersFormattedColumn() + "\n" +
                         "<b>" + formatStartTime(act.start) + "</b>\n" +
                         act.joinPrompt() + "\n"

@@ -16,7 +16,8 @@ class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set gro
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
         if (arguments.size < 2) {
-            sendReply(absSender, chat, "To update fireteam details enter /details id freeform_text\n"
+            sendReply(absSender, chat, "To update fireteam details enter /details ID freeform text\n"
+            + "To delete details use /details ID del."
             + "Fireteam IDs are available from output of /list command.")
             return
         }
@@ -36,7 +37,9 @@ class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set gro
                 if (planned == null) {
                     sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
                 } else {
-                    planned.details = arguments.drop(1).joinToString(" ")
+
+                    planned.details = if (arguments[1] == "del") { "" }
+                                      else { arguments.drop(1).joinToString(" ") }
 
                     sendReply(absSender, chat, "Details updated.")
                 }
