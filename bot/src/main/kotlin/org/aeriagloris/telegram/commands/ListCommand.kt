@@ -32,8 +32,12 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
                         act.joinPrompt() + "\n"
                 }.joinToString("\n")
 
-            sendReply(absSender, chat,
-                "Planned activities:\n\n"+objs, true)
+            if ("".equals(objs)) {
+                sendReply(absSender, chat, "No activities planned")
+            } else {
+                sendReply(absSender, chat,
+                        "Planned activities:\n\n" + objs, true)
+            }
         }
     }
 }
