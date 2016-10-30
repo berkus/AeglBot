@@ -99,7 +99,7 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                     }
                     Activity.new {
                         name = "Crucible"; mode = "any"
-                        minFireteamSize = 1; maxFireteamSize = 12
+                        minFireteamSize = 1; maxFireteamSize = 6
                     }
                     Activity.new {
                         name = "Crucible"; mode = "Private Tournament"
