@@ -41,5 +41,3 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
         }
     }
 }
-
-// Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)

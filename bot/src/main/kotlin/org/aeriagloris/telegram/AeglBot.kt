@@ -62,4 +62,9 @@ class AeglBot : TelegramLongPollingCommandBot()
     override fun processNonCommandUpdate(update: Update) {
         // do nothing for simple chat...
     }
+
+    // @todo Add a thread that would get once a minute a list of planned activities and
+    // notify when the time is closing in.
+    // e.g.
+    // Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)
 }
