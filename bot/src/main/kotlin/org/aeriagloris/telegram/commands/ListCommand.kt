@@ -12,6 +12,7 @@ import org.aeriagloris.persistence.schema.*
 import org.jetbrains.exposed.sql.*
 
 import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
 
 class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current lfg/lfm")
 {
@@ -20,8 +21,9 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
         transaction {
             logger.addLogger(StdOutSqlLogger())
 
-            val objs = PlannedActivity.all().filter {
-                    it.start > DateTime.now() - 3600 // @todo replace with sql where..
+            val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
+            val objs = PlannedActivity.find {
+                    PlannedActivities.start greaterEq hourAgo
                 }.toList().map { act ->
                     "<b>"+act.id+"</b>: <b>"+act.activity.formatName()+"</b>\n" +
                         act.detailsFormatted() +
