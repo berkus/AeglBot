@@ -31,7 +31,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
     }
 
     fun parseTimeSpec(timespec: String): DateTime {
-        val parser = Parser(TimeZone.getTimeZone("Europe/Moscow"))
+        val parser = Parser(TimeZone.getTimeZone("Europe/Moscow")) // @todo bot.timezone
         val groups = parser.parse(timespec)
         return DateTime(groups[0].dates[0])
     }
