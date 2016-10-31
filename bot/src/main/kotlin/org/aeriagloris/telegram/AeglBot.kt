@@ -16,39 +16,36 @@ import org.aeriagloris.telegram.commands.RaidCommand
 import org.aeriagloris.telegram.commands.UpdateCommand
 import org.aeriagloris.telegram.commands.WhoisCommand
 import org.aeriagloris.persistence.JdbcStore
-import com.typesafe.config.ConfigFactory
-import java.util.TimeZone
+import org.slf4j.LoggerFactory
 
 // https://destinytrialsreport.com/ps/Kayouga
 // destinytracker
 // guardian.gg
 
-class AeglBot : TelegramLongPollingCommandBot()
+class AeglBot(val store: JdbcStore)
+    : TelegramLongPollingCommandBot()
 {
-    val telegramBotToken: String
-    val telegramBotName: String
+    companion object {
+        var telegramBotName: String = ""
+        var telegramBotToken: String = ""
+    }
+
+    val log = LoggerFactory.getLogger(AeglBot::class.java)
 
     init {
-        val config = ConfigFactory.load()
-        telegramBotToken = config.getString("bot.token")
-        telegramBotName = config.getString("bot.name")
-
-        TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
-
-        // Database Setup
-        val jdbcStore = JdbcStore(config.getString("bot.driver"), config.getString("bot.database"))
+        log.info("Starting bot "+telegramBotName)
 
         // Telegram Setup
-        register(CancelCommand(jdbcStore))
-        register(DetailsCommand(jdbcStore))
-        register(JoinCommand(jdbcStore))
-        register(PsnCommand(jdbcStore))
-        register(LfgCommand(jdbcStore))
-        //register(LfmCommand(jdbcStore))
-        register(ListCommand(jdbcStore))
-        //register(RaidCommand(jdbcStore))
-        register(UpdateCommand(jdbcStore))
-        register(WhoisCommand(jdbcStore))
+        register(CancelCommand(store))
+        register(DetailsCommand(store))
+        register(JoinCommand(store))
+        register(PsnCommand(store))
+        register(LfgCommand(store))
+        //register(LfmCommand(store))
+        register(ListCommand(store))
+        //register(RaidCommand(store))
+        register(UpdateCommand(store))
+        register(WhoisCommand(store))
         register(HelpCommand(this))
     }
 
