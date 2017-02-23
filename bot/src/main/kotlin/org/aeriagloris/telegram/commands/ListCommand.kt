@@ -32,7 +32,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
                 }.joinToString("\n")
 
             if ("".equals(objs)) {
-                sendReply(absSender, chat, "No activities planned")
+                sendReply(absSender, chat, "No activities planned, add something with /lfg")
             } else {
                 sendReply(absSender, chat,
                         "Planned activities:\n\n" + objs, true)
