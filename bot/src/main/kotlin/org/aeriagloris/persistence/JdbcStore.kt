@@ -15,7 +15,7 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
         transaction {
             logger.addLogger(StdOutSqlLogger())
 
-            create(Guardians, Activities, PlannedActivities, PlannedActivityMembers, PlannedActivityReminders)
+            create(Guardians, Activities, ActivityShortcuts, PlannedActivities, PlannedActivityMembers, PlannedActivityReminders)
 
             if (Activity.count() == 0) {
                 transaction {
@@ -121,6 +121,142 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                     }
                 }
             }
+
+            if (ActivityShortcut.count() == 0) {
+                transaction {
+                    ActivityShortcut.new {
+                        name = "kf"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "King's Fall") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "kfh"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "King's Fall") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "kfn"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "King's Fall") and (Activities.mode eq "normal") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "cr"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crota's End") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "crh"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crota's End") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "crn"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crota's End") and (Activities.mode eq "normal") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "vog"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vault of Glass") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "vogh"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vault of Glass") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "vogn"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vault of Glass") and (Activities.mode eq "normal") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "wotm"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Wrath of the Machine") and (Activities.mode eq "normal") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "wotmh"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Wrath of the Machine") and (Activities.mode eq "hard") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "wotmn"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Wrath of the Machine") and (Activities.mode eq "normal") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "pvp"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "any") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "3v3"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "3v3") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "6v6"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "6v6") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "ib"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "Iron Banner") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "too"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "Trials of Osiris") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "pvt"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "Private Matches") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "trn"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "Private Tournament") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "pve"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "any") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "patrol"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Patrols") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "coo"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Court of Oryx") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "forge"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Archon's Forge") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "poe"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Prison of Elders") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "coe"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Challenge of Elders") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "nf"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Nightfall") }.single()
+                    }
+                }                
+            }
         }
     }
 }
+

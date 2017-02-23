@@ -6,7 +6,6 @@ import org.telegram.telegrambots.api.objects.User
 import org.telegram.telegrambots.bots.AbsSender
 import org.telegram.telegrambots.logging.BotLogger
 import org.aeriagloris.persistence.JdbcStore
-import org.aeriagloris.telegram.services.ActivityIndex
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.aeriagloris.persistence.schema.*
 import org.jetbrains.exposed.sql.*
@@ -35,13 +34,20 @@ class LfgCommand(val store: JdbcStore)
         }
 
         if (arguments[0] == "activities") {
-            val builder = StringBuilder("Activities: use a short name:\n")
+            transaction {
+                val desObjs = ActivityShortcut.find { ActivityShortcuts.game eq "Destiny" }.toList().sortedBy { ActivityShortcuts.name }.map { act ->
+                        "<b>"+act.name+"</b>\t"+act.link.formatName()
+                    }.joinToString("\n")
 
-            for ((k, act) in ActivityIndex.map) {
-                builder.append("<b>"+k+"</b>\t" + act.first + " (" + act.second + ")\n")
+                val tesObjs = ActivityShortcut.find { ActivityShortcuts.game eq "TESO" }.toList().sortedBy { ActivityShortcuts.name }.map { act ->
+                        "<b>"+act.name+"</b>\t"+act.link.formatName()
+                    }.joinToString("\n")
+
+                sendReply(absSender, chat,
+                    "Activities: use a short name:\n" + 
+                    "*** <b>Destiny</b>:\n" + desObjs + "\n\n" +
+                    "*** <b>TESO</b>:\n" + tesObjs, true)
             }
-
-            sendReply(absSender, chat, builder.toString(), true)
             return
         }
 
@@ -59,9 +65,8 @@ class LfgCommand(val store: JdbcStore)
                 sendReply(absSender, chat, "You need to link your PSN account first: use /psn command")
             } else {
 
-                val act1 = ActivityIndex.map[ arguments[0] ]!!
-                val act = Activity
-                    .find { (Activities.name eq act1.first) and (Activities.mode eq act1.second) }
+                val act = ActivityShortcut
+                    .find { ActivityShortcuts.name eq arguments[0] }
                     .singleOrNull()
 
                 if (act == null) {
@@ -71,7 +76,7 @@ class LfgCommand(val store: JdbcStore)
 
                     val plannedActivity = PlannedActivity.new {
                         author = dbUser
-                        activity = act
+                        activity = act.link
                         start = startTime
                         // set these using "/details id text" command
                         details = ""
@@ -84,7 +89,7 @@ class LfgCommand(val store: JdbcStore)
 
                     sendReply(absSender, chat, // Todo: always post to lfg chat?
                         dbUser.formatName() + " is looking for "
-                        + act.formatName()
+                        + act.link.formatName()
                         +" group "+formatStartTime(startTime)+"\n"
                         +plannedActivity.joinPrompt())
 
