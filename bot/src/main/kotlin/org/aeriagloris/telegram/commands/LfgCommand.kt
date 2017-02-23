@@ -88,7 +88,7 @@ class LfgCommand(val store: JdbcStore)
                         +" group "+formatStartTime(startTime)+"\n"
                         +plannedActivity.joinPrompt())
 
-                    //sendReply(absSender, user, "Your lfg is added, to set additional details...")
+                    //sendReply(absSender, "@"+dbUser.telegramName, "Your lfg is added, to set additional details...")
                 }
             }
         }
