@@ -119,6 +119,38 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minFireteamSize = 1; maxFireteamSize = 3
                         minLight = 380
                     }
+
+                    // TESO
+
+                    Activity.new {
+                        name = "Dolmen"; mode = "any"
+                        minFireteamSize = 1; maxFireteamSize = 12
+                        minLevel = 1
+                    }
+
+                    Activity.new {
+                        name = "Delve"; mode = "any"
+                        minFireteamSize = 1; maxFireteamSize = 4
+                        minLevel = 1
+                    }
+
+                    Activity.new {
+                        name = "Dungeon"; mode = "any"
+                        minFireteamSize = 3; maxFireteamSize = 12
+                        minLevel = 8
+                    }
+
+                    Activity.new {
+                        name = "Questing"; mode = "any"
+                        minFireteamSize = 1; maxFireteamSize = 12
+                        minLevel = 1
+                    }
+
+                    Activity.new {
+                        name = "Cyrodiil"; mode = "pvp"
+                        minFireteamSize = 1; maxFireteamSize = 12
+                        minLevel = 10
+                    }
                 }
             }
 
@@ -253,6 +285,37 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "nf"
                         game = "Destiny"
                         link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Nightfall") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "dolmen"
+                        game = "TESO"
+                        link = Activity.find { (Activities.name eq "Dolmen") and (Activities.mode eq "any") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "delve"
+                        game = "TESO"
+                        link = Activity.find { (Activities.name eq "Delve") and (Activities.mode eq "any") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "dung"
+                        game = "TESO"
+                        link = Activity.find { (Activities.name eq "Dungeon") and (Activities.mode eq "any") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "quest"
+                        game = "TESO"
+                        link = Activity.find { (Activities.name eq "Questing") and (Activities.mode eq "any") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "cyro"
+                        game = "TESO"
+                        link = Activity.find { (Activities.name eq "Cyrodiil") and (Activities.mode eq "pvp") }.single()
+                    }
+                    ActivityShortcut.new {
+                        name = "cyrod"
+                        game = "TESO"
+                        link = Activity.find { (Activities.name eq "Cyrodiil") and (Activities.mode eq "pvp") }.single()
                     }
                 }                
             }
