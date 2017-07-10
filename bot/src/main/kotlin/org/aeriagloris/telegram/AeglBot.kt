@@ -1,5 +1,6 @@
 package org.aeriagloris.telegram
 
+import kotlin.concurrent.fixedRateTimer
 import org.telegram.telegrambots.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.api.objects.Update
 import org.telegram.telegrambots.api.methods.send.SendMessage
@@ -14,6 +15,7 @@ import org.aeriagloris.telegram.commands.ListCommand
 import org.aeriagloris.telegram.commands.RaidCommand
 import org.aeriagloris.telegram.commands.UpdateCommand
 import org.aeriagloris.telegram.commands.WhoisCommand
+import org.aeriagloris.telegram.services.Reminder
 import org.aeriagloris.persistence.JdbcStore
 import org.slf4j.LoggerFactory
 
@@ -37,6 +39,11 @@ class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: 
         registerAll(CancelCommand(store), DetailsCommand(store), JoinCommand(store),
             PsnCommand(store), LfgCommand(store), ListCommand(store), UpdateCommand(store),
             WhoisCommand(store), HelpCommand(this))
+
+        fixedRateTimer(name = "Reminder", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
+            log.info("reminder check")
+            Reminder(store).check(lfgChatId)
+        }
     }
 
     override fun getBotToken(): String {
