@@ -8,7 +8,8 @@ defaultTasks 'run'
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'org.telegram:telegrambots:2.4.0'
+    compile 'org.telegram:telegrambots:3.1.2'
+    compile 'org.telegram:telegrambotsextensions:3.1.2'
     compile 'org.postgresql:postgresql:9.4.1211.jre7'
     compile 'com.typesafe:config:1.3.1'
     compile 'org.jetbrains.exposed:exposed:0.7.6'

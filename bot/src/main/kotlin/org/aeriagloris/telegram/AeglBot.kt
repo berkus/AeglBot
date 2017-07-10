@@ -1,6 +1,6 @@
 package org.aeriagloris.telegram
 
-import org.telegram.telegrambots.bots.TelegramLongPollingCommandBot
+import org.telegram.telegrambots.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.api.objects.Update
 import org.telegram.telegrambots.api.methods.send.SendMessage
 import org.telegram.telegrambots.logging.BotLogger
@@ -21,11 +21,10 @@ import org.slf4j.LoggerFactory
 // destinytracker
 // guardian.gg
 
-class AeglBot(val store: JdbcStore)
-    : TelegramLongPollingCommandBot()
+class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: String)
+    : TelegramLongPollingCommandBot(telegramBotName)
 {
     companion object {
-        var telegramBotName: String = ""
         var telegramBotToken: String = ""
     }
 
@@ -35,24 +34,13 @@ class AeglBot(val store: JdbcStore)
         log.info("Starting bot "+telegramBotName)
 
         // Telegram Setup
-        register(CancelCommand(store))
-        register(DetailsCommand(store))
-        register(JoinCommand(store))
-        register(PsnCommand(store))
-        register(LfgCommand(store))
-        register(ListCommand(store))
-        //register(RaidCommand(store))
-        register(UpdateCommand(store))
-        register(WhoisCommand(store))
-        register(HelpCommand(this))
+        registerAll(CancelCommand(store), DetailsCommand(store), JoinCommand(store),
+            PsnCommand(store), LfgCommand(store), ListCommand(store), UpdateCommand(store),
+            WhoisCommand(store), HelpCommand(this))
     }
 
     override fun getBotToken(): String {
         return telegramBotToken
-    }
-
-    override fun getBotUsername(): String {
-        return telegramBotName
     }
 
     override fun processNonCommandUpdate(update: Update) {

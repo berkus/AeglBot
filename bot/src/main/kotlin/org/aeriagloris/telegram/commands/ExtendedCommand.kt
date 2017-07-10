@@ -4,7 +4,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException
 import org.telegram.telegrambots.api.methods.send.SendMessage
 import org.telegram.telegrambots.api.objects.Chat
 import org.telegram.telegrambots.bots.AbsSender
-import org.telegram.telegrambots.bots.commands.BotCommand
+import org.telegram.telegrambots.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.logging.BotLogger
 import java.util.concurrent.TimeUnit
 import org.joda.time.DateTime
@@ -72,6 +72,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
     }
 
     // "Today at 23:00 (starts in 3 hours)"
+    // @todo make static
     fun formatStartTime(time: DateTime): String {
         val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) { 
             "Today"

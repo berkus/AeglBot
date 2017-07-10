@@ -18,8 +18,6 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
         transaction {
-            logger.addLogger(StdOutSqlLogger())
-
             val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
             val objs = PlannedActivity.find {
                     PlannedActivities.start greaterEq hourAgo
@@ -34,8 +32,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
             if ("".equals(objs)) {
                 sendReply(absSender, chat, "No activities planned, add something with /lfg")
             } else {
-                sendReply(absSender, chat,
-                        "Planned activities:\n\n" + objs, true)
+                sendReply(absSender, chat, "Planned activities:\n\n" + objs, true)
             }
         }
     }
