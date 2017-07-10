@@ -10,7 +10,6 @@ import org.aeriagloris.telegram.commands.HelpCommand
 import org.aeriagloris.telegram.commands.JoinCommand
 import org.aeriagloris.telegram.commands.PsnCommand
 import org.aeriagloris.telegram.commands.LfgCommand
-import org.aeriagloris.telegram.commands.LfmCommand
 import org.aeriagloris.telegram.commands.ListCommand
 import org.aeriagloris.telegram.commands.RaidCommand
 import org.aeriagloris.telegram.commands.UpdateCommand
@@ -41,7 +40,6 @@ class AeglBot(val store: JdbcStore)
         register(JoinCommand(store))
         register(PsnCommand(store))
         register(LfgCommand(store))
-        //register(LfmCommand(store))
         register(ListCommand(store))
         //register(RaidCommand(store))
         register(UpdateCommand(store))
