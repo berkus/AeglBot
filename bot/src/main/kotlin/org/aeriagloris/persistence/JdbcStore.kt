@@ -120,6 +120,13 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minLight = 380
                     }
 
+                    // Destiny 2
+
+                    Activity.new {
+                        name = "Crucible"; mode = "4v4"
+                        minFireteamSize = 1; maxFireteamSize = 4
+                    }
+
                     // TESO
 
                     Activity.new {
@@ -150,6 +157,14 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "Cyrodiil"; mode = "pvp"
                         minFireteamSize = 1; maxFireteamSize = 12
                         minLevel = 10
+                    }
+
+                    // Alienation
+
+                    Activity.new {
+                        name = "Alienation"; mode = "coop"
+                        minFireteamSize = 1; maxFireteamSize = 4
+                        minLevel = 1
                     }
                 }
             }
@@ -287,6 +302,16 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         link = Activity.find { (Activities.name eq "Vanguard") and (Activities.mode eq "Nightfall") }.single()
                     }
 
+                    // Destiny 2
+
+                    ActivityShortcut.new {
+                        name = "pvp2"
+                        game = "Destiny 2"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "4v4") }.single()
+                    }
+
+                    // TESO
+
                     ActivityShortcut.new {
                         name = "dolmen"
                         game = "TESO"
@@ -316,6 +341,14 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "cyrod"
                         game = "TESO"
                         link = Activity.find { (Activities.name eq "Cyrodiil") and (Activities.mode eq "pvp") }.single()
+                    }
+
+                    // Alienation
+
+                    ActivityShortcut.new {
+                        name = "alien"
+                        game = "Alienation"
+                        link = Activity.find { (Activities.name eq "Alienation") and (Activities.mode eq "coop") }.single()
                     }
                 }                
             }
