@@ -15,7 +15,7 @@ import org.joda.time.DateTimeZone
 import org.joda.time.format.DateTimeFormat
 
 class LfgCommand(val store: JdbcStore)
-    : ExtendedCommand("lfg", "Looking for group (if you look for a fireteam)")
+    : ExtendedCommand("lfg", "Looking for group (if you want to create an event)")
 {
     fun usage(absSender: AbsSender, chat: Chat) {
 //            "LFG usage: /lfg <b>activity</b> [class] <b>timespec</b>\n"+
