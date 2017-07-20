@@ -14,6 +14,17 @@ import java.util.TimeZone
 
 abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text)
 {
+    fun sendMessage(absSender: AbsSender, chat: Chat, message: SendMessage) {
+        message.setChatId(chat.id)
+        message.disableNotification()
+
+        try {
+            absSender.sendMessage(message)
+        } catch (e: TelegramApiException) {
+            BotLogger.error("COMMAND", e)
+        }
+    }
+
     fun sendReply(absSender: AbsSender, chat: Chat, message: String, isHtml: Boolean = false) {
         val answer = SendMessage()
         answer.setChatId(chat.id)
