@@ -16,7 +16,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
 {
     fun sendReply(absSender: AbsSender, chat: Chat, message: String, isHtml: Boolean = false) {
         val answer = SendMessage()
-        answer.setChatId(chat.getId().toString())
+        answer.setChatId(chat.id)
         answer.enableHtml(isHtml)
         answer.setText(message)
         answer.disableNotification()
