@@ -166,6 +166,18 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minFireteamSize = 1; maxFireteamSize = 4
                         minLevel = 1
                     }
+
+                    // Titanfall 2
+
+                    Activity.new {
+                        name = "Titanfall 2"; mode = "coop"
+                        minFireteamSize = 1; maxFireteamSize = 4
+                    }
+
+                    Activity.new {
+                        name = "Titanfall 2"; mode = "pvp"
+                        minFireteamSize = 1; maxFireteamSize = 6
+                    }
                 }
             }
 
@@ -349,6 +361,20 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "alien"
                         game = "Alienation"
                         link = Activity.find { (Activities.name eq "Alienation") and (Activities.mode eq "coop") }.single()
+                    }
+
+                    // Titanfall 2
+
+                    ActivityShortcut.new {
+                        name = "tf2coop"
+                        game = "Titanfall 2"
+                        link = Activity.find { (Activities.name eq "Titanfall 2") and (Activities.mode eq "coop") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "tf2pvp"
+                        game = "Titanfall 2"
+                        link = Activity.find { (Activities.name eq "Titanfall 2") and (Activities.mode eq "pvp") }.single()
                     }
                 }                
             }
