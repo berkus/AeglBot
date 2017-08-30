@@ -127,6 +127,13 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minFireteamSize = 1; maxFireteamSize = 4
                     }
 
+                    Activity.new {
+                        name = "Leviathan"; mode = "normal"
+                        minFireteamSize = 1; maxFireteamSize = 6
+                        minLight = 100; minLevel = 15
+                    }
+
+
                     // TESO
 
                     Activity.new {
@@ -322,6 +329,12 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "4v4") }.single()
                     }
 
+                    ActivityShortcut.new {
+                        name = "levin"
+                        game = "Destiny 2"
+                        link = Activity.find { (Activities.name eq "Leviathan") and (Activities.mode eq "normal") }.single()
+                    }
+
                     // TESO
 
                     ActivityShortcut.new {
@@ -376,7 +389,7 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         game = "Titanfall 2"
                         link = Activity.find { (Activities.name eq "Titanfall 2") and (Activities.mode eq "pvp") }.single()
                     }
-                }                
+                }
             }
         }
     }
