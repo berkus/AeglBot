@@ -133,6 +133,11 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minLight = 100; minLevel = 15
                     }
 
+                    Activity.new {
+                        name = "Crucible"; mode = "Trials of the Nine"
+                        minFireteamSize = 4; maxFireteamSize = 4
+                        minLight = 250; minLevel = 20
+                    }
 
                     // TESO
 
@@ -327,6 +332,12 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "pvp2"
                         game = "Destiny 2"
                         link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "4v4") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "to9"
+                        game = "Destiny"
+                        link = Activity.find { (Activities.name eq "Crucible") and (Activities.mode eq "Trials of the Nine") }.single()
                     }
 
                     ActivityShortcut.new {
