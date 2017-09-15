@@ -35,18 +35,18 @@ class LfgCommand(val store: JdbcStore)
 
         if (arguments[0] == "activities") {
             transaction {
-                val desObjs = ActivityShortcut.find { ActivityShortcuts.game eq "Destiny" }.toList().sortedBy { ActivityShortcuts.name }.map { act ->
-                        "<b>"+act.name+"</b>\t"+act.link.formatName()
-                    }.joinToString("\n")
+                var text = "Activities: use a short name:\n";
+                val games = ActivityShortcuts.slice(ActivityShortcuts.game).selectAll().withDistinct().toList()
+                    .map { game -> game[ActivityShortcuts.game] }.sorted()
 
-                val tesObjs = ActivityShortcut.find { ActivityShortcuts.game eq "TESO" }.toList().sortedBy { ActivityShortcuts.name }.map { act ->
-                        "<b>"+act.name+"</b>\t"+act.link.formatName()
-                    }.joinToString("\n")
+                for (game in games) {
+                    text += "*** <b>"+game+"</b>:\n" +
+                        ActivityShortcut.find { ActivityShortcuts.game eq game }.toList().sortedBy { ActivityShortcuts.name }.map { act ->
+                            "<b>"+act.name+"</b>\t"+act.link.formatName()
+                        }.joinToString("\n") + "\n"
+                }
 
-                sendReply(absSender, chat,
-                    "Activities: use a short name:\n" + 
-                    "*** <b>Destiny</b>:\n" + desObjs + "\n\n" +
-                    "*** <b>TESO</b>:\n" + tesObjs, true)
+                sendReply(absSender, chat, text, true)
             }
             return
         }
