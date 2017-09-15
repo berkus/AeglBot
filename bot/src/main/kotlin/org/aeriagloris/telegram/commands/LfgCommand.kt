@@ -1,6 +1,8 @@
 package org.aeriagloris.telegram.commands
 
 import org.telegram.telegrambots.api.methods.send.SendMessage
+import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow
+import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup
 import org.telegram.telegrambots.api.objects.Chat
 import org.telegram.telegrambots.api.objects.User
 import org.telegram.telegrambots.bots.AbsSender
@@ -26,10 +28,33 @@ class LfgCommand(val store: JdbcStore)
             "(NB: times are in MSK timezone by default)", true)
     }
 
+    fun interactive(absSender: AbsSender, chat: Chat) {
+        val message = SendMessage()
+        message.setText("Pick a game from the list")
+
+        val row1 = KeyboardRow()
+        // Set each button, you can also use KeyboardButton objects if you need something else than text
+        row1.add("Destiny")
+        row1.add("Destiny 2")
+        row1.add("TESO")
+
+        val row2 = KeyboardRow()
+        row2.add("Alienation")
+        row2.add("Titanfall 2")
+        row2.add("Cancel")
+
+        val keyboardMarkup = ReplyKeyboardMarkup()
+        keyboardMarkup.setKeyboard(listOf(row1, row2))
+
+        message.setReplyMarkup(keyboardMarkup)
+        sendMessage(absSender, chat, message)
+    }
+
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
         if (arguments.size < 1) {
-            usage(absSender, chat)
+            interactive(absSender, chat)
+            //usage(absSender, chat)
             return
         }
 
