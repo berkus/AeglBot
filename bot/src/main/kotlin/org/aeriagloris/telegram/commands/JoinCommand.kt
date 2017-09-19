@@ -53,7 +53,7 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
 
                             sendReply(absSender, chat,
                                 dbUser.formatName() + " has joined " + planned.activity.formatName()
-                                +" group\n"
+                                +" group " + formatStartTime(planned.start) + "\n"
                                 +planned.membersFormattedList() +" are going\n" + planned.joinPrompt())
                         }
                     }
