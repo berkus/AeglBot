@@ -55,7 +55,7 @@ class CancelCommand(val store: JdbcStore) : ExtendedCommand("cancel", "Cancel jo
 
                         sendReply(absSender, chat,
                             dbUser.formatName() + " has left " + planned.activity.formatName()
-                            + " group " + formatStartTime(planned.start) + "\n"
+                            + " group " + formatStartTime(planned.start).decapitalize() + "\n"
                             +suffix)
                     }
                 }
