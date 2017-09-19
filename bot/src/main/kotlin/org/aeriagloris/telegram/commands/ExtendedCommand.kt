@@ -17,6 +17,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
     fun sendMessage(absSender: AbsSender, chat: Chat, message: SendMessage) {
         message.setChatId(chat.id)
         message.disableNotification()
+        message.disableWebPagePreview()
 
         try {
             absSender.sendMessage(message)
@@ -31,6 +32,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
         answer.enableHtml(isHtml)
         answer.setText(message)
         answer.disableNotification()
+        answer.disableWebPagePreview()
         // @todo make some commands with enabled notifications?
         // maybe make separate notifyMessage() for that
 
@@ -85,7 +87,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
     // "Today at 23:00 (starts in 3 hours)"
     // @todo make static
     fun formatStartTime(time: DateTime): String {
-        val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) { 
+        val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) {
             "Today"
         } else {
             "on " + DateTimeFormat.forStyle("S-").print(time)
