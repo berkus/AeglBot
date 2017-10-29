@@ -33,7 +33,7 @@ class CancelCommand(val store: JdbcStore) : ExtendedCommand("cancel", "Cancel jo
                     .findById(arguments[0].toInt())
 
                 if (planned == null) {
-                    sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
+                    sendReply(absSender, chat, "Activity ${arguments[0]} was not found.")
                 } else {
                     val member = PlannedActivityMember.find {
                         (PlannedActivityMembers.userId eq dbUser.id) and

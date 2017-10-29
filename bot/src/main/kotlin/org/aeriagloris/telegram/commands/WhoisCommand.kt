@@ -36,9 +36,9 @@ class WhoisCommand(val store: JdbcStore) : ExtendedCommand("whois", "Query teleg
                     }
 
                 if (guardian == null) {
-                    sendReply(absSender, chat, "Guardian "+name+" was not found.")
+                    sendReply(absSender, chat, "Guardian ${name} was not found.")
                 } else {
-                    sendReply(absSender, chat, "Guardian @"+guardian.telegramName+" PSN "+guardian.psnName)
+                    sendReply(absSender, chat, "Guardian @${guardian.telegramName} PSN ${guardian.psnName}")
                 }
             }
         }

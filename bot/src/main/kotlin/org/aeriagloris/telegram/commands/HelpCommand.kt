@@ -14,7 +14,7 @@ class HelpCommand(val commandRegistry: ICommandRegistry)
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        val helpMessageBuilder = StringBuilder("<b>Help</b> " + Emoji.AMBULANCE + "\n")
+        val helpMessageBuilder = StringBuilder("<b>Help</b> ${Emoji.AMBULANCE}\n")
         helpMessageBuilder.append("These are the registered commands for this Bot:\n\n")
 
         commandRegistry.getRegisteredCommands().forEach { botCommand: BotCommand ->

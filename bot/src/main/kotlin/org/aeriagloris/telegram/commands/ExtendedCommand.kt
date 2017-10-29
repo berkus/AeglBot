@@ -93,11 +93,11 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
             "on " + DateTimeFormat.forStyle("S-").print(time)
         }
 
-        val prefix2 = " at " + DateTimeFormat.forStyle("-S").print(time)
+        val prefix2 = DateTimeFormat.forStyle("-S").print(time)
 
         val timeDiff = time.getMillis() - DateTime.now().getMillis()
-        val infixStr = if (timeDiff <= 0) { " (started " } else { " (starts " }
+        val infixStr = if (timeDiff <= 0) { "started" } else { "starts" }
 
-        return prefix + prefix2 + infixStr + timeDiffString(timeDiff) + ")"
+        return "${prefix} at ${prefix2} (${infixStr} ${timeDiffString(timeDiff)})"
     }
 }

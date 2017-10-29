@@ -22,7 +22,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
             val objs = PlannedActivity.find {
                     PlannedActivities.start greaterEq hourAgo
                 }.toList().sortedBy { it.start }.map { act ->
-                    "<b>"+act.id+"</b>: <b>"+act.activity.formatName()+"</b>\n" +
+                    "<b>${act.id}</b>: <b>${act.activity.formatName()}</b>\n" +
                         act.detailsFormatted() +
                         act.membersFormattedColumn() + "\n" +
                         "<b>" + formatStartTime(act.start) + "</b>\n" +

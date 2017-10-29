@@ -34,7 +34,7 @@ class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set gro
                     .findById(arguments[0].toInt())
 
                 if (planned == null) {
-                    sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
+                    sendReply(absSender, chat, "Activity ${arguments[0]} was not found.")
                 } else {
 
                     planned.details = if (arguments[1] == "del") { "" }
