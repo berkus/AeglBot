@@ -40,6 +40,10 @@ class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: 
             PsnCommand(store), LfgCommand(store), ListCommand(store), UpdateCommand(store),
             WhoisCommand(store), HelpCommand(this))
 
+        // @todo Add a thread that would get once a minute a list of planned activities and
+        // notify when the time is closing in.
+        // e.g.
+        // Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)
         fixedRateTimer(name = "Reminder", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
             log.info("reminder check")
             Reminder(store).check(lfgChatId)
@@ -53,9 +57,4 @@ class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: 
     override fun processNonCommandUpdate(update: Update) {
         // do nothing for simple chat...
     }
-
-    // @todo Add a thread that would get once a minute a list of planned activities and
-    // notify when the time is closing in.
-    // e.g.
-    // Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)
 }
