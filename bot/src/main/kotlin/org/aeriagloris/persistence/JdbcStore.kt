@@ -190,6 +190,19 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "Titanfall 2"; mode = "pvp"
                         minFireteamSize = 1; maxFireteamSize = 6
                     }
+
+                    // Warframe
+
+                    Activity.new {
+                        name = "Warframe"; mode = "pve"
+                        minFireteamSize = 1; maxFireteamSize = 4
+                    }
+
+                    Activity.new {
+                        name = "Warframe"; mode = "pvp"
+                        minFireteamSize = 1; maxFireteamSize = 4
+                    }
+
                 }
             }
 
@@ -399,6 +412,20 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "tf2pvp"
                         game = "Titanfall 2"
                         link = Activity.find { (Activities.name eq "Titanfall 2") and (Activities.mode eq "pvp") }.single()
+                    }
+
+                    // Warframe
+
+                   ActivityShortcut.new {
+                        name = "wfpve"
+                        game = "Warframe"
+                        link = Activity.find { (Activities.name eq "Warframe") and (Activities.mode eq "pve") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "wfpvp"
+                        game = "Warframe"
+                        link = Activity.find { (Activities.name eq "Warframe") and (Activities.mode eq "pvp") }.single()
                     }
                 }
             }
