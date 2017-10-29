@@ -67,7 +67,7 @@ class AlertsWatcher(val store: JdbcStore) {
             // Publish all new alerts (@todo sorted by expiry date)
 
             for (item in items.filter {i -> i.type == "Alert"}) {
-                sendReplyMessage(absSender, chatId, "${Emoji.RAISED_FIST} Alert: ${item.title}", true)
+                sendReplyMessage(absSender, chatId.toLong(), "${Emoji.RAISED_FIST} Alert: ${item.title}", true)
             }
         }
     }

@@ -12,7 +12,7 @@ import org.joda.time.format.DateTimeFormat
 import com.joestelmach.natty.*
 import java.util.TimeZone
 
-fun sendReplyMessage(absSender: AbsSender, chatId: String, message: String, isHtml: Boolean = false) {
+fun sendReplyMessage(absSender: AbsSender, chatId: Long, message: String, isHtml: Boolean = false) {
     val answer = SendMessage()
     answer.setChatId(chatId)
     answer.enableHtml(isHtml)
