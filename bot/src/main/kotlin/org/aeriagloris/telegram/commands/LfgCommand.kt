@@ -18,39 +18,15 @@ class LfgCommand(val store: JdbcStore)
     : ExtendedCommand("lfg", "Looking for group (if you want to create an event)")
 {
     fun usage(absSender: AbsSender, chat: Chat) {
-//            "LFG usage: /lfg <b>activity</b> [class] <b>timespec</b>\n"+
         sendReply(absSender, chat,
             "LFG usage: /lfg <b>activity</b> timespec\n"+
-            "For a list of activity codes: /lfg activities\n"+
+            "For a list of activity codes: /activities\n"+
             "Example: /lfg kf tomorrow 23:00\n"+
             "(NB: times are in MSK timezone by default)", true)
     }
 
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        if (arguments.size < 1) {
-            usage(absSender, chat)
-            return
-        }
-
-        if (arguments[0] == "activities") {
-            transaction {
-                var text = "Activities: use a short name:\n";
-                val games = ActivityShortcuts.slice(ActivityShortcuts.game).selectAll().withDistinct().toList()
-                    .map { game -> game[ActivityShortcuts.game] }.sorted()
-
-                for (game in games) {
-                    text += "*** <b>"+game+"</b>:\n" +
-                        ActivityShortcut.find { ActivityShortcuts.game eq game }.toList().sortedBy { ActivityShortcuts.name }.map { act ->
-                            "<b>"+act.name+"</b>\t"+act.link.formatName()
-                        }.joinToString("\n") + "\n"
-                }
-
-                sendReply(absSender, chat, text, true)
-            }
-            return
-        }
-
         if (arguments.size < 2) {
             usage(absSender, chat)
             return
@@ -70,7 +46,7 @@ class LfgCommand(val store: JdbcStore)
                     .singleOrNull()
 
                 if (act == null) {
-                    sendReply(absSender, chat, "Activity "+arguments[0]+" was not found.")
+                    sendReply(absSender, chat, "Activity ${arguments[0]} was not found. Use /activities for a list.")
                 } else {
                     val startTime = parseTimeSpec(arguments.drop(1).joinToString(" "))
 
@@ -88,12 +64,9 @@ class LfgCommand(val store: JdbcStore)
                     }
 
                     sendReply(absSender, chat, // Todo: always post to lfg chat?
-                        dbUser.formatName() + " is looking for "
-                        + act.link.formatName()
-                        +" group "+formatStartTime(startTime)+"\n"
-                        +plannedActivity.joinPrompt())
-
-                    //sendReply(absSender, "@"+dbUser.telegramName, "Your lfg is added, to set additional details...")
+                        "${dbUser.formatName()} is looking for ${act.link.formatName()} group ${formatStartTime(startTime)}\n"
+                        +plannedActivity.joinPrompt()+"\n"
+                        +"Use `/details ${plannedActivity.id} description` to specify more details about the event.")
                 }
             }
         }
