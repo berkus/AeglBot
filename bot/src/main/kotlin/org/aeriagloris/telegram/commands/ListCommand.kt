@@ -9,11 +9,12 @@ import org.aeriagloris.persistence.JdbcStore
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.aeriagloris.persistence.schema.*
 import org.jetbrains.exposed.sql.*
+import org.aeriagloris.telegram.services.Emoji
 
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 
-class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current lfg/lfm")
+class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current events")
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
@@ -25,7 +26,7 @@ class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current 
                     "<b>${act.id}</b>: <b>${act.activity.formatName()}</b>\n" +
                         act.detailsFormatted() +
                         act.membersFormattedColumn() + "\n" +
-                        "<b>" + formatStartTime(act.start) + "</b>\n" +
+                        "${Emoji.ALARM_CLOCK} <b>${formatStartTime(act.start)}</b>\n" +
                         act.joinPrompt() + "\n"
                 }.joinToString("\n")
 
