@@ -16,6 +16,7 @@ import org.aeriagloris.telegram.commands.ListCommand
 import org.aeriagloris.telegram.commands.UpdateCommand
 import org.aeriagloris.telegram.commands.WhoisCommand
 import org.aeriagloris.telegram.services.Reminder
+import org.aeriagloris.telegram.services.AlertsWatcher
 import org.aeriagloris.persistence.JdbcStore
 import org.slf4j.LoggerFactory
 
@@ -47,6 +48,11 @@ class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: 
         fixedRateTimer(name = "Reminder", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
             log.info("reminder check")
             Reminder(store).check(lfgChatId)
+        }
+
+        fixedRateTimer(name = "Alerts", daemon = true, initialDelay = 0, period = 15*1000 /* millis */) {
+            log.info("alerts check")
+            AlertsWatcher(store).check(wfChatId, this@AeglBot)
         }
     }
 
