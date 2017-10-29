@@ -14,6 +14,7 @@ fun main(args: Array<String>) {
     val botToken = config.getString("bot.token")
     val botName = config.getString("bot.name")
     val lfgChat = config.getString("bot.lfgChatId")
+    val wfChat = config.getString("bot.wfChatId")
 
     TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
 
@@ -23,5 +24,5 @@ fun main(args: Array<String>) {
     // (it must be available in member function BEFORE we construct an instance of AeglBot)
     AeglBot.telegramBotToken = botToken
 
-    telegramBotsApi.registerBot(AeglBot(botName, jdbcStore, lfgChat))
+    telegramBotsApi.registerBot(AeglBot(botName, jdbcStore, lfgChat, wfChat))
 }

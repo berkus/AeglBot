@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 // destinytracker
 // guardian.gg
 
-class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: String)
+class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: String, val wfChatId: String)
     : TelegramLongPollingCommandBot(telegramBotName)
 {
     companion object {
