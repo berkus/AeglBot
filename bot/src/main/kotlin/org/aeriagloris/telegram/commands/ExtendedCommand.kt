@@ -12,6 +12,23 @@ import org.joda.time.format.DateTimeFormat
 import com.joestelmach.natty.*
 import java.util.TimeZone
 
+fun sendReplyMessage(absSender: AbsSender, chatId: String, message: String, isHtml: Boolean = false) {
+    val answer = SendMessage()
+    answer.setChatId(chatId)
+    answer.enableHtml(isHtml)
+    answer.setText(message)
+    answer.disableNotification()
+    answer.disableWebPagePreview()
+    // @todo make some commands with enabled notifications?
+    // maybe make separate notifyMessage() for that
+
+    try {
+        absSender.sendMessage(answer)
+    } catch (e: TelegramApiException) {
+        BotLogger.error("COMMAND", e)
+    }
+}
+
 abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text)
 {
     fun sendMessage(absSender: AbsSender, chat: Chat, message: SendMessage) {
@@ -27,20 +44,7 @@ abstract class ExtendedCommand(tag: String, text: String) : BotCommand(tag, text
     }
 
     fun sendReply(absSender: AbsSender, chat: Chat, message: String, isHtml: Boolean = false) {
-        val answer = SendMessage()
-        answer.setChatId(chat.id)
-        answer.enableHtml(isHtml)
-        answer.setText(message)
-        answer.disableNotification()
-        answer.disableWebPagePreview()
-        // @todo make some commands with enabled notifications?
-        // maybe make separate notifyMessage() for that
-
-        try {
-            absSender.sendMessage(answer)
-        } catch (e: TelegramApiException) {
-            BotLogger.error("COMMAND", e)
-        }
+        sendReplyMessage(absSender, chat.id, message, isHtml)
     }
 
     fun parseTimeSpec(timespec: String): DateTime {
