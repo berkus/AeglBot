@@ -12,9 +12,8 @@ class UpdateCommand(val store: JdbcStore) : ExtendedCommand("update", "Update ac
 {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
     {
-        transaction {
-        }
+        //transaction { }
 
-        sendReply(absSender, chat, "Database already up to date.")
+        sendReply(absSender, chat, "Database already up to date. Chat id ${chat.id}")
     }
 }
