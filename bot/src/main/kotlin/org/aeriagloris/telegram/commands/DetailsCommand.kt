@@ -16,7 +16,7 @@ class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set gro
     {
         if (arguments.size < 2) {
             sendReply(absSender, chat, "To update fireteam details enter /details ID freeform text\n"
-            + "To delete details use /details ID del."
+            + "To delete details use /details ID del.\n"
             + "Fireteam IDs are available from output of /list command.")
             return
         }
