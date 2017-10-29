@@ -1,4 +1,5 @@
 apply plugin: 'kotlin'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'application'
 
 sourceCompatibility = 1.8
@@ -6,18 +7,40 @@ mainClassName = 'org.aeriagloris.telegram.ServerKt'
 
 defaultTasks 'run'
 
+ext {
+    dagger_version = '2.5'
+    okhttp_version = '3.6.0'
+    retrofit_version = '2.1.0'
+    converter_xml_version = '2.0.0'
+}
+
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    //compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
     compile 'org.telegram:telegrambots:3.1.2'
     compile 'org.telegram:telegrambotsextensions:3.1.2'
+
     compile 'org.postgresql:postgresql:9.4.1211.jre7'
-    compile 'com.typesafe:config:1.3.1'
     compile 'org.jetbrains.exposed:exposed:0.7.6'
     compile 'org.springframework.kotlin:spring-kotlin:0.2.1'
+    compile 'com.typesafe:config:1.3.1'
     compile 'org.slf4j:slf4j-simple:1.7.21'
     // add joda-time
     compile 'com.joestelmach:natty:0.12'
     compile "org.jetbrains.anko:anko:$anko_version"
+
+    kapt "com.google.dagger:dagger-compiler:$dagger_version"
+    compile "com.google.dagger:dagger:$dagger_version"
+    compile "com.squareup.okhttp3:okhttp:$okhttp_version"
+    compile "com.squareup.okhttp3:logging-interceptor:$okhttp_version"
+    compile "com.squareup.retrofit2:retrofit:$retrofit_version"
+    compile ("com.squareup.retrofit2:converter-simplexml:$converter_xml_version") {
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'stax', module: 'stax'
+    }
 }
 
 sourceSets {
