@@ -50,7 +50,7 @@ class AeglBot(val telegramBotName: String, val store: JdbcStore, val lfgChatId: 
             Reminder(store).check(lfgChatId)
         }
 
-        fixedRateTimer(name = "Alerts", daemon = true, initialDelay = 0, period = 15*1000 /* millis */) {
+        fixedRateTimer(name = "Alerts", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
             log.info("alerts check")
             AlertsWatcher(store).check(wfChatId, this@AeglBot)
         }
