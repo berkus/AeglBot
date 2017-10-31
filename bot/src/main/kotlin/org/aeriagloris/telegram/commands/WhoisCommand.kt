@@ -20,7 +20,7 @@ class WhoisCommand(val store: JdbcStore) : ExtendedCommand("whois", "Query teleg
         }
 
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
 

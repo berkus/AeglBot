@@ -21,7 +21,7 @@ class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a firete
         }
 
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
 

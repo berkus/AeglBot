@@ -18,7 +18,7 @@ class Reminder(val store: JdbcStore)
     fun check(chatId: String)
     {
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             val minutesAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusMinutes(15)
             val objs = PlannedActivity.find {

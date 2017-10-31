@@ -13,7 +13,7 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
         Database.connect(connectionString, driver = driverClass)
 
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             create(Alerts, Guardians, Activities, ActivityShortcuts, PlannedActivities, PlannedActivityMembers, PlannedActivityReminders)
 

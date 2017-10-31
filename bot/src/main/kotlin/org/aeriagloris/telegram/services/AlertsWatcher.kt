@@ -42,7 +42,7 @@ class AlertsWatcher(val store: JdbcStore) {
         feed.url = url
 
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             val items = mutableListOf<Alert>()
             val feedItems = feed.channel?.feedItems ?: emptyList()

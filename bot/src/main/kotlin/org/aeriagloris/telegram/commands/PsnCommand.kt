@@ -23,7 +23,7 @@ class PsnCommand(val store: JdbcStore) : ExtendedCommand("psn", "Link your teleg
         }
 
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
             if (dbUser == null) {

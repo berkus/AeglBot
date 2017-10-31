@@ -33,7 +33,7 @@ class LfgCommand(val store: JdbcStore)
         }
 
         transaction {
-            logger.addLogger(StdOutSqlLogger())
+            logger.addLogger(Slf4jSqlLogger())
 
             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
 
