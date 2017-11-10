@@ -20,7 +20,7 @@ import retrofit2.converter.simplexml.SimpleXmlConverterFactory
 import org.aeriagloris.telegram.commands.sendReplyMessage
 import mu.KLogging
 
-class AlertsWatcher(val store: JdbcStore) {
+class AlertsWatcher(val store: JdbcStore)  {
     companion object : KLogging() {
         //Mon, 05 Jun 2017 07:41:40 +0000
         val format = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH)
@@ -38,15 +38,21 @@ class AlertsWatcher(val store: JdbcStore) {
             .build()
             .create(AlertService::class.java)
 
-        val response = alertService.getAlerts("rss.php").execute()
-        val feed = response.body()
-        feed.url = url
+        val feed = try {
+            val response = alertService.getAlerts("rss.php").execute()
+            val feed = response.body()
+            feed.url = url
+            feed
+        } catch (ex: java.net.SocketTimeoutException) {
+            logger.error(ex) { "Socket timeout in Alerts" }
+            null
+        }
 
         transaction {
             logger.addLogger(Slf4jSqlLogger())
 
             val items = mutableListOf<Alert>()
-            val feedItems = feed.channel?.feedItems ?: emptyList()
+            val feedItems = feed?.channel?.feedItems ?: emptyList()
             for (feedItem in feedItems) {
                 val g = feedItem.guid ?: ""
                 val alert = Alert.find { Alerts.guid eq g }.singleOrNull()
