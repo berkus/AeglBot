@@ -18,9 +18,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import retrofit2.converter.simplexml.SimpleXmlConverterFactory
 import org.aeriagloris.telegram.commands.sendReplyMessage
+import mu.KLogging
 
 class AlertsWatcher(val store: JdbcStore) {
-    companion object {
+    companion object : KLogging() {
         //Mon, 05 Jun 2017 07:41:40 +0000
         val format = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH)
     }

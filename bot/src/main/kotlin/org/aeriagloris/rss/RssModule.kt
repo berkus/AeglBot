@@ -9,10 +9,11 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
 import java.util.concurrent.TimeUnit
-import org.jetbrains.anko.*
+import mu.KLogging
 
 @Module
-class RssModule() : AnkoLogger {
+class RssModule() {
+    companion object : KLogging()
 
     val cacheSize: Long = 10 * 1024 * 1024
     val cacheTimeSec = 10
@@ -31,7 +32,7 @@ class RssModule() : AnkoLogger {
 
     @Provides
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
-        val interceptor = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger { message -> debug(message) })
+        val interceptor = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger { message -> logger.debug { message } })
         //interceptor.level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
         return interceptor
     }
