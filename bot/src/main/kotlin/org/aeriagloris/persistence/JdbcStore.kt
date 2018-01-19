@@ -203,6 +203,11 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minFireteamSize = 1; maxFireteamSize = 4
                     }
 
+                    Activity.new {
+                        name = "Warframe"; mode = "Raid"
+                        minFireteamSize = 4; maxFireteamSize = 8
+                    }
+
                 }
             }
 
@@ -426,6 +431,12 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "wfpvp"
                         game = "Warframe"
                         link = Activity.find { (Activities.name eq "Warframe") and (Activities.mode eq "pvp") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "wfraid"
+                        game = "Warframe"
+                        link = Activity.find { (Activities.name eq "Warframe") and (Activities.mode eq "Raid") }.single()
                     }
                 }
             }
