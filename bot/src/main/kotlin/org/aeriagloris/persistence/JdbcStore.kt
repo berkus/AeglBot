@@ -221,6 +221,9 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         minFireteamSize = 1; maxFireteamSize = 4
                     }
 
+                    // ARK: Survival Evolved
+                    // The Division
+                    // Overwatch
 
                 }
             }
