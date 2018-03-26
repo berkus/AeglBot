@@ -134,6 +134,24 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                     }
 
                     Activity.new {
+                        name = "Leviathan"; mode = "prestige"
+                        minFireteamSize = 1; maxFireteamSize = 6
+                        minLight = 300; minLevel = 20
+                    }
+
+                    Activity.new {
+                        name = "Leviathan, Eater of Worlds"; mode = "normal"
+                        minFireteamSize = 1; maxFireteamSize = 6
+                        minLight = 300; minLevel = 20
+                    }
+
+                    Activity.new {
+                        name = "Leviathan, Eater of Worlds"; mode = "prestige"
+                        minFireteamSize = 1; maxFireteamSize = 6
+                        minLight = 315; minLevel = 25
+                    }
+
+                    Activity.new {
                         name = "Crucible"; mode = "Trials of the Nine"
                         minFireteamSize = 4; maxFireteamSize = 4
                         minLight = 250; minLevel = 20
@@ -358,6 +376,24 @@ class JdbcStore(val driverClass: String, val connectionString: String) {
                         name = "levin"
                         game = "Destiny 2"
                         link = Activity.find { (Activities.name eq "Leviathan") and (Activities.mode eq "normal") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "levip"
+                        game = "Destiny 2"
+                        link = Activity.find { (Activities.name eq "Leviathan") and (Activities.mode eq "prestige") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "eaten"
+                        game = "Destiny 2"
+                        link = Activity.find { (Activities.name eq "Leviathan, Eater of Worlds") and (Activities.mode eq "normal") }.single()
+                    }
+
+                    ActivityShortcut.new {
+                        name = "eatep"
+                        game = "Destiny 2"
+                        link = Activity.find { (Activities.name eq "Leviathan, Eater of Worlds") and (Activities.mode eq "prestige") }.single()
                     }
 
                     // TESO
