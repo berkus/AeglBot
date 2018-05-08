@@ -8,3 +8,5 @@ application.properties
 **/*.rs.bk
 Cargo.lock
 bot.log
+
+aeglbot.sql
