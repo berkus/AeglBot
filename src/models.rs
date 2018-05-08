@@ -1,8 +1,11 @@
-// use super::schema::*;
+use super::schema::*;
 use chrono::NaiveDateTime;
 use serde_json::Value;
+use std::fmt;
 
-#[derive(Queryable)]
+#[derive(Queryable, Identifiable, Associations)]
+#[table_name = "activityshortcuts"]
+#[belongs_to(Activity, foreign_key = "link")]
 pub struct ActivityShortcut {
     pub id: i32,
     pub name: String,
@@ -11,74 +14,48 @@ pub struct ActivityShortcut {
 }
 
 // #[derive(Insertable)]
-// #[table_name = "activityshortcuts"]
 
-// object Activities : IntIdTable() {
-//     val name = text("name").index(false)
-//     val mode = text("mode").nullable()
-//     val minFireteamSize = integer("min_fireteam_size")
-//     val maxFireteamSize = integer("max_fireteam_size")
-//     val minLight = integer("min_light").nullable()
-//     val minLevel = integer("min_level").nullable()
-// }
-
-// class Activity(id: EntityID<Int>) : IntEntity(id) {
-//     companion object : IntEntityClass<Activity>(Activities)
-
-//     var name by Activities.name
-//     var mode by Activities.mode
-//     var minFireteamSize by Activities.minFireteamSize
-//     var maxFireteamSize by Activities.maxFireteamSize
-//     var minLight by Activities.minLight
-//     var minLevel by Activities.minLevel
-
-//     fun formatName(): String = name + " " + mode
-// }
-
-#[derive(Queryable)]
-// #[table_name = "activities"]
+#[derive(Identifiable, Queryable)]
+#[table_name = "activities"]
 pub struct Activity {
     pub id: i32,
+    pub name: String,
+    pub mode: Option<String>,
+    pub min_fireteam_size: i32,
+    pub max_fireteam_size: i32,
+    pub min_light: Option<i32>,
+    pub min_level: Option<i32>,
 }
 
-// object Alerts : IntIdTable() {
-//     val guid = text("guid").uniqueIndex()
-//     val title = text("title")
-//     val type = text("type")
-//     val startDate = datetime("startDate")
-//     val expiryDate = datetime("expiryDate").nullable()
-//     val faction = text("faction").nullable()
-// }
-
-// class Alert(id: EntityID<Int>) : IntEntity(id) {
-//     companion object : IntEntityClass<Alert>(Alerts)
-
-//     var guid by Alerts.guid
-//     var title by Alerts.title
-//     var type by Alerts.type
-//     var startDate by Alerts.startDate
-//     var expiryDate by Alerts.expiryDate
-//     var faction by Alerts.faction
-// }
+impl Activity {
+    pub fn format_name(&self) -> String {
+        format!(
+            "{} {}",
+            self.name,
+            match self.mode {
+                None => "",
+                Some(ref x) => &x,
+            }
+        )
+    }
+}
 
 #[derive(Queryable)]
 // #[table_name = "alerts"]
 pub struct Alert {
     pub id: i32,
+    pub guid: String,
+    pub title: String,
+    #[column_name = "type"]
+    pub alert_type: String,
+    #[column_name = "startdate"]
+    pub start_date: NaiveDateTime,
+    #[column_name = "expirydate"]
+    pub expiry_date: Option<NaiveDateTime>,
+    pub faction: Option<String>,
 }
 
-// object Guardians : IntIdTable() {
-//     val email = text("email").nullable()
-//     val psnClan = text("psn_clan").nullable()
-//     val createdAt = datetime("created_at").default(DateTime.now())
-//     val updatedAt = datetime("updated_at").default(DateTime.now())
-//     val deletedAt = datetime("deleted_at").nullable()
-//     val tokens = text("tokens").nullable() // Should be `jsonb` actually...
-//     val pendingActivationCode = text("pending_activation_code").nullable()
-// }
-
-#[derive(Queryable)]
-// #[table_name = "guardians"]
+#[derive(Identifiable, Queryable)]
 pub struct Guardian {
     pub id: i32,
     pub telegram_name: String,
@@ -99,37 +76,21 @@ impl Guardian {
     }
 }
 
-// object PlannedActivities : IntIdTable() {
-//     val authorId = reference("author_id", Guardians)
-//     val activityId = reference("activity_id", Activities)
-//     val details = text("details").nullable()
-//     val start = datetime("start")
-// }
+impl fmt::Display for Guardian {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} (t.me/{})", self.psn_name, self.telegram_name)
+    }
+}
 
 // class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
-//     companion object : IntEntityClass<PlannedActivity>(PlannedActivities)
-
 //     var author by Guardian referencedOn PlannedActivities.authorId
 //     var activity by Activity referencedOn PlannedActivities.activityId
 //     var start by PlannedActivities.start
 //     var details by PlannedActivities.details
-
 //     val members by PlannedActivityMember referrersOn PlannedActivityMembers.plannedActivityId
-
-//     fun joinLink(): String = "/join $id"
-
 //     fun membersFormatted(joiner: String): String = members.toList().joinToString(joiner) { it.user.formatName() }
-
 //     fun membersFormattedList(): String = membersFormatted(", ")
-
 //     fun membersFormattedColumn(): String = membersFormatted("\n")
-
-//     fun requiresMoreMembers(): Boolean = members.count() < activity.minFireteamSize
-
-//     fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
-
-//     fun detailsFormatted(): String = if ("".equals(details)) { "" } else { details + "\n" }
-
 //     fun joinPrompt(): String = if (isFull()) {
 //             "This activity fireteam is full."
 //         } else {
@@ -138,52 +99,69 @@ impl Guardian {
 //         }
 // }
 
-#[derive(Queryable)]
-// #[table_name = "plannedactivities"]
+#[derive(Identifiable, Queryable, Associations)]
+#[belongs_to(Guardian, foreign_key = "author_id")]
+#[belongs_to(Activity, foreign_key = "activity_id")]
+#[table_name = "plannedactivities"]
 pub struct PlannedActivity {
     pub id: i32,
+    pub author_id: i32,   // refs Guardians
+    pub activity_id: i32, // refs Activities
+    pub details: Option<String>,
+    pub start: NaiveDateTime,
 }
 
-// object PlannedActivityMembers : IntIdTable() {
-//     val plannedActivityId = reference("planned_activity_id", PlannedActivities)
-//     val userId = reference("user_id", Guardians)
-//     val added = datetime("added").default(DateTime.now())
+impl PlannedActivity {
+    pub fn join_link(&self) -> String {
+        format!("/join {}", self.id)
+    }
 
-//     init {
-//         index(true, plannedActivityId, userId)
-//     }
-// }
+    //     fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
+    pub fn is_full(&self) -> bool {
+        false
+    }
 
-// class PlannedActivityMember(id: EntityID<Int>) : IntEntity(id) {
-//     companion object : IntEntityClass<PlannedActivityMember>(PlannedActivityMembers)
+    //     fun requiresMoreMembers(): Boolean = members.count() < activity.minFireteamSize
+    pub fn requires_more_members(&self) -> bool {
+        false
+    }
 
-//     var user by Guardian referencedOn PlannedActivityMembers.userId
-//     var activity by PlannedActivity referencedOn PlannedActivityMembers.plannedActivityId
-//     var added by PlannedActivityMembers.added
-// }
+    pub fn format_details(&self) -> String {
+        match self.details {
+            None => "".to_string(),
+            Some(ref x) => format!("{}\n", x),
+        }
+    }
+}
 
-#[derive(Queryable)]
-// #[table_name = "plannedactivitymembers"]
+impl fmt::Display for PlannedActivity {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.format_details())
+    }
+}
+
+#[derive(Identifiable, Queryable, Associations)]
+#[belongs_to(Guardian, foreign_key = "user_id")]
+#[belongs_to(Activity, foreign_key = "planned_activity_id")]
+#[table_name = "plannedactivitymembers"]
 pub struct PlannedActivityMember {
     pub id: i32,
+    pub planned_activity_id: i32,
+    pub user_id: i32,
+    pub added: NaiveDateTime,
 }
-
-// object PlannedActivityReminders : IntIdTable() {
-//     val plannedActivityId = reference("planned_activity_id", PlannedActivities)
-//     val userId = reference("user_id", Guardians)
-//     val remind = datetime("remind")
-// }
-
-// class PlannedActivityReminder(id: EntityID<Int>) : IntEntity(id) {
-//     companion object : IntEntityClass<PlannedActivityReminder>(PlannedActivityReminders)
 
 //     var user by Guardian referencedOn PlannedActivityReminders.userId
 //     var activity by PlannedActivity referencedOn PlannedActivityReminders.plannedActivityId
 //     var reminder by PlannedActivityReminders.remind
-// }
 
-#[derive(Queryable)]
-// #[table_name = "plannedactivityreminders"]
+#[derive(Identifiable, Queryable, Associations)]
+#[belongs_to(Guardian, foreign_key = "user_id")]
+#[belongs_to(Activity, foreign_key = "planned_activity_id")]
+#[table_name = "plannedactivityreminders"]
 pub struct PlannedActivityReminder {
     pub id: i32,
+    pub planned_activity_id: i32, // refs planned_activities
+    pub user_id: i32,             // refs Guardians
+    pub remind: NaiveDateTime,
 }
