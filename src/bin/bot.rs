@@ -5,11 +5,22 @@
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
 extern crate aegl_bot;
 extern crate diesel;
+extern crate dotenv;
+extern crate futures;
+extern crate telegram_bot;
+extern crate tokio_core;
 
 use aegl_bot::models::*;
 use diesel::prelude::*;
+use dotenv::dotenv;
+use futures::Stream;
+use std::env;
+use telegram_bot::*;
+use tokio_core::reactor::Core;
 
 fn main() {
+    dotenv().ok();
+
     use aegl_bot::schema::activities::dsl::*;
     use aegl_bot::schema::alerts::dsl::*;
     use aegl_bot::schema::guardians::dsl::*;
@@ -58,4 +69,31 @@ fn main() {
     for act in results4 {
         println!("{}", act);
     }
+
+    let mut core = Core::new().unwrap();
+    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+    let api = Api::configure(token)
+        .build(core.handle())
+        .expect("Telegram API connect failed");
+
+    // Fetch new updates via long poll method
+    let future = api.stream().for_each(|update| {
+        // If the received update contains a new message...
+        if let UpdateKind::Message(message) = update.kind {
+            if let MessageKind::Text { ref data, .. } = message.kind {
+                // Print received text message to stdout.
+                println!("<{}>: {}", &message.from.first_name, data);
+
+                // Answer message with "Hi".
+                api.spawn(message.text_reply(format!(
+                    "Hi, {}! You just wrote '{}'",
+                    &message.from.first_name, data
+                )));
+            }
+        }
+
+        Ok(())
+    });
+
+    core.run(future).unwrap();
 }

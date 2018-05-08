@@ -3,6 +3,7 @@ extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
 extern crate serde_json;
+extern crate telegram_bot;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
