@@ -10,20 +10,52 @@ use aegl_bot::models::*;
 use diesel::prelude::*;
 
 fn main() {
+    use aegl_bot::schema::activities::dsl::*;
+    use aegl_bot::schema::alerts::dsl::*;
     use aegl_bot::schema::guardians::dsl::*;
 
     let connection = aegl_bot::establish_connection();
 
     let results = guardians
         // .filter(published.eq(true))
-        .limit(5)
+        // .limit(5)
         .load::<Guardian>(&connection)
         .expect("Error loading guardians");
 
     println!("Displaying {} guardians", results.len());
     for guar in results {
-        println!("{}", guar.psn_name);
-        println!("-----------\n");
-        println!("{}", guar.telegram_name);
+        println!("{}", guar);
+    }
+
+    let results2 = activities
+        .load::<Activity>(&connection)
+        .expect("Error loading activities");
+
+    println!("Displaying {} activities", results2.len());
+    for act in results2 {
+        println!("{}", act.format_name());
+    }
+
+    let results3 = alerts
+        .limit(5)
+        .load::<Alert>(&connection)
+        .expect("Error loading alerts");
+
+    println!("Displaying {} alerts", results3.len());
+    for alrt in results3 {
+        println!("{}", alrt.title);
+    }
+
+    let guar = guardians
+        .find(1)
+        .first::<Guardian>(&connection)
+        .expect("Guardian with id 1 not found");
+    let results4 = PlannedActivity::belonging_to(&guar)
+        .load::<PlannedActivity>(&connection)
+        .expect("Error loading activities");
+
+    println!("Displaying {} planned activities", results4.len());
+    for act in results4 {
+        println!("{}", act);
     }
 }
