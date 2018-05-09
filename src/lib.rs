@@ -10,6 +10,7 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
+pub mod commands;
 pub mod models;
 pub mod schema;
 
