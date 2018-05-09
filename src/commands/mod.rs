@@ -1,3 +1,6 @@
+mod whois_command;
+pub use self::whois_command::*;
+
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use models::Guardian;
