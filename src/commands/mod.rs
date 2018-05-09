@@ -1,3 +1,5 @@
+mod psn_command;
+pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
