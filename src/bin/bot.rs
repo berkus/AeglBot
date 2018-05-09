@@ -7,6 +7,7 @@ extern crate aegl_bot;
 extern crate diesel;
 extern crate dotenv;
 extern crate futures;
+extern crate rss;
 extern crate telegram_bot;
 extern crate tokio_core;
 
@@ -115,6 +116,11 @@ fn main() {
 
         Ok(())
     });
+
+    // fixedRateTimer(name = "Alerts", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
+    //     log.info("alerts check")
+    //     AlertsWatcher(store).check(wfChatId, this@AeglBot)
+    // }
 
     core.run(future).unwrap();
 }
