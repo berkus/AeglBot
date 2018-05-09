@@ -70,6 +70,14 @@ pub struct Guardian {
     pub pending_activation_code: Option<String>,
 }
 
+#[derive(Insertable)]
+#[table_name = "guardians"]
+pub struct NewGuardian<'a> {
+    pub telegram_name: &'a str,
+    pub telegram_id: i32, // @todo use i64/BigInt
+    pub psn_name: &'a str,
+}
+
 impl Guardian {
     pub fn format_name(&self) -> String {
         format!("{} (t.me/{})", self.psn_name, self.telegram_name)
