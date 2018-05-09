@@ -89,6 +89,7 @@ fn main() {
         println!("{}", act);
     }
 
+    // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
 
     let mut core = Core::new().unwrap();

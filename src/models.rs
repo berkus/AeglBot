@@ -59,7 +59,7 @@ pub struct Alert {
 pub struct Guardian {
     pub id: i32,
     pub telegram_name: String,
-    pub telegram_id: i32,
+    pub telegram_id: i32, // @todo use i64/BigInt
     pub psn_name: String,
     pub email: Option<String>,
     pub psn_clan: Option<String>,
@@ -120,6 +120,9 @@ pub struct PlannedActivity {
 }
 
 impl PlannedActivity {
+    // pub fn author() -> Guardian {
+    // guardians.find(self.author_id).first().load::<Guardian>();pffft
+    // }
     pub fn join_link(&self) -> String {
         format!("/join {}", self.id)
     }
@@ -144,9 +147,17 @@ impl PlannedActivity {
 
 impl fmt::Display for PlannedActivity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.format_details())
+        write!(f, "<b>{id}</b> {}", self.format_details(), id = self.id)
     }
 }
+
+// }.toList().sortedBy { it.start }.map { act ->
+//     "<b>${act.id}</b>: <b>${act.activity.formatName()}</b>\n" +
+//         act.detailsFormatted() +
+//         act.membersFormattedColumn() + "\n" +
+//         "⏰ <b>${formatStartTime(act.start)}</b>\n" +
+//         act.joinPrompt() + "\n"
+// }.joinToString("\n")
 
 #[derive(Identifiable, Queryable, Associations)]
 #[belongs_to(Guardian, foreign_key = "user_id")]
