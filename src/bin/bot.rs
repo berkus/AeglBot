@@ -10,6 +10,7 @@ extern crate futures;
 extern crate telegram_bot;
 extern crate tokio_core;
 
+use aegl_bot::commands::*;
 use aegl_bot::models::*;
 use diesel::prelude::*;
 use dotenv::dotenv;
@@ -17,6 +18,23 @@ use futures::Stream;
 use std::env;
 use telegram_bot::*;
 use tokio_core::reactor::Core;
+
+/// Match command in both variations (with bot name and without bot name).
+/// @param data Input text received from Telegram.
+/// @param command Command name without leading slash.
+/// @param bot_name Registered bot name.
+/// @returns None if command did not match, Some remaining text after command otherwise.
+fn match_command(data: &str, command: &str, bot_name: &str) -> Option<String> {
+    let command = "/".to_owned() + &command;
+    let long_command = format!("{}@{}", command, bot_name);
+    if data.starts_with(&long_command) {
+        return Some(data[long_command.len() + 1..].to_string());
+    }
+    if data.starts_with(&command) {
+        return Some(data[command.len() + 1..].to_string());
+    }
+    None
+}
 
 fn main() {
     dotenv().ok();
@@ -70,6 +88,8 @@ fn main() {
         println!("{}", act);
     }
 
+    let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
+
     let mut core = Core::new().unwrap();
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
     let api = Api::configure(token)
@@ -84,11 +104,12 @@ fn main() {
                 // Print received text message to stdout.
                 println!("<{}>: {}", &message.from.first_name, data);
 
-                // Answer message with "Hi".
-                api.spawn(message.text_reply(format!(
-                    "Hi, {}! You just wrote '{}'",
-                    &message.from.first_name, data
-                )));
+                // Plug awesome-bot style routing in here
+                if let Some(text) = match_command(data, "whois", &bot_name) {
+                    WhoisCommand::handle(&api, &message, &text, &connection);
+                } else if let Some(text) = match_command(data, "psn", &bot_name) {
+                    PsnCommand::handle(&api, &message, &text, &connection);
+                }
             }
         }
 
