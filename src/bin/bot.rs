@@ -91,6 +91,16 @@ fn main() {
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
+    let lfg_chat = ChatId::new(
+        env::var("BOT_LFG_CHAT_ID")
+            .expect("BOT_LFG_CHAT_ID must be set")
+            .into(),
+    );
+    let wf_alerts_chat = ChatId::new(
+        env::var("BOT_WF_CHAT_ID")
+            .expect("BOT_WF_CHAT_ID must be set")
+            .into(),
+    );
 
     let mut core = Core::new().unwrap();
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
