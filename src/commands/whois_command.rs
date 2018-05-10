@@ -23,7 +23,7 @@ impl WhoisCommand {
             return;
         }
 
-        if !validate_username(api, message, connection) {
+        if let None = validate_username(api, message, connection) {
             return;
         };
 

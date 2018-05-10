@@ -14,27 +14,32 @@ pub fn validate_username(
     api: &telegram_bot::Api,
     message: &telegram_bot::Message,
     connection: &PgConnection,
-) -> bool {
+) -> Option<Guardian> {
     let username = match message.from.username {
         None => {
             api.spawn(message.text_reply(
                 "You have no telegram username, register your telegram account first.",
             ));
-            return false;
+            return None;
         }
         Some(ref name) => name,
     };
     let db_user = guardians
         .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
+        .limit(1)
         .load::<Guardian>(connection);
-    let _db_user = match db_user {
-        Ok(user) => user,
-        Err(_) => {
+    match db_user {
+        Ok(users) => if users.len() > 0 {
+            Some(users[0].clone())
+        } else {
             api.spawn(
                 message.text_reply("You need to link your PSN account first: use /psn command"),
             );
-            return false;
+            None
+        },
+        Err(_) => {
+            api.spawn(message.text_reply("Error querying guardian info."));
+            None
         }
-    };
-    true
+    }
 }

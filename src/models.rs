@@ -55,7 +55,7 @@ pub struct Alert {
     pub faction: Option<String>,
 }
 
-#[derive(Identifiable, Queryable)]
+#[derive(Identifiable, Queryable, Clone)]
 pub struct Guardian {
     pub id: i32,
     pub telegram_name: String,
