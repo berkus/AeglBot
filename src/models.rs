@@ -81,6 +81,12 @@ pub struct NewAlert<'a> {
     pub flavor: Option<&'a str>,
 }
 
+impl fmt::Display for Alert {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "hi, i'm alert")
+    }
+}
+
 //
 // Guardian
 //
