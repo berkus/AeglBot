@@ -3,6 +3,10 @@ use chrono::NaiveDateTime;
 use serde_json::Value;
 use std::fmt;
 
+//
+// ActivityShortcut
+//
+
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[table_name = "activityshortcuts"]
 #[belongs_to(Activity, foreign_key = "link")]
@@ -13,6 +17,9 @@ pub struct ActivityShortcut {
     pub link: i32,
 }
 
+//
+// Activity
+//
 
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Model)]
 #[table_name = "activities"]
@@ -39,6 +46,10 @@ impl Activity {
     }
 }
 
+//
+// Alert
+//
+
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Model)]
 pub struct Alert {
     pub id: i32,
@@ -53,6 +64,10 @@ pub struct Alert {
     pub faction: Option<String>,
     pub flavor: Option<String>,
 }
+
+//
+// Guardian
+//
 
 #[derive(Debug, Clone, Queryable, Identifiable, AsChangeset, Model)]
 pub struct Guardian {
@@ -89,6 +104,10 @@ impl fmt::Display for Guardian {
         write!(f, "{} (t.me/{})", self.psn_name, self.telegram_name)
     }
 }
+
+//
+// PlannedActivity
+//
 
 // class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
 //     var author by Guardian referencedOn PlannedActivities.authorId
@@ -159,6 +178,10 @@ impl fmt::Display for PlannedActivity {
 //         act.joinPrompt() + "\n"
 // }.joinToString("\n")
 
+//
+// PlannedActivityMember
+//
+
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[belongs_to(Guardian, foreign_key = "user_id")]
 #[belongs_to(Activity, foreign_key = "planned_activity_id")]
@@ -169,6 +192,10 @@ pub struct PlannedActivityMember {
     pub user_id: i32,
     pub added: NaiveDateTime,
 }
+
+//
+// PlannedActivityReminder
+//
 
 //     var user by Guardian referencedOn PlannedActivityReminders.userId
 //     var activity by PlannedActivity referencedOn PlannedActivityReminders.plannedActivityId
