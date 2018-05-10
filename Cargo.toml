@@ -18,6 +18,7 @@ features = [
     "postgres",
     "chrono",
     "serde_json",
+    #"barrel-migrations",
 ]
 version = "1.2.2"
 
