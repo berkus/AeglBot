@@ -55,7 +55,7 @@ pub struct Alert {
     pub id: i32,
     pub guid: String,
     pub title: String,
-    #[column_name = "type"]
+    #[column_name = "type_"]
     pub alert_type: String,
     #[column_name = "startdate"]
     pub start_date: NaiveDateTime,
