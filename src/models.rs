@@ -65,6 +65,22 @@ pub struct Alert {
     pub flavor: Option<String>,
 }
 
+#[derive(Insertable, NewModel)]
+#[table_name = "alerts"]
+#[model(Alert)]
+pub struct NewAlert<'a> {
+    pub guid: &'a str,
+    pub title: &'a str,
+    #[column_name = "type_"]
+    pub alert_type: &'a str,
+    #[column_name = "startdate"]
+    pub start_date: NaiveDateTime,
+    #[column_name = "expirydate"]
+    pub expiry_date: Option<NaiveDateTime>,
+    pub faction: Option<&'a str>,
+    pub flavor: Option<&'a str>,
+}
+
 //
 // Guardian
 //
