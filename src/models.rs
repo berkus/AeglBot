@@ -59,7 +59,7 @@ pub struct Alert {
 pub struct Guardian {
     pub id: i32,
     pub telegram_name: String,
-    pub telegram_id: i32, // @todo use i64/BigInt
+    pub telegram_id: i64,
     pub psn_name: String,
     pub email: Option<String>,
     pub psn_clan: Option<String>,
@@ -74,7 +74,7 @@ pub struct Guardian {
 #[table_name = "guardians"]
 pub struct NewGuardian<'a> {
     pub telegram_name: &'a str,
-    pub telegram_id: i32, // @todo use i64/BigInt
+    pub telegram_id: i64,
     pub psn_name: &'a str,
 }
 

@@ -1,7 +1,7 @@
 create table guardians (
     id serial primary key not null,
     telegram_name text not null unique,
-    telegram_id integer not null unique,
+    telegram_id bigint not null unique,
     psn_name text not null,
     email text,
     psn_clan text,

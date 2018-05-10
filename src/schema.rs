@@ -36,7 +36,7 @@ table! {
     guardians (id) {
         id -> Int4,
         telegram_name -> Text,
-        telegram_id -> Int4,
+        telegram_id -> Int8,
         psn_name -> Text,
         email -> Nullable<Text>,
         psn_clan -> Nullable<Text>,
