@@ -2,6 +2,7 @@
 extern crate diesel;
 extern crate chrono;
 extern crate dotenv;
+extern crate rss;
 extern crate serde_json;
 extern crate telegram_bot;
 #[macro_use]
@@ -16,6 +17,7 @@ use std::env;
 pub mod commands;
 pub mod models;
 pub mod schema;
+pub mod services;
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();

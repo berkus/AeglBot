@@ -13,6 +13,7 @@ extern crate tokio_core;
 
 use aegl_bot::commands::*;
 use aegl_bot::models::*;
+use aegl_bot::services::*;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use futures::Stream;
@@ -127,6 +128,8 @@ fn main() {
 
         Ok(())
     });
+
+    alerts_watcher::check(&api, wf_alerts_chat);
 
     // @todo Add a thread that would get once a minute a list of planned activities and
     // notify when the time is closing in.
