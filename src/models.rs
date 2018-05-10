@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use serde_json::Value;
 use std::fmt;
 
-#[derive(Queryable, Identifiable, Associations)]
+#[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[table_name = "activityshortcuts"]
 #[belongs_to(Activity, foreign_key = "link")]
 pub struct ActivityShortcut {
@@ -13,9 +13,8 @@ pub struct ActivityShortcut {
     pub link: i32,
 }
 
-// #[derive(Insertable)]
 
-#[derive(Identifiable, Queryable)]
+#[derive(Debug, Queryable, Identifiable, AsChangeset, Model)]
 #[table_name = "activities"]
 pub struct Activity {
     pub id: i32,
@@ -40,8 +39,7 @@ impl Activity {
     }
 }
 
-#[derive(Queryable)]
-// #[table_name = "alerts"]
+#[derive(Debug, Queryable, Identifiable, AsChangeset, Model)]
 pub struct Alert {
     pub id: i32,
     pub guid: String,
@@ -55,7 +53,7 @@ pub struct Alert {
     pub faction: Option<String>,
 }
 
-#[derive(Identifiable, Queryable, Clone)]
+#[derive(Debug, Clone, Queryable, Identifiable, AsChangeset, Model)]
 pub struct Guardian {
     pub id: i32,
     pub telegram_name: String,
@@ -70,8 +68,9 @@ pub struct Guardian {
     pub pending_activation_code: Option<String>,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, NewModel)]
 #[table_name = "guardians"]
+#[model(Guardian)]
 pub struct NewGuardian<'a> {
     pub telegram_name: &'a str,
     pub telegram_id: i64,
@@ -107,7 +106,7 @@ impl fmt::Display for Guardian {
 //         }
 // }
 
-#[derive(Identifiable, Queryable, Associations)]
+#[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[belongs_to(Guardian, foreign_key = "author_id")]
 #[belongs_to(Activity, foreign_key = "activity_id")]
 #[table_name = "plannedactivities"]
@@ -159,7 +158,7 @@ impl fmt::Display for PlannedActivity {
 //         act.joinPrompt() + "\n"
 // }.joinToString("\n")
 
-#[derive(Identifiable, Queryable, Associations)]
+#[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[belongs_to(Guardian, foreign_key = "user_id")]
 #[belongs_to(Activity, foreign_key = "planned_activity_id")]
 #[table_name = "plannedactivitymembers"]
@@ -174,7 +173,7 @@ pub struct PlannedActivityMember {
 //     var activity by PlannedActivity referencedOn PlannedActivityReminders.plannedActivityId
 //     var reminder by PlannedActivityReminders.remind
 
-#[derive(Identifiable, Queryable, Associations)]
+#[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[belongs_to(Guardian, foreign_key = "user_id")]
 #[belongs_to(Activity, foreign_key = "planned_activity_id")]
 #[table_name = "plannedactivityreminders"]
