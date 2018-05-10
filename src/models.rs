@@ -115,12 +115,6 @@ pub struct NewGuardian<'a> {
     pub psn_name: &'a str,
 }
 
-impl Guardian {
-    pub fn format_name(&self) -> String {
-        format!("{} (t.me/{})", self.psn_name, self.telegram_name)
-    }
-}
-
 impl fmt::Display for Guardian {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} (t.me/{})", self.psn_name, self.telegram_name)
