@@ -5,5 +5,6 @@ create table alerts (
     type text not null,
     startdate timestamp without time zone not null,
     expirydate timestamp without time zone,
-    faction text
+    faction text,
+    flavor text
 );

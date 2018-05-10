@@ -51,6 +51,7 @@ pub struct Alert {
     #[column_name = "expirydate"]
     pub expiry_date: Option<NaiveDateTime>,
     pub faction: Option<String>,
+    pub flavor: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, AsChangeset, Model)]

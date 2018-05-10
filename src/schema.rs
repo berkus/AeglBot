@@ -29,6 +29,7 @@ table! {
         startdate -> Timestamp,
         expirydate -> Nullable<Timestamp>,
         faction -> Nullable<Text>,
+        flavor -> Nullable<Text>,
     }
 }
 
