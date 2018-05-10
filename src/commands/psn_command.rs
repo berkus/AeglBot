@@ -3,8 +3,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use models::{Guardian, NewGuardian};
 use schema::guardians::dsl::*;
-use telegram_bot;
-use telegram_bot::CanReplySendMessage;
+use telegram_bot::{self, CanReplySendMessage, Integer};
 
 pub struct PsnCommand; //ExtendedCommand("psn", "Link your telegram user to PSN")
 
@@ -47,9 +46,11 @@ impl PsnCommand {
                 } else {
                     use schema::guardians;
 
+                    let user_id: Integer = message.from.id.into();
+
                     let guardian = NewGuardian {
                         telegram_name: username,
-                        telegram_id: 0, //message.from.id,
+                        telegram_id: user_id,
                         psn_name: name,
                     };
 
