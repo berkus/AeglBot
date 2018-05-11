@@ -8,6 +8,7 @@ extern crate telegram_bot;
 #[macro_use]
 extern crate diesel_derives_extra;
 extern crate diesel_derives_traits;
+extern crate failure;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;

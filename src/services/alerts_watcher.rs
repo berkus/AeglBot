@@ -9,8 +9,12 @@ use telegram_bot::CanSendMessage;
 
 const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
-pub fn check(api: &telegram_bot::Api, chat_id: telegram_bot::ChatId, connection: &PgConnection) {
-    let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php").unwrap();
+pub fn check(
+    api: &telegram_bot::Api,
+    chat_id: telegram_bot::ChatId,
+    connection: &PgConnection,
+) -> Result<(), Error> {
+    let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
     let mut alert_list = vec![];
     for item in channel.into_items() {
         println!("{:?}", item);
@@ -48,7 +52,7 @@ pub fn check(api: &telegram_bot::Api, chat_id: telegram_bot::ChatId, connection:
                 flavor: item.description(),
             };
 
-            alert_list.push(alert.save(connection).unwrap());
+            alert_list.push(alert.save(connection)?);
         }
     }
 
@@ -59,4 +63,6 @@ pub fn check(api: &telegram_bot::Api, chat_id: telegram_bot::ChatId, connection:
         println!("{}", item);
         // api.spawn(chat_id.text("{}", item)); // html=>true
     }
+
+    Ok(())
 }
