@@ -1,6 +1,7 @@
 use chrono::NaiveDateTime;
 use diesel::*;
 use diesel_derives_traits::NewModel;
+use failure::Error;
 use models::{Alert, NewAlert};
 use rss::{Channel, Guid};
 use schema::alerts::dsl::*;
