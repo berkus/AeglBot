@@ -18,7 +18,7 @@ pub fn check(
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
     let mut alert_list = vec![];
     for item in channel.into_items() {
-        println!("{:?}", item);
+        println!("{:?}", item); //@todo remove
 
         let def_guid = &Guid::default();
         let guid_value = item.guid().unwrap_or(def_guid).value();
@@ -62,7 +62,7 @@ pub fn check(
     // Publish all new alerts
     for item in alert_list.iter().filter(|x| x.alert_type == "Alert") {
         println!("{}", item);
-        // api.spawn(chat_id.text("{}", item)); // html=>true
+        // api.spawn(chat_id.text("{}", item).parse_mode(ParseMode::Html));
     }
 
     Ok(())
