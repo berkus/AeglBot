@@ -41,54 +41,7 @@ fn match_command(data: &str, command: &str, bot_name: &str) -> Option<String> {
 fn main() {
     dotenv().ok();
 
-    use aegl_bot::schema::activities::dsl::*;
-    use aegl_bot::schema::alerts::dsl::*;
-    use aegl_bot::schema::guardians::dsl::*;
-
     let connection = aegl_bot::establish_connection();
-
-    let results = guardians
-        // .filter(published.eq(true))
-        // .limit(5)
-        .load::<Guardian>(&connection)
-        .expect("Error loading guardians");
-
-    println!("Displaying {} guardians", results.len());
-    for guar in results {
-        println!("{}", guar);
-    }
-
-    let results2 = activities
-        .load::<Activity>(&connection)
-        .expect("Error loading activities");
-
-    println!("Displaying {} activities", results2.len());
-    for act in results2 {
-        println!("{}", act.format_name());
-    }
-
-    let results3 = alerts
-        .limit(5)
-        .load::<Alert>(&connection)
-        .expect("Error loading alerts");
-
-    println!("Displaying {} alerts", results3.len());
-    for alrt in results3 {
-        println!("{}", alrt.title);
-    }
-
-    let guar = guardians
-        .find(1)
-        .first::<Guardian>(&connection)
-        .expect("Guardian with id 1 not found");
-    let results4 = PlannedActivity::belonging_to(&guar)
-        .load::<PlannedActivity>(&connection)
-        .expect("Error loading activities");
-
-    println!("Displaying {} planned activities", results4.len());
-    for act in results4 {
-        println!("{}", act);
-    }
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
@@ -147,4 +100,85 @@ fn main() {
     // }
 
     core.run(future).unwrap();
+}
+
+#[test]
+fn test_guardians() {
+    use aegl_bot::schema::guardians::dsl::*;
+
+    dotenv().ok();
+
+    let connection = aegl_bot::establish_connection();
+
+    let results = guardians
+        // .filter(published.eq(true))
+        // .limit(5)
+        .load::<Guardian>(&connection)
+        .expect("Error loading guardians");
+
+    println!("Displaying {} guardians", results.len());
+    for guar in results {
+        println!("{}", guar);
+    }
+}
+
+#[test]
+fn test_activities() {
+    use aegl_bot::models::*;
+    use aegl_bot::schema::activities::dsl::*;
+
+    dotenv().ok();
+
+    let connection = aegl_bot::establish_connection();
+
+    let results = activities
+        .load::<Activity>(&connection)
+        .expect("Error loading activities");
+
+    println!("Displaying {} activities", results.len());
+    for act in results {
+        println!("{}", act.format_name());
+    }
+}
+
+#[test]
+fn test_alerts() {
+    use aegl_bot::models::*;
+    use aegl_bot::schema::alerts::dsl::*;
+
+    dotenv().ok();
+
+    let connection = aegl_bot::establish_connection();
+
+    let results = alerts
+        .limit(5)
+        .load::<Alert>(&connection)
+        .expect("Error loading alerts");
+
+    println!("Displaying {} alerts", results.len());
+    for alrt in results {
+        println!("{}", alrt.title);
+    }
+}
+
+#[test]
+fn test_planned_activities() {
+    use aegl_bot::models::*;
+
+    dotenv().ok();
+
+    let connection = aegl_bot::establish_connection();
+
+    let guar = guardians
+        .find(1)
+        .first::<Guardian>(&connection)
+        .expect("Guardian with id 1 not found");
+    let results = PlannedActivity::belonging_to(&guar)
+        .load::<PlannedActivity>(&connection)
+        .expect("Error loading activities");
+
+    println!("Displaying {} planned activities", results.len());
+    for act in results {
+        println!("{}", act);
+    }
 }
