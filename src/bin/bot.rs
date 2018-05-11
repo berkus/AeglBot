@@ -95,12 +95,14 @@ fn main() {
     let lfg_chat = ChatId::new(
         env::var("BOT_LFG_CHAT_ID")
             .expect("BOT_LFG_CHAT_ID must be set")
-            .into(),
+            .parse::<i64>()
+            .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id"),
     );
     let wf_alerts_chat = ChatId::new(
         env::var("BOT_WF_CHAT_ID")
             .expect("BOT_WF_CHAT_ID must be set")
-            .into(),
+            .parse::<i64>()
+            .expect("BOT_WF_CHAT_ID must be a valid telegram chat id"),
     );
 
     let mut core = Core::new().unwrap();
@@ -129,7 +131,7 @@ fn main() {
         Ok(())
     });
 
-    alerts_watcher::check(&api, wf_alerts_chat);
+    alerts_watcher::check(&api, wf_alerts_chat, &connection);
 
     // @todo Add a thread that would get once a minute a list of planned activities and
     // notify when the time is closing in.

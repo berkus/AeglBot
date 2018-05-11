@@ -65,16 +65,16 @@ pub struct Alert {
     pub flavor: Option<String>,
 }
 
-#[derive(Insertable, NewModel)]
+#[derive(Clone, Insertable, NewModel)]
 #[table_name = "alerts"]
 #[model(Alert)]
 pub struct NewAlert<'a> {
     pub guid: &'a str,
     pub title: &'a str,
     #[column_name = "type_"]
-    pub alert_type: &'a str,
+    pub alert_type: Option<&'a str>,
     #[column_name = "startdate"]
-    pub start_date: NaiveDateTime,
+    pub start_date: Option<NaiveDateTime>,
     #[column_name = "expirydate"]
     pub expiry_date: Option<NaiveDateTime>,
     pub faction: Option<&'a str>,
@@ -83,7 +83,7 @@ pub struct NewAlert<'a> {
 
 impl fmt::Display for Alert {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "hi, i'm alert")
+        write!(f, "✊ Alert: {}", self.title)
     }
 }
 
