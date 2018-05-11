@@ -9,16 +9,18 @@ extern crate dotenv;
 extern crate futures;
 extern crate rss;
 extern crate telegram_bot;
+extern crate tokio;
 extern crate tokio_core;
 
 use aegl_bot::commands::*;
-use aegl_bot::models::*;
 use aegl_bot::services::*;
 use diesel::prelude::*;
 use dotenv::dotenv;
-use futures::Stream;
+use futures::{Future, Stream};
 use std::env;
+use std::time::{Duration, Instant};
 use telegram_bot::*;
+use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
 /// Match command in both variations (with bot name and without bot name).
@@ -84,21 +86,29 @@ fn main() {
         Ok(())
     });
 
-    alerts_watcher::check(&api, wf_alerts_chat, &connection);
+    let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
+        .for_each(move |_| {
+            let alert_api = api;
+            println!("alerts check"); // @todo Proper logger!
+            alerts_watcher::check(&alert_api, wf_alerts_chat, &connection);
+            Ok(())
+        })
+        .map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
-    // @todo Add a thread that would get once a minute a list of planned activities and
-    // notify when the time is closing in.
-    // e.g.
-    // Event starting in 15 minutes: Iron Banner with dozniak, aero_kamero (4 more can join)
-    // fixedRateTimer(name = "Reminder", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
-    //     log.info("reminder check")
-    //     Reminder(store).check(lfgChatId)
-    // }
-    // fixedRateTimer(name = "Alerts", daemon = true, initialDelay = 0, period = 60*1000 /* millis */) {
-    //     log.info("alerts check")
-    //     AlertsWatcher(store).check(wfChatId, this@AeglBot)
-    // }
+    let reminder_api = api.clone();
+    let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
+        .for_each(move |_| {
+            // @todo Add a thread that would get once a minute a list of planned activities and
+            // notify when the time is closing in.
+            // e.g.
+            // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
+            //     log.info("reminder check")
+            //     Reminder(store).check(lfgChatId)
+            Ok(())
+        })
+        .map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
+    tokio::spawn(alert_task);
     core.run(future).unwrap();
 }
 
