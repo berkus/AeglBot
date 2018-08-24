@@ -91,8 +91,7 @@ fn main() {
             println!("alerts check"); // @todo Proper logger!
             alerts_watcher::check(&alert_api, wf_alerts_chat, &connection);
             Ok(())
-        })
-        .map_err(|e| panic!("Alert thread errored; err={:?}", e));
+        }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
     let reminder_api = api.clone();
     let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
