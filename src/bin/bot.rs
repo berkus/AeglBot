@@ -5,6 +5,15 @@
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
 #![feature(futures_api, async_await, await_macro)]
 
+extern crate aegl_bot;
+extern crate diesel;
+extern crate dotenv;
+extern crate futures;
+extern crate rss;
+extern crate telegram_bot;
+extern crate tokio;
+extern crate tokio_core;
+
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
 use diesel::prelude::*;
