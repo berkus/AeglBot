@@ -1,12 +1,21 @@
-use commands::validate_username;
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use models::Guardian;
-use schema::guardians::dsl::*;
-use telegram_bot;
-use telegram_bot::CanReplySendMessage;
+use crate::{
+    commands::{extended_command::ExtendedCommand, validate_username},
+    models::Guardian,
+    schema::guardians::dsl::*,
+};
+use diesel::{pg::PgConnection, prelude::*};
+use telegram_bot::{self, CanReplySendMessage};
 
-pub struct WhoisCommand; //ExtendedCommand("whois", "Query telegram or PSN id")
+pub struct WhoisCommand;
+
+impl ExtendedCommand for WhoisCommand {
+    fn prefix() -> &'static str {
+        "whois"
+    }
+    fn description() -> &'static str {
+        "Query telegram or PSN id"
+    }
+}
 
 impl WhoisCommand {
     pub fn handle(

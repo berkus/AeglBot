@@ -1,14 +1,13 @@
+mod extended_command;
+pub use self::extended_command::*;
 mod psn_command;
 pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use models::Guardian;
-use schema::guardians::dsl::*;
-use telegram_bot;
-use telegram_bot::CanReplySendMessage;
+use crate::{models::Guardian, schema::guardians::dsl::*};
+use diesel::{pg::PgConnection, prelude::*};
+use telegram_bot::{self, CanReplySendMessage};
 
 pub fn validate_username(
     api: &telegram_bot::Api,

@@ -1,3 +1,5 @@
+#![feature(crate_in_paths)] // feature from edition-2018
+
 #[macro_use]
 extern crate diesel;
 extern crate chrono;

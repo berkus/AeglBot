@@ -3,13 +3,7 @@
 // To make it usable it misses natty parsing lib implementation in rust
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-#![feature(
-    rust_2018_preview,
-    use_extern_macros,
-    futures_api,
-    async_await,
-    await_macro
-)]
+#![feature(futures_api, async_await, await_macro)]
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
@@ -103,8 +97,7 @@ fn main() {
             //     log.info("reminder check")
             //     Reminder(store).check(lfgChatId)
             Ok(())
-        })
-        .map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+        }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
     tokio::spawn(alert_task);
     core.run(future).unwrap();

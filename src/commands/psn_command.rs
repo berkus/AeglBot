@@ -1,11 +1,21 @@
-use diesel;
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use models::{Guardian, NewGuardian};
-use schema::guardians::dsl::*;
+use crate::{
+    commands::extended_command::ExtendedCommand,
+    models::{Guardian, NewGuardian},
+    schema::guardians::dsl::*,
+};
+use diesel::{self, pg::PgConnection, prelude::*};
 use telegram_bot::{self, CanReplySendMessage, Integer};
 
-pub struct PsnCommand; //ExtendedCommand("psn", "Link your telegram user to PSN")
+pub struct PsnCommand;
+
+impl ExtendedCommand for PsnCommand {
+    fn prefix() -> &'static str {
+        "psn"
+    }
+    fn description() -> &'static str {
+        "Link your telegram user to PSN"
+    }
+}
 
 impl PsnCommand {
     pub fn handle(
@@ -44,7 +54,7 @@ impl PsnCommand {
                         psn = user[0].psn_name
                     )));
                 } else {
-                    use schema::guardians;
+                    use crate::schema::guardians;
 
                     let user_id: Integer = message.from.id.into();
 
