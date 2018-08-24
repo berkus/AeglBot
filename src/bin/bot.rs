@@ -3,14 +3,13 @@
 // To make it usable it misses natty parsing lib implementation in rust
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-extern crate aegl_bot;
-extern crate diesel;
-extern crate dotenv;
-extern crate futures;
-extern crate rss;
-extern crate telegram_bot;
-extern crate tokio;
-extern crate tokio_core;
+#![feature(
+    rust_2018_preview,
+    use_extern_macros,
+    futures_api,
+    async_await,
+    await_macro
+)]
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
