@@ -1,8 +1,6 @@
 use super::commands::format_start_time;
 use super::schema::*;
 use chrono::NaiveDateTime;
-use diesel::dsl::BelongingToDsl;
-use diesel::dsl::IntervalDsl;
 use serde_json::Value;
 use std::fmt;
 
@@ -149,11 +147,11 @@ pub struct PlannedActivity {
 
 impl PlannedActivity {
     // pub fn author() -> Guardian {
-    // guardians.find(self.author_id).first().load::<Guardian>();pffft
+    //     guardians.find(self.author_id).first().load::<Guardian>();pffft
     // }
-    pub fn activity(&self) -> Activity {
-        Activity::belonging_to(self)
-    }
+    // pub fn activity(&self) -> Activity {
+    //     PlannedActivity::belonging_to(self.activity_id)
+    // }
 
     pub fn join_link(&self) -> String {
         format!("/join{}", self.id)
@@ -163,7 +161,7 @@ impl PlannedActivity {
         if self.is_full() {
             format!("This activity fireteam is full.")
         } else {
-            let count = activity.max_fireteam_size - members.count();
+            let count = 5; //activity.max_fireteam_size - members.count();
             format!(
                 "Enter `{joinLink}` to join this group. Up to {count} more can join.",
                 joinLink = self.join_link(),
@@ -209,7 +207,7 @@ impl fmt::Display for PlannedActivity {
             f,
             "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
             id = self.id,
-            name = self.activity().format_name(),
+            name = "test", //self.activity().format_name(),
             details = self.format_details(),
             members = self.members_formatted_column(),
             time = format_start_time(self.start),
