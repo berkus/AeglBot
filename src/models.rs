@@ -156,7 +156,7 @@ impl PlannedActivity {
     }
 
     pub fn join_link(&self) -> String {
-        format!("/join {}", self.id)
+        format!("/join{}", self.id)
     }
 
     pub fn join_prompt(&self) -> String {
