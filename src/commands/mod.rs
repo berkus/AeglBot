@@ -19,6 +19,7 @@ pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
+use chrono::{Duration, NaiveDateTime};
 use crate::{models::Guardian, schema::guardians::dsl::*};
 use diesel::{pg::PgConnection, prelude::*};
 use telegram_bot::{self, CanReplySendMessage};
@@ -59,37 +60,37 @@ pub fn validate_username(
 
 fn time_diff_string(duration: Duration) -> String {
     let times = vec![
-        (TimeUnit.DAYS.toMillis(365), "year"),
-        (TimeUnit.DAYS.toMillis(30), "month"),
-        (TimeUnit.DAYS.toMillis(1), "day"),
-        (TimeUnit.HOURS.toMillis(1), "hour"),
-        (TimeUnit.MINUTES.toMillis(1), "minute"),
+        (Duration::days(365), "year"),
+        (Duration::days(30), "month"),
+        (Duration::days(1), "day"),
+        (Duration::hours(1), "hour"),
+        (Duration::minutes(1), "minute"),
     ];
 
-    // var dur = Math.abs(duration)
-    // val res = times.zip(timesString).map { item ->
-    //     val (current, timesStr) = item
-    //     val temp = dur / current
-    //     if (temp > 0) {
-    //         dur -= temp * current
-    //         temp.toString() + " " + timesStr + if (temp != 1L) { "s" } else { "" }
-    //     } else {
-    //         ""
-    //     }
-    // }.joinToString(" ").trim()
+    let mut dur = duration.num_minutes();
+    let mut text = "".to_owned();
 
-    // if ("".equals(res)) {
-    //     return "just now"
-    // }
-    // else {
-    //     if (duration > 0) {
-    //         return "in " + res
-    //     }
-    //     else {
-    //         return res + " ago"
-    //     }
-    // }
-    format!("")
+    for item in times.iter() {
+        let (current, timesStr) = item;
+        let current = current.num_minutes();
+        let temp = dur / current;
+        if temp > 0 {
+            dur -= temp * current;
+            text += &format!("{} {}{} ", temp, timesStr, if temp != 1 { "s" } else { "" });
+        }
+    }
+
+    let text = text.trim();
+
+    if text == "" {
+        return format!("just now");
+    } else {
+        if duration > Duration::zero() {
+            return format!("in {}", text);
+        } else {
+            return format!("{} ago", text);
+        }
+    }
 }
 
 // "Today at 23:00 (starts in 3 hours)"
