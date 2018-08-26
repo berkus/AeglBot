@@ -205,17 +205,18 @@ impl PlannedActivity {
 
 impl fmt::Display for PlannedActivity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<b>{id}</b> {}", self.format_details(), id = self.id)
+        write!(
+            f,
+            "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
+            id = self.id,
+            name = self.activity().format_name(),
+            details = self.format_details(),
+            members = self.members_formatted_column(),
+            time = format_start_time(self.start),
+            join = self.join_prompt()
+        )
     }
 }
-
-// }.toList().sortedBy { it.start }.map { act ->
-//     "<b>${act.id}</b>: <b>${act.activity.formatName()}</b>\n" +
-//         act.detailsFormatted() +
-//         act.membersFormattedColumn() + "\n" +
-//         "⏰ <b>${formatStartTime(act.start)}</b>\n" +
-//         act.joinPrompt() + "\n"
-// }.joinToString("\n")
 
 //
 // PlannedActivityMember
