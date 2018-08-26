@@ -73,7 +73,10 @@ fn time_diff_string(duration: Duration) -> String {
     for item in times.iter() {
         let (current, timesStr) = item;
         let current = current.num_minutes();
-        let temp = dur / current;
+        let temp = (dur / current).abs();
+
+        info!("current {}, dur {}, temp {}", current, dur, temp);
+
         if temp > 0 {
             dur -= temp * current;
             text += &format!("{} {}{} ", temp, timesStr, if temp != 1 { "s" } else { "" });
@@ -108,4 +111,25 @@ pub fn format_start_time(time: NaiveDateTime) -> String {
 
     // return "${prefix} at ${prefix2} (${infixStr} ${timeDiffString(timeDiff)})"
     format!("")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_time_diffs() {
+        pretty_env_logger::init();
+
+        assert_eq!(time_diff_string(Duration::minutes(2)), "in 2 minutes");
+        assert_eq!(time_diff_string(Duration::minutes(1)), "in 1 minute");
+        assert_eq!(time_diff_string(Duration::minutes(0)), "just now");
+        assert_eq!(time_diff_string(Duration::minutes(-1)), "1 minute ago");
+        assert_eq!(time_diff_string(Duration::minutes(-2)), "2 minutes ago");
+
+        assert_eq!(
+            time_diff_string(Duration::days(2) + Duration::hours(15) + Duration::minutes(33)),
+            "in 2 days 15 hours 33 minutes"
+        );
+    }
 }
