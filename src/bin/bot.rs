@@ -9,10 +9,13 @@ extern crate aegl_bot;
 extern crate diesel;
 extern crate dotenv;
 extern crate futures;
+extern crate pretty_env_logger;
 extern crate rss;
 extern crate telegram_bot;
 extern crate tokio;
 extern crate tokio_core;
+#[macro_use]
+extern crate log;
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
@@ -29,21 +32,34 @@ use tokio_core::reactor::Core;
 /// @param data Input text received from Telegram.
 /// @param command Command name without leading slash.
 /// @param bot_name Registered bot name.
-/// @returns None if command did not match, Some remaining text after command otherwise.
-fn match_command(data: &str, command: &str, bot_name: &str) -> Option<String> {
+/// @returns A pair of matched command and remainder of the message text.
+/// (None, None) if command did not match,
+/// (command, and Some remaining text after command otherwise).
+fn match_command(data: &str, command: &str, bot_name: &str) -> (Option<String>, Option<String>) {
     let command = "/".to_owned() + &command;
     let long_command = format!("{}@{}", command, bot_name);
     if data.starts_with(&long_command) {
-        return Some(data[long_command.len() + 1..].to_string());
+        return (
+            Some(long_command.clone()),
+            data.get(long_command.len()..)
+                .map(|x| x.trim_left().to_string())
+                .filter(|y| y.len() != 0),
+        );
     }
     if data.starts_with(&command) {
-        return Some(data[command.len() + 1..].to_string());
+        return (
+            Some(command.clone()),
+            data.get(command.len()..)
+                .map(|x| x.trim_left().to_string())
+                .filter(|y| y.len() != 0),
+        );
     }
-    None
+    (None, None)
 }
 
 fn main() {
     dotenv().ok();
+    pretty_env_logger::init();
 
     let connection = aegl_bot::establish_connection();
 
@@ -68,6 +84,9 @@ fn main() {
         .build(core.handle())
         .expect("Telegram API connect failed");
 
+    // WhoisCommand::register(&api, &connection);
+    // PsnCommand::register(&api, &connection);
+
     // Fetch new updates via long poll method
     let future = api.stream().for_each(|update| {
         // If the received update contains a new message...
@@ -77,10 +96,24 @@ fn main() {
                 println!("<{}>: {}", &message.from.first_name, data);
 
                 // Plug awesome-bot style routing in here
-                if let Some(text) = match_command(data, "whois", &bot_name) {
-                    WhoisCommand::handle(&api, &message, &text, &connection);
-                } else if let Some(text) = match_command(data, "psn", &bot_name) {
-                    PsnCommand::handle(&api, &message, &text, &connection);
+                if let (Some(_), text) = match_command(data, "whois", &bot_name) {
+                    WhoisCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "psn", &bot_name) {
+                    PsnCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "join", &bot_name) {
+                    JoinCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "cancel", &bot_name) {
+                    CancelCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "list", &bot_name) {
+                    ListCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "lfg", &bot_name) {
+                    LfgCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "details", &bot_name) {
+                    DetailsCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "activities", &bot_name) {
+                    ActivitiesCommand::execute(&api, &message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(data, "help", &bot_name) {
+                    HelpCommand::execute(&api, &message, None, text, &connection);
                 }
             }
         }
@@ -88,28 +121,28 @@ fn main() {
         Ok(())
     });
 
-    let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
-        .for_each(move |_| {
-            let alert_api = api;
-            println!("alerts check"); // @todo Proper logger!
-            alerts_watcher::check(&alert_api, wf_alerts_chat, &connection);
-            Ok(())
-        }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
+    // let alert_api = api.clone();
+    // let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
+    //     .for_each(move |_| {
+    //         println!("alerts check"); // @todo Proper logger!
+    //         alerts_watcher::check(&alert_api, wf_alerts_chat, &connection);
+    //         Ok(())
+    //     }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
-    let reminder_api = api.clone();
-    let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
-        .for_each(move |_| {
-            // @todo Add a thread that would get once a minute a list of planned activities and
-            // notify when the time is closing in.
-            // e.g.
-            // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
-            //     log.info("reminder check")
-            //     Reminder(store).check(lfgChatId)
-            Ok(())
-        }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+    // let reminder_api = api.clone();
+    // let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
+    //     .for_each(move |_| {
+    //         // @todo Add a thread that would get once a minute a list of planned activities and
+    //         // notify when the time is closing in.
+    //         // e.g.
+    //         // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
+    //         //     log.info("reminder check")
+    //         //     Reminder(store).check(lfgChatId)
+    //         Ok(())
+    //     }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
-    tokio::spawn(alert_task);
-    core.run(future).unwrap();
+    // tokio::spawn(alert_task);
+    core.run(future).unwrap(); // @todo handle connection errors and restart bot after pause
 }
 
 #[test]

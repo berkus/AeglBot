@@ -1,5 +1,3 @@
-// class CancelCommand(val store: JdbcStore) : ExtendedCommand("cancel", "Cancel joining fireteam")
-// {
 //     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
 //     {
 //         if (arguments.size != 1) {
@@ -50,4 +48,28 @@
 //             }
 //         }
 //     }
-// }
+use crate::commands::BotCommand;
+use diesel::PgConnection;
+use telegram_bot::{self, CanReplySendMessage};
+
+pub struct CancelCommand;
+
+impl BotCommand for CancelCommand {
+    fn prefix() -> &'static str {
+        "cancel"
+    }
+
+    fn description() -> &'static str {
+        "Cancel joining fireteam"
+    }
+
+    fn execute(
+        api: &telegram_bot::Api,
+        message: &telegram_bot::Message,
+        command: Option<String>,
+        name: Option<String>,
+        connection: &PgConnection,
+    ) {
+        api.spawn(message.text_reply("not implemented yet"));
+    }
+}

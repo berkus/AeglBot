@@ -1,5 +1,3 @@
-// class JoinCommand(val store: JdbcStore) : ExtendedCommand("join", "Join a fireteam from the list")
-// {
 //     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
 //     {
 //         if (arguments.size != 1) {
@@ -49,4 +47,28 @@
 //             }
 //         }
 //     }
-// }
+use crate::commands::BotCommand;
+use diesel::PgConnection;
+use telegram_bot::{self, CanReplySendMessage};
+
+pub struct JoinCommand;
+
+impl BotCommand for JoinCommand {
+    fn prefix() -> &'static str {
+        "join"
+    }
+
+    fn description() -> &'static str {
+        "Join existing fireteam from the list"
+    }
+
+    fn execute(
+        api: &telegram_bot::Api,
+        message: &telegram_bot::Message,
+        command: Option<String>,
+        name: Option<String>,
+        connection: &PgConnection,
+    ) {
+        api.spawn(message.text_reply("not implemented yet"));
+    }
+}

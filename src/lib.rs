@@ -1,4 +1,4 @@
-#![feature(crate_in_paths)] // feature from edition-2018
+#![feature(crate_in_paths, extern_prelude)] // features from edition-2018
 
 #[macro_use]
 extern crate diesel;
@@ -11,6 +11,8 @@ extern crate telegram_bot;
 extern crate diesel_derives_extra;
 extern crate diesel_derives_traits;
 extern crate failure;
+#[macro_use]
+extern crate log;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;

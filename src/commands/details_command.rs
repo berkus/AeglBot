@@ -1,5 +1,3 @@
-// class DetailsCommand(val store: JdbcStore) : ExtendedCommand("details", "Set group details as freeform text")
-// {
 //     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
 //     {
 //         if (arguments.size < 2) {
@@ -33,4 +31,28 @@
 //             }
 //         }
 //     }
-// }
+use crate::commands::BotCommand;
+use diesel::PgConnection;
+use telegram_bot::{self, CanReplySendMessage};
+
+pub struct DetailsCommand;
+
+impl BotCommand for DetailsCommand {
+    fn prefix() -> &'static str {
+        "details"
+    }
+
+    fn description() -> &'static str {
+        "Set group details as freeform text"
+    }
+
+    fn execute(
+        api: &telegram_bot::Api,
+        message: &telegram_bot::Message,
+        command: Option<String>,
+        name: Option<String>,
+        connection: &PgConnection,
+    ) {
+        api.spawn(message.text_reply("not implemented yet"));
+    }
+}

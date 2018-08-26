@@ -1,5 +1,3 @@
-// class ListCommand(val store: JdbcStore) : ExtendedCommand("list", "List current events")
-// {
 //     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
 //     {
 //         transaction {
@@ -21,4 +19,28 @@
 //             }
 //         }
 //     }
-// }
+use crate::commands::bot_command::BotCommand;
+use diesel::PgConnection;
+use telegram_bot::{self, CanReplySendMessage};
+
+pub struct ListCommand;
+
+impl BotCommand for ListCommand {
+    fn prefix() -> &'static str {
+        "list"
+    }
+
+    fn description() -> &'static str {
+        "List current events"
+    }
+
+    fn execute(
+        api: &telegram_bot::Api,
+        message: &telegram_bot::Message,
+        command: Option<String>,
+        name: Option<String>,
+        connection: &PgConnection,
+    ) {
+        api.spawn(message.text_reply("not implemented yet"));
+    }
+}

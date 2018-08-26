@@ -1,5 +1,5 @@
 use crate::{
-    commands::{extended_command::ExtendedCommand, validate_username},
+    commands::{bot_command::BotCommand, validate_username},
     models::Guardian,
     schema::guardians::dsl::*,
 };
@@ -8,23 +8,23 @@ use telegram_bot::{self, CanReplySendMessage};
 
 pub struct WhoisCommand;
 
-impl ExtendedCommand for WhoisCommand {
+impl BotCommand for WhoisCommand {
     fn prefix() -> &'static str {
         "whois"
     }
+
     fn description() -> &'static str {
         "Query telegram or PSN id"
     }
-}
 
-impl WhoisCommand {
-    pub fn handle(
+    fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        name: &String,
+        command: Option<String>,
+        name: Option<String>,
         connection: &PgConnection,
     ) {
-        if name.len() < 1 {
+        if name.is_none() {
             api.spawn(
                 message
                     .text_reply("To query user provide his @TelegramId (starting with @) or PsnId"),
@@ -32,9 +32,11 @@ impl WhoisCommand {
             return;
         }
 
+        let name = name.unwrap();
+
         if let None = validate_username(api, message, connection) {
             return;
-        };
+        }
 
         let guardian = if name.starts_with("@") {
             guardians
@@ -43,7 +45,7 @@ impl WhoisCommand {
                 .load::<Guardian>(connection)
         } else {
             guardians
-                .filter(psn_name.eq(name))
+                .filter(psn_name.eq(&name))
                 .limit(1)
                 .load::<Guardian>(connection)
         };
@@ -57,9 +59,7 @@ impl WhoisCommand {
                         psn_name = guardian[0].psn_name
                     )));
                 } else {
-                    api.spawn(
-                        message.text_reply(format!("Guardian {name} was not found.", name = name)),
-                    );
+                    api.spawn(message.text_reply(format!("Guardian {} was not found.", name)));
                 }
             }
             Err(_) => {

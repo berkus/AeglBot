@@ -1,35 +1,39 @@
 use crate::{
-    commands::extended_command::ExtendedCommand,
+    commands::bot_command::BotCommand,
     models::{Guardian, NewGuardian},
     schema::guardians::dsl::*,
 };
 use diesel::{self, pg::PgConnection, prelude::*};
-use telegram_bot::{self, CanReplySendMessage, Integer};
+use telegram_bot::{self, types::ParseMode, CanReplySendMessage, Integer};
 
 pub struct PsnCommand;
 
-impl ExtendedCommand for PsnCommand {
+impl BotCommand for PsnCommand {
     fn prefix() -> &'static str {
         "psn"
     }
+
     fn description() -> &'static str {
         "Link your telegram user to PSN"
     }
-}
 
-impl PsnCommand {
-    pub fn handle(
+    fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        name: &String,
+        command: Option<String>,
+        name: Option<String>,
         connection: &PgConnection,
     ) {
-        if name.len() < 1 {
+        if name.is_none() {
             api.spawn(
-                message.text_reply("Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE"),
+                message
+                    .text_reply("Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE")
+                    .parse_mode(ParseMode::Html),
             );
             return;
         }
+
+        let name = name.unwrap();
 
         let username = match message.from.username {
             None => {
@@ -61,7 +65,7 @@ impl PsnCommand {
                     let guardian = NewGuardian {
                         telegram_name: username,
                         telegram_id: user_id,
-                        psn_name: name,
+                        psn_name: &name,
                     };
 
                     diesel::insert_into(guardians::table)
