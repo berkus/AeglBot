@@ -147,6 +147,7 @@ fn main() {
 
 #[test]
 fn test_guardians() {
+    use aegl_bot::models::Guardian;
     use aegl_bot::schema::guardians::dsl::*;
 
     dotenv().ok();
@@ -167,7 +168,7 @@ fn test_guardians() {
 
 #[test]
 fn test_activities() {
-    use aegl_bot::models::*;
+    use aegl_bot::models::Activity;
     use aegl_bot::schema::activities::dsl::*;
 
     dotenv().ok();
@@ -186,7 +187,7 @@ fn test_activities() {
 
 #[test]
 fn test_alerts() {
-    use aegl_bot::models::*;
+    use aegl_bot::models::Alert;
     use aegl_bot::schema::alerts::dsl::*;
 
     dotenv().ok();
@@ -206,7 +207,8 @@ fn test_alerts() {
 
 #[test]
 fn test_planned_activities() {
-    use aegl_bot::models::*;
+    use aegl_bot::models::{Guardian, PlannedActivity};
+    use aegl_bot::schema::guardians::dsl::*;
 
     dotenv().ok();
 
