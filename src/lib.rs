@@ -1,5 +1,6 @@
 #![feature(crate_in_paths, extern_prelude)] // features from edition-2018
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
+#![allow(unused_imports)] // during development
 
 #[macro_use]
 extern crate diesel;
