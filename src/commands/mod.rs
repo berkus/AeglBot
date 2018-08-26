@@ -56,3 +56,55 @@ pub fn validate_username(
         }
     }
 }
+
+fn time_diff_string(duration: Duration) -> String {
+    let times = vec![
+        (TimeUnit.DAYS.toMillis(365), "year"),
+        (TimeUnit.DAYS.toMillis(30), "month"),
+        (TimeUnit.DAYS.toMillis(1), "day"),
+        (TimeUnit.HOURS.toMillis(1), "hour"),
+        (TimeUnit.MINUTES.toMillis(1), "minute"),
+    ];
+
+    // var dur = Math.abs(duration)
+    // val res = times.zip(timesString).map { item ->
+    //     val (current, timesStr) = item
+    //     val temp = dur / current
+    //     if (temp > 0) {
+    //         dur -= temp * current
+    //         temp.toString() + " " + timesStr + if (temp != 1L) { "s" } else { "" }
+    //     } else {
+    //         ""
+    //     }
+    // }.joinToString(" ").trim()
+
+    // if ("".equals(res)) {
+    //     return "just now"
+    // }
+    // else {
+    //     if (duration > 0) {
+    //         return "in " + res
+    //     }
+    //     else {
+    //         return res + " ago"
+    //     }
+    // }
+    format!("")
+}
+
+// "Today at 23:00 (starts in 3 hours)"
+pub fn format_start_time(time: NaiveDateTime) -> String {
+    // val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) {
+    //     "Today"
+    // } else {
+    //     "on " + DateTimeFormat.forStyle("S-").print(time)
+    // }
+
+    // val prefix2 = DateTimeFormat.forStyle("-S").print(time)
+
+    // val timeDiff = time.getMillis() - DateTime.now().getMillis()
+    // val infixStr = if (timeDiff <= 0) { "started" } else { "starts" }
+
+    // return "${prefix} at ${prefix2} (${infixStr} ${timeDiffString(timeDiff)})"
+    format!("")
+}

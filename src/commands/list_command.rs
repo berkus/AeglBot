@@ -1,27 +1,8 @@
-//     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
-//     {
-//         transaction {
-//             val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
-//             val objs = PlannedActivity.find {
-//                     PlannedActivities.start greaterEq hourAgo
-//                 }.toList().sortedBy { it.start }.map { act ->
-//                     "<b>${act.id}</b>: <b>${act.activity.formatName()}</b>\n" +
-//                         act.detailsFormatted() +
-//                         act.membersFormattedColumn() + "\n" +
-//                         "⏰ <b>${formatStartTime(act.start)}</b>\n" +
-//                         act.joinPrompt() + "\n"
-//                 }.joinToString("\n")
-
-//             if ("".equals(objs)) {
-//                 sendReply(absSender, chat, "No activities planned, add something with /lfg")
-//             } else {
-//                 sendReply(absSender, chat, "Planned activities:\n\n" + objs, true)
-//             }
-//         }
-//     }
 use crate::commands::bot_command::BotCommand;
-use diesel::PgConnection;
-use telegram_bot::{self, CanReplySendMessage};
+use diesel::{dsl::*, prelude::*, PgConnection};
+use models::PlannedActivity;
+use schema::plannedactivities::dsl::*;
+use telegram_bot::{self, types::ParseMode, CanReplySendMessage};
 
 pub struct ListCommand;
 
@@ -41,6 +22,24 @@ impl BotCommand for ListCommand {
         name: Option<String>,
         connection: &PgConnection,
     ) {
-        api.spawn(message.text_reply("not implemented yet"));
+        let upcoming_events = plannedactivities
+            // val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
+            .filter(start.ge(now - 60_i32.minutes()))
+            .order(start.asc())
+            .load::<PlannedActivity>(connection)
+            .expect("TEMP loading @FIXME");
+
+        if upcoming_events.is_empty() {
+            api.spawn(message.text_reply("No activities planned, add something with /lfg"));
+            return;
+        }
+
+        let text = upcoming_events
+            .iter()
+            .fold("Planned activities:\n\n".to_owned(), |acc, event| {
+                acc + &format!("{}\n", event)
+            });
+
+        api.spawn(message.text_reply(text).parse_mode(ParseMode::Html));
     }
 }

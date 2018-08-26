@@ -1,3 +1,4 @@
+use super::commands::format_start_time;
 use super::schema::*;
 use chrono::NaiveDateTime;
 use serde_json::Value;
@@ -131,16 +132,6 @@ impl fmt::Display for Guardian {
 //     var start by PlannedActivities.start
 //     var details by PlannedActivities.details
 //     val members by PlannedActivityMember referrersOn PlannedActivityMembers.plannedActivityId
-//     fun membersFormatted(joiner: String): String = members.toList().joinToString(joiner) { it.user.formatName() }
-//     fun membersFormattedList(): String = membersFormatted(", ")
-//     fun membersFormattedColumn(): String = membersFormatted("\n")
-//     fun joinPrompt(): String = if (isFull()) {
-//             "This activity fireteam is full."
-//         } else {
-//             val count = activity.maxFireteamSize - members.count()
-//             "Enter `${joinLink()}` to join this group. Up to $count more can join."
-//         }
-// }
 
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[belongs_to(Guardian, foreign_key = "author_id")]
@@ -162,7 +153,20 @@ impl PlannedActivity {
         format!("/join {}", self.id)
     }
 
-    //     fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
+    pub fn join_prompt(&self) -> String {
+        if self.is_full() {
+            format!("This activity fireteam is full.")
+        } else {
+            let count = activity.max_fireteam_size - members.count();
+            format!(
+                "Enter `{joinLink}` to join this group. Up to {count} more can join.",
+                joinLink = self.join_link(),
+                count = count
+            )
+        }
+    }
+
+    // fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
     pub fn is_full(&self) -> bool {
         false
     }
@@ -177,6 +181,19 @@ impl PlannedActivity {
             None => "".to_string(),
             Some(ref x) => format!("{}\n", x),
         }
+    }
+
+    pub fn members_formatted(&self, joiner: &str) -> String {
+        // members.toList().joinToString(joiner) { it.user.formatName() }
+        joiner.to_owned()
+    }
+
+    pub fn members_formatted_list(&self) -> String {
+        self.members_formatted(", ")
+    }
+
+    pub fn members_formatted_column(&self) -> String {
+        self.members_formatted("\n")
     }
 }
 
