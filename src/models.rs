@@ -1,6 +1,8 @@
 use super::commands::format_start_time;
 use super::schema::*;
 use chrono::NaiveDateTime;
+use diesel::dsl::BelongingToDsl;
+use diesel::dsl::IntervalDsl;
 use serde_json::Value;
 use std::fmt;
 
@@ -149,6 +151,10 @@ impl PlannedActivity {
     // pub fn author() -> Guardian {
     // guardians.find(self.author_id).first().load::<Guardian>();pffft
     // }
+    pub fn activity(&self) -> Activity {
+        Activity::belonging_to(self)
+    }
+
     pub fn join_link(&self) -> String {
         format!("/join {}", self.id)
     }

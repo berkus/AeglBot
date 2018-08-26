@@ -6,7 +6,7 @@ use models::{Alert, NewAlert};
 use rss::{Channel, Guid};
 use schema::alerts::dsl::*;
 use telegram_bot;
-use telegram_bot::CanSendMessage;
+// use telegram_bot::CanSendMessage;
 
 const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
@@ -36,7 +36,7 @@ pub fn check(
                     item.pub_date().unwrap_or(""),
                     RSS_DATE_FORMAT,
                 ).map(|v| Some(v))
-                    .unwrap_or(None),
+                .unwrap_or(None),
                 expiry_date: NaiveDateTime::parse_from_str(
                     item.extensions()
                         .get("wf")
@@ -45,8 +45,9 @@ pub fn check(
                         .unwrap_or(""),
                     RSS_DATE_FORMAT,
                 ).map(|v| Some(v))
-                    .unwrap_or(None),
-                faction: item.extensions()
+                .unwrap_or(None),
+                faction: item
+                    .extensions()
                     .get("wf")
                     .and_then(|ext| ext.get("wf:faction"))
                     .map(|v| v[0].value().unwrap_or("")),
