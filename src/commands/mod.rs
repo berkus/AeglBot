@@ -19,7 +19,7 @@ pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
-use chrono::{Duration, NaiveDateTime};
+use chrono::{prelude::*, Duration, Local};
 use crate::{models::Guardian, schema::guardians::dsl::*};
 use diesel::{pg::PgConnection, prelude::*};
 use telegram_bot::{self, CanReplySendMessage};
@@ -100,20 +100,30 @@ fn time_diff_string(duration: Duration) -> String {
 }
 
 // "Today at 23:00 (starts in 3 hours)"
-pub fn format_start_time(time: NaiveDateTime) -> String {
-    // val prefix = if (time.withTime(0,0,0,0) == DateTime.now().withTime(0,0,0,0)) {
-    //     "Today"
-    // } else {
-    //     "on " + DateTimeFormat.forStyle("S-").print(time)
-    // }
+pub fn format_start_time(time: DateTime<Local>) -> String {
+    let prefix = if time.date() == Local::today() {
+        //@fixme Date<MskTimeZone>
+        format!("Today")
+    } else {
+        format!("on {}", time.format("%a %b %e %Y"))
+    };
 
-    // val prefix2 = DateTimeFormat.forStyle("-S").print(time)
+    let prefix2 = time.format("%T");
 
-    // val timeDiff = time.getMillis() - DateTime.now().getMillis()
-    // val infixStr = if (timeDiff <= 0) { "started" } else { "starts" }
+    let time_diff = time - Local::now();
+    let infix_str = if time_diff < Duration::zero() {
+        "started"
+    } else {
+        "starts"
+    };
 
-    // return "${prefix} at ${prefix2} (${infixStr} ${timeDiffString(timeDiff)})"
-    format!("")
+    format!(
+        "{} at {} ({} {})",
+        prefix,
+        prefix2,
+        infix_str,
+        time_diff_string(time_diff)
+    )
 }
 
 #[cfg(test)]
@@ -132,6 +142,20 @@ mod tests {
         assert_eq!(
             time_diff_string(Duration::days(2) + Duration::hours(15) + Duration::minutes(33)),
             "in 2 days 15 hours 33 minutes"
+        );
+    }
+
+    #[test]
+    fn test_start_time_formats() {
+        // let hours = 3600;
+        // let msk = FixedOffset::east(3 * hours);
+
+        let today = Local::now();
+        // let today = msk.from_utc_datetime(Utc::now());
+        // + Duration::hours(2) + Duration::minutes(30)
+        assert_eq!(
+            format_start_time(today),
+            format!("{}", today.format("Today at %H:%M:%S (started just now)"))
         );
     }
 }

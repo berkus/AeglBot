@@ -1,6 +1,6 @@
 use super::commands::format_start_time;
 use super::schema::*;
-use chrono::NaiveDateTime;
+use chrono::prelude::*;
 use serde_json::Value;
 use std::fmt;
 
@@ -210,7 +210,7 @@ impl fmt::Display for PlannedActivity {
             name = "test", //self.activity().format_name(),
             details = self.format_details(),
             members = self.members_formatted_column(),
-            time = format_start_time(self.start),
+            time = format_start_time(Local.from_local_datetime(&self.start).unwrap()),
             join = self.join_prompt()
         )
     }
