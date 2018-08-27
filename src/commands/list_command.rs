@@ -18,8 +18,8 @@ impl BotCommand for ListCommand {
     fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        command: Option<String>,
-        name: Option<String>,
+        _command: Option<String>,
+        _args: Option<String>,
         connection: &PgConnection,
     ) {
         let upcoming_events = plannedactivities

@@ -66,9 +66,9 @@ impl BotCommand for CancelCommand {
     fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        command: Option<String>,
-        name: Option<String>,
-        connection: &PgConnection,
+        _command: Option<String>,
+        _name: Option<String>,
+        _connection: &PgConnection,
     ) {
         api.spawn(message.text_reply("not implemented yet"));
     }

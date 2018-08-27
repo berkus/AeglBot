@@ -16,9 +16,9 @@ impl BotCommand for HelpCommand {
     fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        command: Option<String>,
-        name: Option<String>,
-        connection: &PgConnection,
+        _command: Option<String>,
+        _name: Option<String>,
+        _connection: &PgConnection,
     ) {
         //         commandRegistry.getRegisteredCommands().forEach { botCommand: BotCommand ->
         //             helpMessageBuilder.append(botCommand.toString()).append("\n\n")

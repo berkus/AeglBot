@@ -11,8 +11,8 @@ use telegram_bot;
 const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
 pub fn check(
-    api: &telegram_bot::Api,
-    chat_id: telegram_bot::ChatId,
+    _api: &telegram_bot::Api,
+    _chat_id: telegram_bot::ChatId,
     connection: &PgConnection,
 ) -> Result<(), Error> {
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;

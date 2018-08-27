@@ -31,7 +31,7 @@ impl BotCommand for LfgCommand {
     fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        command: Option<String>,
+        _command: Option<String>,
         args: Option<String>,
         connection: &PgConnection,
     ) {
@@ -46,7 +46,7 @@ impl BotCommand for LfgCommand {
         //     return
         // }
 
-        if let Some(guardian) = validate_username(api, message, connection) {
+        if let Some(_guardian) = validate_username(api, message, connection) {
             // val act = ActivityShortcut
             //     .find { ActivityShortcuts.name eq arguments[0] }
             //     .singleOrNull()

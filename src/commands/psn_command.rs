@@ -20,7 +20,7 @@ impl BotCommand for PsnCommand {
     fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        command: Option<String>,
+        _command: Option<String>,
         name: Option<String>,
         connection: &PgConnection,
     ) {

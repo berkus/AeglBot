@@ -45,7 +45,7 @@ impl BotCommand for JoinCommand {
     fn execute(
         api: &telegram_bot::Api,
         message: &telegram_bot::Message,
-        command: Option<String>,
+        _command: Option<String>,
         team_id: Option<String>,
         connection: &PgConnection,
     ) {
@@ -57,7 +57,7 @@ Fireteam IDs are available from output of /list command.",
             return;
         }
 
-        if let Some(user) = validate_username(api, message, connection) {
+        if let Some(_user) = validate_username(api, message, connection) {
             // do stuff
             // if activity.too_old() msg(cannot join too old)
         }
