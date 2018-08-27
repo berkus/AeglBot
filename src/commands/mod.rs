@@ -71,15 +71,18 @@ fn time_diff_string(duration: Duration) -> String {
     let mut text = "".to_owned();
 
     for item in times.iter() {
-        let (current, timesStr) = item;
+        let (current, times_str) = item;
         let current = current.num_minutes();
         let temp = (dur / current).abs();
 
-        info!("current {}, dur {}, temp {}", current, dur, temp);
-
         if temp > 0 {
             dur -= temp * current;
-            text += &format!("{} {}{} ", temp, timesStr, if temp != 1 { "s" } else { "" });
+            text += &format!(
+                "{} {}{} ",
+                temp,
+                times_str,
+                if temp != 1 { "s" } else { "" }
+            );
         }
     }
 
@@ -119,11 +122,10 @@ mod tests {
 
     #[test]
     fn test_time_diffs() {
-        pretty_env_logger::init();
-
         assert_eq!(time_diff_string(Duration::minutes(2)), "in 2 minutes");
         assert_eq!(time_diff_string(Duration::minutes(1)), "in 1 minute");
         assert_eq!(time_diff_string(Duration::minutes(0)), "just now");
+        assert_eq!(time_diff_string(Duration::seconds(20)), "just now");
         assert_eq!(time_diff_string(Duration::minutes(-1)), "1 minute ago");
         assert_eq!(time_diff_string(Duration::minutes(-2)), "2 minutes ago");
 
