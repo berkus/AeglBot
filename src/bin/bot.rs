@@ -61,7 +61,7 @@ fn main() {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let connection = aegl_bot::establish_connection();
+    let connection_pool = aegl_bot::establish_connection();
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
