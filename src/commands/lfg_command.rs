@@ -10,10 +10,10 @@ impl LfgCommand {
         api.spawn(
             message
                 .text_reply(
-                    "LFG usage: /lfg <b>activity</b> timespec\n
-            For a list of activity codes: /activities\n
-            Example: /lfg kf tomorrow 23:00\n
-            (NB: times are in MSK timezone by default)",
+                    "LFG usage: /lfg <b>activity</b> timespec
+For a list of activity codes: /activities
+Example: /lfg kf tomorrow 23:00
+(NB: times are in MSK timezone by default)",
                 ).parse_mode(ParseMode::Html),
         );
     }
@@ -25,7 +25,7 @@ impl BotCommand for LfgCommand {
     }
 
     fn description() -> &'static str {
-        "Looking for group (if you want to create an event)"
+        "Create a new Looking For Group event"
     }
 
     fn execute(
@@ -60,7 +60,7 @@ impl BotCommand for LfgCommand {
             //         author = dbUser
             //         activity = act.link
             //         start = startTime
-            //         // set these using "/details id text" command
+            //         // set these later using "/details id text" command
             //         details = ""
             //     }
 
@@ -72,7 +72,7 @@ impl BotCommand for LfgCommand {
             //     sendReply(absSender, chat, // Todo: always post to lfg chat?
             //         "${dbUser.formatName()} is looking for ${act.link.formatName()} group ${formatStartTime(startTime)}\n"
             //         +plannedActivity.joinPrompt()+"\n"
-            //         +"Use `/details ${plannedActivity.id} description` to specify more details about the event.")
+            //         +"Enter `/details ${plannedActivity.id} free form description text` to specify more details about the event.")
             // }
         }
     }
