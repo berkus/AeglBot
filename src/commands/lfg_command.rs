@@ -1,3 +1,5 @@
+use chrono::prelude::*;
+use chrono_english::{parse_date_string, Dialect};
 use crate::commands::{bot_command::BotCommand, validate_username};
 use diesel::PgConnection;
 use log::info;
@@ -41,10 +43,24 @@ impl BotCommand for LfgCommand {
             return LfgCommand::usage(api, message);
         }
 
-        // if (arguments.size < 2) {
-        //     usage(absSender, chat)
-        //     return
-        // }
+        // Split args in two:
+        // activity spec,
+        // and timespec
+        let args = args.unwrap();
+        let args: Vec<&str> = args.splitn(2, ' ').collect();
+
+        if args.len() < 2 {
+            return LfgCommand::usage(api, message);
+        }
+
+        let activity = args[0];
+        let timespec = args[1];
+
+        info!("Adding activity `{}` at `{}`", &activity, &timespec);
+
+        let date_time = parse_date_string(timespec, Local::now(), Dialect::Us);
+
+        info!("...parsed `{:?}`", date_time);
 
         if let Some(_guardian) = validate_username(api, message, connection) {
             // val act = ActivityShortcut
