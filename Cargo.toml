@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [dependencies]
 chrono = "0.4.2"
+chrono-english = "0.1.2"
 diesel_derives_extra = "0.1.2"
 diesel_derives_traits = "0.1.2"
 r2d2 = "0.8.2"

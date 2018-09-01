@@ -7,6 +7,7 @@ extern crate r2d2_diesel;
 #[macro_use]
 extern crate diesel;
 extern crate chrono;
+extern crate chrono_english;
 extern crate dotenv;
 extern crate rss;
 extern crate serde_json;
