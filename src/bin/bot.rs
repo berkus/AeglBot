@@ -19,12 +19,14 @@ extern crate log;
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
-use diesel::prelude::*;
+// use diesel::prelude::*;
 use dotenv::dotenv;
 use futures::{Future, Stream};
 use std::env;
 use std::time::{Duration, Instant};
 use telegram_bot::*;
+// use tokio::prelude::*;
+use std::sync::Mutex;
 use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
@@ -79,70 +81,78 @@ fn main() {
     );
 
     let mut core = Core::new().unwrap();
-    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-    let api = Api::configure(token)
-        .build(core.handle())
-        .expect("Telegram API connect failed");
+    loop {
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+        let api = Api::configure(token)
+            .build(core.handle())
+            .expect("Telegram API connect failed");
 
-    // WhoisCommand::register(&api, &connection);
-    // PsnCommand::register(&api, &connection);
+        // WhoisCommand::register(&api, &connection);
+        // PsnCommand::register(&api, &connection);
 
-    // Fetch new updates via long poll method
-    let future = api.stream().for_each(|update| {
-        // If the received update contains a new message...
-        if let UpdateKind::Message(message) = update.kind {
-            if let MessageKind::Text { ref data, .. } = message.kind {
-                // Print received text message to stdout.
-                println!("<{}>: {}", &message.from.first_name, data);
+        // Fetch new updates via long poll method
+        let future = api.stream().for_each(|update| {
+            // If the received update contains a new message...
+            if let UpdateKind::Message(message) = update.kind {
+                if let MessageKind::Text { ref data, .. } = message.kind {
+                    // Print received text message to stdout.
+                    println!("<{}>: {}", &message.from.first_name, data);
 
-                // Plug awesome-bot style routing in here
-                if let (Some(_), text) = match_command(data, "whois", &bot_name) {
-                    WhoisCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "psn", &bot_name) {
-                    PsnCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "join", &bot_name) {
-                    JoinCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "cancel", &bot_name) {
-                    CancelCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "list", &bot_name) {
-                    ListCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "lfg", &bot_name) {
-                    LfgCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "details", &bot_name) {
-                    DetailsCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "activities", &bot_name) {
-                    ActivitiesCommand::execute(&api, &message, None, text, &connection);
-                } else if let (Some(_), text) = match_command(data, "help", &bot_name) {
-                    HelpCommand::execute(&api, &message, None, text, &connection);
+                    let connection = connection_pool.get().unwrap();
+
+                    // Plug awesome-bot style routing in here
+                    if let (Some(_), text) = match_command(data, "whois", &bot_name) {
+                        WhoisCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "psn", &bot_name) {
+                        PsnCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "join", &bot_name) {
+                        JoinCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "cancel", &bot_name) {
+                        CancelCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "list", &bot_name) {
+                        ListCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "lfg", &bot_name) {
+                        LfgCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "details", &bot_name) {
+                        DetailsCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "activities", &bot_name) {
+                        ActivitiesCommand::execute(&api, &message, None, text, &connection);
+                    } else if let (Some(_), text) = match_command(data, "help", &bot_name) {
+                        HelpCommand::execute(&api, &message, None, text, &connection);
+                    }
                 }
             }
-        }
 
-        Ok(())
-    });
+            Ok(())
+        });
 
-    // let alert_api = api.clone();
-    // let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
-    //     .for_each(move |_| {
-    //         println!("alerts check"); // @todo Proper logger!
-    //         alerts_watcher::check(&alert_api, wf_alerts_chat, &connection);
-    //         Ok(())
-    //     }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
+        let alerts_api: Mutex<Api> = Mutex::new(api.clone());
+        let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
+            .for_each(|_| {
+                info!("alerts check");
+                let connection = connection_pool.get().unwrap();
+                alerts_watcher::check(&*alerts_api.lock().unwrap(), wf_alerts_chat, &connection);
+                Ok(())
+            }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
-    // let reminder_api = api.clone();
-    // let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
-    //     .for_each(move |_| {
-    //         // @todo Add a thread that would get once a minute a list of planned activities and
-    //         // notify when the time is closing in.
-    //         // e.g.
-    //         // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
-    //         //     log.info("reminder check")
-    //         //     Reminder(store).check(lfgChatId)
-    //         Ok(())
-    //     }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+        // let reminder_api = api.clone();
+        let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
+            .for_each(|_| {
+                // @todo Add a thread that would get once a minute a list of planned activities and
+                // notify when the time is closing in.
+                // e.g.
+                // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
+                info!("reminder check");
+                //     let connection = connection_pool.get().unwrap();
+                //     reminders::check(&reminders_api, lfg_chat, &connection);
+                Ok(())
+            }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
-    // tokio::spawn(alert_task);
-    core.run(future).unwrap(); // @todo handle connection errors and restart bot after pause
+        tokio::spawn(alert_task);
+        tokio::spawn(reminder_task);
+
+        core.run(future).unwrap(); // @todo handle connection errors and restart bot after pause
+    }
 }
 
 #[test]
