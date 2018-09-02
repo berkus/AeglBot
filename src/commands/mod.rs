@@ -1,42 +1,52 @@
-mod activities_command;
-pub use self::activities_command::*;
+// mod activities_command;
+// pub use self::activities_command::*;
 mod bot_command;
+
 pub use self::bot_command::*;
-mod cancel_command;
-pub use self::cancel_command::*;
-mod details_command;
-pub use self::details_command::*;
-mod help_command;
-pub use self::help_command::*;
-mod join_command;
-pub use self::join_command::*;
-mod lfg_command;
-pub use self::lfg_command::*;
-mod list_command;
-pub use self::list_command::*;
+
+// mod cancel_command;
+// pub use self::cancel_command::*;
+// mod details_command;
+// pub use self::details_command::*;
+// mod help_command;
+// pub use self::help_command::*;
+// mod join_command;
+// pub use self::join_command::*;
+// mod lfg_command;
+// pub use self::lfg_command::*;
+// mod list_command;
+// pub use self::list_command::*;
 mod psn_command;
+
 pub use self::psn_command::*;
-mod whois_command;
-pub use self::whois_command::*;
+// mod whois_command;
+// pub use self::whois_command::*;
 
 use chrono::{prelude::*, Duration, Local};
 use crate::{models::Guardian, schema::guardians::dsl::*};
 use diesel::{pg::PgConnection, prelude::*};
-use telegram_bot::{self, CanReplySendMessage};
+use futures::Future;
+use telebot::{functions::*, RcBot};
 
 pub fn validate_username(
-    api: &telegram_bot::Api,
-    message: &telegram_bot::Message,
+    bot: &RcBot,
+    message: telebot::objects::Message,
     connection: &PgConnection,
 ) -> Option<Guardian> {
-    let username = match message.from.username {
+    let username = match message.from.unwrap().username {
         None => {
-            api.spawn(message.text_reply(
-                "You have no telegram username, register your telegram account first.",
-            ));
+            bot.inner.handle.spawn(
+                bot.message(
+                    message.chat.id,
+                    "You have no telegram username, register your telegram account first.".into(),
+                ).reply_to_message_id(message.message_id)
+                .send()
+                .map(|_| ())
+                .map_err(|e| error!("Error: {:?}", e)),
+            );
             return None;
         }
-        Some(ref name) => name,
+        Some(ref name) => name.clone(),
     };
     let db_user = guardians
         .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
@@ -46,13 +56,25 @@ pub fn validate_username(
         Ok(users) => if users.len() > 0 {
             Some(users[0].clone())
         } else {
-            api.spawn(
-                message.text_reply("You need to link your PSN account first: use /psn command"),
+            bot.inner.handle.spawn(
+                bot.message(
+                    message.chat.id,
+                    "You need to link your PSN account first: use /psn command".into(),
+                ).reply_to_message_id(message.message_id)
+                .send()
+                .map(|_| ())
+                .map_err(|e| error!("Error: {:?}", e)),
             );
             None
         },
         Err(_) => {
-            api.spawn(message.text_reply("Error querying guardian info."));
+            bot.inner.handle.spawn(
+                bot.message(message.chat.id, "Error querying guardian info.".into())
+                    .reply_to_message_id(message.message_id)
+                    .send()
+                    .map(|_| ())
+                    .map_err(|e| error!("Error: {:?}", e)),
+            );
             None
         }
     }

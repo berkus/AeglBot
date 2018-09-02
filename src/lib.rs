@@ -11,11 +11,12 @@ extern crate chrono_english;
 extern crate dotenv;
 extern crate rss;
 extern crate serde_json;
-extern crate telegram_bot;
+extern crate telebot;
 #[macro_use]
 extern crate diesel_derives_extra;
 extern crate diesel_derives_traits;
 extern crate failure;
+extern crate futures;
 #[macro_use]
 extern crate log;
 

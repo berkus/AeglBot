@@ -4,7 +4,8 @@ use crate::{
     schema::guardians::dsl::*,
 };
 use diesel::{self, pg::PgConnection, prelude::*};
-use telegram_bot::{self, types::ParseMode, CanReplySendMessage, Integer};
+use futures::Future;
+use telebot::{functions::*, RcBot};
 
 pub struct PsnCommand;
 
@@ -18,52 +19,97 @@ impl BotCommand for PsnCommand {
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         name: Option<String>,
         connection: &PgConnection,
     ) {
+        info!("PSN command");
+
         if name.is_none() {
-            api.spawn(
-                message
-                    .text_reply("Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE")
-                    .parse_mode(ParseMode::Html),
+            bot.inner.handle.spawn(
+                bot.message(
+                    message.chat.id,
+                    "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE".into(),
+                ).parse_mode(ParseMode::HTML)
+                .reply_to_message_id(message.message_id)
+                .send()
+                .map(|_| ())
+                .map_err(|e| error!("Error: {:?}", e)),
             );
             return;
         }
 
         let name = name.unwrap();
 
-        let username = match message.from.username {
+        let from = match message.from {
             None => {
-                api.spawn(message.text_reply(
-                    "You have no telegram username, register your telegram account first.",
-                ));
+                bot.inner.handle.spawn(
+                    bot.message(message.chat.id, "Message has no sender info.".into())
+                        .reply_to_message_id(message.message_id)
+                        .send()
+                        .map(|_| ())
+                        .map_err(|e| error!("Error: {:?}", e)),
+                );
                 return;
             }
-            Some(ref name) => name,
+            Some(from) => from,
+        };
+
+        let username = match from.username {
+            None => {
+                bot.inner.handle.spawn(
+                    bot.message(
+                        message.chat.id,
+                        "You have no telegram username, register your telegram account first."
+                            .into(),
+                    ).reply_to_message_id(message.message_id)
+                    .send()
+                    .map(|_| ())
+                    .map_err(|e| error!("Error: {:?}", e)),
+                );
+
+                return;
+            }
+            Some(name) => name,
         };
 
         let db_user = guardians
             .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
             .limit(1)
             .load::<Guardian>(connection);
+        debug!("Queried guardian {}", username);
         match db_user {
             Ok(user) => {
                 if user.len() > 0 {
-                    api.spawn(message.text_reply(format!(
-                        "Your telegram @{username} is already linked with psn {psn}",
-                        username = username,
-                        psn = user[0].psn_name
-                    )));
+                    debug!("Guardian {} found, erroring", username);
+                    debug!(
+                        "Sending to chat {} in reply to {}",
+                        message.chat.id, message.message_id
+                    );
+                    bot.inner.handle.spawn(
+                        bot.message(
+                            message.chat.id,
+                            format!(
+                                "Your telegram @{username} is already linked with psn {psn}",
+                                username = username,
+                                psn = user[0].psn_name
+                            ),
+                        ).reply_to_message_id(message.message_id)
+                        .send()
+                        .map(|_| ())
+                        .map_err(|e| error!("Error: {:?}", e)),
+                    );
+                    return;
                 } else {
+                    debug!("Guardian {} not found, adding", username);
                     use crate::schema::guardians;
 
-                    let user_id: Integer = message.from.id.into();
+                    let user_id = from.id.into();
 
                     let guardian = NewGuardian {
-                        telegram_name: username,
+                        telegram_name: &username,
                         telegram_id: user_id,
                         psn_name: &name,
                     };
@@ -73,15 +119,31 @@ impl BotCommand for PsnCommand {
                         .execute(connection)
                         .expect("Unexpected error saving guardian");
 
-                    api.spawn(message.text_reply(format!(
-                        "Linking telegram @{username} with psn {psn}",
-                        username = username,
-                        psn = name
-                    )));
+                    bot.inner.handle.spawn(
+                        bot.message(
+                            message.chat.id,
+                            format!(
+                                "Linking telegram @{username} with psn {psn}",
+                                username = username,
+                                psn = name
+                            ),
+                        ).reply_to_message_id(message.message_id)
+                        .send()
+                        .map(|_| ())
+                        .map_err(|e| error!("Error: {:?}", e)),
+                    );
+                    return;
                 }
             }
             Err(_) => {
-                api.spawn(message.text_reply("Error querying guardian name."));
+                bot.inner.handle.spawn(
+                    bot.message(message.chat.id, "Error querying guardian name.".into())
+                        .reply_to_message_id(message.message_id)
+                        .send()
+                        .map(|_| ())
+                        .map_err(|e| error!("Error: {:?}", e)),
+                );
+                return;
             }
         };
     }

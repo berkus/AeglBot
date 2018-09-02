@@ -11,7 +11,7 @@ extern crate dotenv;
 extern crate futures;
 extern crate pretty_env_logger;
 extern crate rss;
-extern crate telegram_bot;
+extern crate telebot;
 extern crate tokio;
 extern crate tokio_core;
 #[macro_use]
@@ -19,14 +19,12 @@ extern crate log;
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
-// use diesel::prelude::*;
+use diesel::{dsl::*, prelude::*, PgConnection};
 use dotenv::dotenv;
-use futures::{Future, Stream};
+use futures::{Future, IntoFuture, Stream};
 use std::env;
 use std::time::{Duration, Instant};
-use telegram_bot::*;
-// use tokio::prelude::*;
-use std::sync::Mutex;
+use telebot::RcBot;
 use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
@@ -37,10 +35,23 @@ use tokio_core::reactor::Core;
 /// @returns A pair of matched command and remainder of the message text.
 /// (None, None) if command did not match,
 /// (command, and Some remaining text after command otherwise).
-fn match_command(data: &str, command: &str, bot_name: &str) -> (Option<String>, Option<String>) {
+fn match_command(
+    msg: &telebot::objects::Message,
+    command: &str,
+    bot_name: &str,
+) -> (Option<String>, Option<String>) {
+    if let None = msg.text {
+        return (None, None);
+    }
+
+    let data = msg.text.clone().unwrap();
+    debug!("matching text {:#?}", data);
+
     let command = "/".to_owned() + &command;
     let long_command = format!("{}@{}", command, bot_name);
+    debug!("matching {:#?} against {:#?}", data, long_command);
     if data.starts_with(&long_command) {
+        debug!(".. matched");
         return (
             Some(long_command.clone()),
             data.get(long_command.len()..)
@@ -48,7 +59,9 @@ fn match_command(data: &str, command: &str, bot_name: &str) -> (Option<String>, 
                 .filter(|y| y.len() != 0),
         );
     }
+    debug!("matching {:#?} against {:#?}", data, command);
     if data.starts_with(&command) {
+        debug!(".. matched");
         return (
             Some(command.clone()),
             data.get(command.len()..)
@@ -67,76 +80,65 @@ fn main() {
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
-    let lfg_chat = ChatId::new(
-        env::var("BOT_LFG_CHAT_ID")
-            .expect("BOT_LFG_CHAT_ID must be set")
-            .parse::<i64>()
-            .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id"),
-    );
-    let wf_alerts_chat = ChatId::new(
-        env::var("BOT_WF_CHAT_ID")
-            .expect("BOT_WF_CHAT_ID must be set")
-            .parse::<i64>()
-            .expect("BOT_WF_CHAT_ID must be a valid telegram chat id"),
-    );
+    let _lfg_chat = env::var("BOT_LFG_CHAT_ID")
+        .expect("BOT_LFG_CHAT_ID must be set")
+        .parse::<i64>()
+        .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
+    let _wf_alerts_chat = env::var("BOT_WF_CHAT_ID")
+        .expect("BOT_WF_CHAT_ID must be set")
+        .parse::<i64>()
+        .expect("BOT_WF_CHAT_ID must be a valid telegram chat id");
 
     let mut core = Core::new().unwrap();
     loop {
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-        let api = Api::configure(token)
-            .build(core.handle())
-            .expect("Telegram API connect failed");
+        let bot = RcBot::new(core.handle(), &token).update_interval(200);
 
         // WhoisCommand::register(&api, &connection);
         // PsnCommand::register(&api, &connection);
 
-        // Fetch new updates via long poll method
-        let future = api.stream().for_each(|update| {
-            // If the received update contains a new message...
-            if let UpdateKind::Message(message) = update.kind {
-                if let MessageKind::Text { ref data, .. } = message.kind {
-                    // Print received text message to stdout.
-                    println!("<{}>: {}", &message.from.first_name, data);
+        let stream = bot.get_stream()
+            .filter_map(|(bot, update)| update.message.map(|msg| (bot, msg)))
+            .and_then(|(_, message)| {
+                debug!("{:#?}", message);
 
-                    let connection = connection_pool.get().unwrap();
+                let connection = connection_pool.get().unwrap();
 
-                    // Plug awesome-bot style routing in here
-                    if let (Some(_), text) = match_command(data, "whois", &bot_name) {
-                        WhoisCommand::execute(&api, &message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(data, "psn", &bot_name) {
-                        PsnCommand::execute(&api, &message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(data, "join", &bot_name) {
-                        JoinCommand::execute(&api, &message, None, text, &connection);
+                // @todo Plug awesome-bot style routing in here
+                /*                    if let (Some(_), text) = match_command(data, "whois", &bot_name) {
+                                        WhoisCommand::execute(&bot, message, None, text, &connection);
+                                    } else*/ if let (Some(_), text) = match_command(&message, "psn", &bot_name) {
+                    PsnCommand::execute(&bot, message, None, text, &connection);
+                } /*else if let (Some(_), text) = match_command(data, "join", &bot_name) {
+                        JoinCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "cancel", &bot_name) {
-                        CancelCommand::execute(&api, &message, None, text, &connection);
+                        CancelCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "list", &bot_name) {
-                        ListCommand::execute(&api, &message, None, text, &connection);
+                        ListCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "lfg", &bot_name) {
-                        LfgCommand::execute(&api, &message, None, text, &connection);
+                        LfgCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "details", &bot_name) {
-                        DetailsCommand::execute(&api, &message, None, text, &connection);
+                        DetailsCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "activities", &bot_name) {
-                        ActivitiesCommand::execute(&api, &message, None, text, &connection);
+                        ActivitiesCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "help", &bot_name) {
-                        HelpCommand::execute(&api, &message, None, text, &connection);
-                    }
-                }
-            }
+                        HelpCommand::execute(&bot, message, None, text, &connection);
+                    }*/
 
-            Ok(())
-        });
-
-        let alerts_api: Mutex<Api> = Mutex::new(api.clone());
-        let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
+                Ok(())
+            });
+        /*
+        let alerts_bot = bot.clone();
+        let _alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
             .for_each(|_| {
                 info!("alerts check");
                 let connection = connection_pool.get().unwrap();
-                alerts_watcher::check(&*alerts_api.lock().unwrap(), wf_alerts_chat, &connection);
+                alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection);
                 Ok(())
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
-        // let reminder_api = api.clone();
-        let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
+        // let reminder_bot = bot.clone();
+        let _reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
             .for_each(|_| {
                 // @todo Add a thread that would get once a minute a list of planned activities and
                 // notify when the time is closing in.
@@ -144,14 +146,14 @@ fn main() {
                 // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
                 info!("reminder check");
                 //     let connection = connection_pool.get().unwrap();
-                //     reminders::check(&reminders_api, lfg_chat, &connection);
+                //     reminders::check(&reminders_bot, lfg_chat, &connection);
                 Ok(())
             }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
-        tokio::spawn(alert_task);
-        tokio::spawn(reminder_task);
-
-        core.run(future).unwrap(); // @todo handle connection errors and restart bot after pause
+        // tokio::spawn(alert_task);
+        // tokio::spawn(reminder_task);
+*/
+        core.run(stream.for_each(|_| Ok(())).into_future()).unwrap(); // @todo handle connection errors and restart bot after pause
     }
 }
 
@@ -162,11 +164,11 @@ fn test_guardians() {
 
     dotenv().ok();
 
-    let connection = aegl_bot::establish_connection();
+    let connection = aegl_bot::establish_connection().get().unwrap();
 
     let results = guardians
         // .filter(published.eq(true))
-        // .limit(5)
+        .limit(5)
         .load::<Guardian>(&connection)
         .expect("Error loading guardians");
 
@@ -183,7 +185,7 @@ fn test_activities() {
 
     dotenv().ok();
 
-    let connection = aegl_bot::establish_connection();
+    let connection = aegl_bot::establish_connection().get().unwrap();
 
     let results = activities
         .load::<Activity>(&connection)
@@ -202,7 +204,7 @@ fn test_alerts() {
 
     dotenv().ok();
 
-    let connection = aegl_bot::establish_connection();
+    let connection = aegl_bot::establish_connection().get().unwrap();
 
     let results = alerts
         .limit(5)
@@ -222,7 +224,7 @@ fn test_planned_activities() {
 
     dotenv().ok();
 
-    let connection = aegl_bot::establish_connection();
+    let connection = aegl_bot::establish_connection().get().unwrap();
 
     let guar = guardians
         .find(1)

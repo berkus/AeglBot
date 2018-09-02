@@ -5,14 +5,12 @@ use failure::Error;
 use models::{Alert, NewAlert};
 use rss::{Channel, Guid};
 use schema::alerts::dsl::*;
-use telegram_bot;
-// use telegram_bot::CanSendMessage;
 
 const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
 pub fn check(
-    _api: &telegram_bot::Api,
-    _chat_id: telegram_bot::ChatId,
+    _bot: &telebot::RcBot,
+    _chat_id: telebot::objects::Integer,
     connection: &PgConnection,
 ) -> Result<(), Error> {
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
