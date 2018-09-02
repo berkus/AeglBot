@@ -85,7 +85,7 @@ fn main() {
         .expect("BOT_LFG_CHAT_ID must be set")
         .parse::<i64>()
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
-    let _wf_alerts_chat = env::var("BOT_WF_CHAT_ID")
+    let wf_alerts_chat = env::var("BOT_WF_CHAT_ID")
         .expect("BOT_WF_CHAT_ID must be set")
         .parse::<i64>()
         .expect("BOT_WF_CHAT_ID must be a valid telegram chat id");
@@ -128,32 +128,34 @@ fn main() {
 
                 Ok(())
             });
-        /*
+
         let alerts_bot = bot.clone();
-        let _alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
-            .for_each(|_| {
+        let alerts_pool = connection_pool.clone();
+        let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
+            .for_each(move |_| {
                 info!("alerts check");
-                let connection = connection_pool.get().unwrap();
+                let connection = alerts_pool.get().unwrap();
                 alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection);
                 Ok(())
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
         // let reminder_bot = bot.clone();
-        let _reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
-            .for_each(|_| {
-                // @todo Add a thread that would get once a minute a list of planned activities and
-                // notify when the time is closing in.
-                // e.g.
-                // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
-                info!("reminder check");
-                //     let connection = connection_pool.get().unwrap();
-                //     reminders::check(&reminders_bot, lfg_chat, &connection);
-                Ok(())
-            }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+        // let _reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
+        //     .for_each(|_| {
+        //         // @todo Add a thread that would get once a minute a list of planned activities and
+        //         // notify when the time is closing in.
+        //         // e.g.
+        //         // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
+        //         info!("reminder check");
+        //         //     let connection = connection_pool.get().unwrap();
+        //         //     reminders::check(&reminders_bot, lfg_chat, &connection);
+        //         Ok(())
+        //     }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
+        bot.inner.handle.spawn(alert_task);
         // tokio::spawn(alert_task);
         // tokio::spawn(reminder_task);
-*/
+
         core.run(stream.for_each(|_| Ok(())).into_future()).unwrap(); // @todo handle connection errors and restart bot after pause
     }
 }
