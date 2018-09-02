@@ -3,7 +3,6 @@
 #![allow(unused_imports)] // during development
 
 extern crate r2d2;
-extern crate r2d2_diesel;
 #[macro_use]
 extern crate diesel;
 extern crate chrono;
@@ -31,11 +30,11 @@ pub mod models;
 pub mod schema;
 pub mod services;
 
-pub fn establish_connection() -> Pool<r2d2_diesel::ConnectionManager<PgConnection>> {
+pub fn establish_connection() -> Pool<diesel::r2d2::ConnectionManager<PgConnection>> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = r2d2_diesel::ConnectionManager::new(database_url.clone());
+    let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
 
     r2d2::Pool::builder()
         .max_size(15)

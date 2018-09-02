@@ -10,6 +10,7 @@ extern crate diesel;
 extern crate dotenv;
 extern crate futures;
 extern crate pretty_env_logger;
+extern crate r2d2;
 extern crate rss;
 extern crate telebot;
 extern crate tokio;
