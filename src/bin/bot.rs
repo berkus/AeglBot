@@ -106,9 +106,9 @@ fn main() {
                 let connection = connection_pool.get().unwrap();
 
                 // @todo Plug awesome-bot style routing in here
-                /*                    if let (Some(_), text) = match_command(data, "whois", &bot_name) {
-                                        WhoisCommand::execute(&bot, message, None, text, &connection);
-                                    } else*/ if let (Some(_), text) = match_command(&message, "psn", &bot_name) {
+                if let (Some(_), text) = match_command(&message, "whois", &bot_name) {
+                    WhoisCommand::execute(&bot, message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(&message, "psn", &bot_name) {
                     PsnCommand::execute(&bot, message, None, text, &connection);
                 } /*else if let (Some(_), text) = match_command(data, "join", &bot_name) {
                         JoinCommand::execute(&bot, message, None, text, &connection);

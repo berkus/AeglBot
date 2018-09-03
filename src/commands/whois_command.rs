@@ -1,10 +1,11 @@
 use crate::{
-    commands::{bot_command::BotCommand, validate_username},
+    commands::{bot_command::BotCommand, spawn_message, validate_username},
     models::Guardian,
     schema::guardians::dsl::*,
 };
 use diesel::{pg::PgConnection, prelude::*};
-use telegram_bot::{self, CanReplySendMessage};
+use futures::Future;
+use telebot::{functions::*, RcBot};
 
 pub struct WhoisCommand;
 
@@ -18,23 +19,26 @@ impl BotCommand for WhoisCommand {
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         name: Option<String>,
         connection: &PgConnection,
     ) {
         if name.is_none() {
-            api.spawn(
-                message
-                    .text_reply("To query user provide his @TelegramId (starting with @) or PsnId"),
+            spawn_message(
+                bot,
+                bot.message(
+                    message.chat.id,
+                    "To query user provide his @TelegramId (starting with @) or PsnId".into(),
+                ).reply_to_message_id(message.message_id),
             );
             return;
         }
 
         let name = name.unwrap();
 
-        if let None = validate_username(api, message, connection) {
+        if let None = validate_username(bot, &message, connection) {
             return;
         }
 
@@ -53,17 +57,31 @@ impl BotCommand for WhoisCommand {
         match guardian {
             Ok(guardian) => {
                 if guardian.len() > 0 {
-                    api.spawn(message.text_reply(format!(
-                        "Guardian @{telegram_name} PSN {psn_name}",
-                        telegram_name = guardian[0].telegram_name,
-                        psn_name = guardian[0].psn_name
-                    )));
+                    spawn_message(
+                        bot,
+                        bot.message(
+                            message.chat.id,
+                            format!(
+                                "Guardian @{telegram_name} PSN {psn_name}",
+                                telegram_name = guardian[0].telegram_name,
+                                psn_name = guardian[0].psn_name
+                            ),
+                        ).reply_to_message_id(message.message_id),
+                    );
                 } else {
-                    api.spawn(message.text_reply(format!("Guardian {} was not found.", name)));
+                    spawn_message(
+                        bot,
+                        bot.message(message.chat.id, format!("Guardian {} was not found.", name))
+                            .reply_to_message_id(message.message_id),
+                    );
                 }
             }
             Err(_) => {
-                api.spawn(message.text_reply("Error querying guardian name."));
+                spawn_message(
+                    bot,
+                    bot.message(message.chat.id, "Error querying guardian name.".into())
+                        .reply_to_message_id(message.message_id),
+                );
             }
         }
     }
