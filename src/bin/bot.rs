@@ -115,9 +115,11 @@ fn main() {
                         JoinCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "cancel", &bot_name) {
                         CancelCommand::execute(&bot, message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(data, "list", &bot_name) {
-                        ListCommand::execute(&bot, message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(data, "lfg", &bot_name) {
+                    } */
+                else if let (Some(_), text) = match_command(&message, "list", &bot_name) {
+                    ListCommand::execute(&bot, message, None, text, &connection);
+                }
+                /*else if let (Some(_), text) = match_command(&message, "lfg", &bot_name) {
                         LfgCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "details", &bot_name) {
                         DetailsCommand::execute(&bot, message, None, text, &connection);

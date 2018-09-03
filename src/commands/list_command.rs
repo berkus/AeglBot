@@ -1,8 +1,15 @@
-use crate::commands::bot_command::BotCommand;
-use diesel::{dsl::*, prelude::*, PgConnection};
-use models::PlannedActivity;
-use schema::plannedactivities::dsl::*;
-use telegram_bot::{self, types::ParseMode, CanReplySendMessage};
+use crate::{
+    commands::{bot_command::BotCommand, spawn_message},
+    models::PlannedActivity,
+};
+use diesel::{
+    self,
+    dsl::{now, IntervalDsl},
+    pg::PgConnection,
+    prelude::*,
+};
+use futures::Future;
+use telebot::{functions::*, RcBot};
 
 pub struct ListCommand;
 
@@ -16,12 +23,14 @@ impl BotCommand for ListCommand {
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         _args: Option<String>,
         connection: &PgConnection,
     ) {
+        use schema::plannedactivities::dsl::*;
+
         let upcoming_events = plannedactivities
             // val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
             .filter(start.ge(now - 60_i32.minutes()))
@@ -30,7 +39,13 @@ impl BotCommand for ListCommand {
             .expect("TEMP loading @FIXME");
 
         if upcoming_events.is_empty() {
-            api.spawn(message.text_reply("No activities planned, add something with /lfg"));
+            spawn_message(
+                bot,
+                bot.message(
+                    message.chat.id,
+                    "No activities planned, add something with /lfg".into(),
+                ).reply_to_message_id(message.message_id),
+            );
             return;
         }
 
@@ -40,6 +55,11 @@ impl BotCommand for ListCommand {
                 acc + &format!("{}\n", event)
             });
 
-        api.spawn(message.text_reply(text).parse_mode(ParseMode::Html));
+        spawn_message(
+            bot,
+            bot.message(message.chat.id, text)
+                .parse_mode(ParseMode::HTML)
+                .reply_to_message_id(message.message_id),
+        );
     }
 }
