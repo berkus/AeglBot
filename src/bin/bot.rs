@@ -121,9 +121,10 @@ fn main() {
                         LfgCommand::execute(&bot, message, None, text, &connection);
                     } else if let (Some(_), text) = match_command(data, "details", &bot_name) {
                         DetailsCommand::execute(&bot, message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(data, "activities", &bot_name) {
-                        ActivitiesCommand::execute(&bot, message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(data, "help", &bot_name) {
+                    }*/
+                else if let (Some(_), text) = match_command(&message, "activities", &bot_name) {
+                    ActivitiesCommand::execute(&bot, message, None, text, &connection);
+                } /*else if let (Some(_), text) = match_command(&message, "help", &bot_name) {
                         HelpCommand::execute(&bot, message, None, text, &connection);
                     }*/
 

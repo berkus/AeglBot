@@ -1,8 +1,10 @@
-use crate::commands::BotCommand;
-use diesel::{prelude::*, PgConnection};
-use models::ActivityShortcut;
-use schema::activityshortcuts::dsl::*;
-use telegram_bot::{self, types::ParseMode, CanReplySendMessage};
+use crate::{
+    commands::{bot_command::BotCommand, spawn_message},
+    models::{Activity, ActivityShortcut},
+};
+use diesel::{self, pg::PgConnection, prelude::*};
+use futures::Future;
+use telebot::{functions::*, RcBot};
 
 pub struct ActivitiesCommand;
 
@@ -16,12 +18,15 @@ impl BotCommand for ActivitiesCommand {
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         _unused: Option<String>,
         connection: &PgConnection,
     ) {
+        use schema::activities::dsl::{activities, id};
+        use schema::activityshortcuts::dsl::{activityshortcuts, game, name};
+
         let games = activityshortcuts
             .select(game)
             .distinct()
@@ -39,15 +44,24 @@ impl BotCommand for ActivitiesCommand {
                 .load::<ActivityShortcut>(connection)
                 .expect("TEMP loading @FIXME");
             for shortcut in shortcuts.into_iter() {
+                let link_name = activities
+                    .filter(id.eq(shortcut.link))
+                    .first::<Activity>(connection)
+                    .expect("TEMP loading @FIXME");
+
                 text += &format!(
                     "<b>{name}</b>\t{link}\n",
                     name = shortcut.name,
-                    link = shortcut.link
+                    link = link_name.format_name(),
                 );
-                // shortcut.link.formatName()
             }
             text += "\n";
         }
-        api.spawn(message.text_reply(text).parse_mode(ParseMode::Html));
+        spawn_message(
+            bot,
+            bot.message(message.chat.id, text)
+                .parse_mode(ParseMode::HTML)
+                .reply_to_message_id(message.message_id),
+        );
     }
 }

@@ -1,9 +1,7 @@
-// mod activities_command;
-// pub use self::activities_command::*;
+mod activities_command;
+pub use self::activities_command::*;
 mod bot_command;
-
 pub use self::bot_command::*;
-
 // mod cancel_command;
 // pub use self::cancel_command::*;
 // mod details_command;
