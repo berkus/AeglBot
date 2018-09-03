@@ -140,22 +140,21 @@ fn main() {
                 Ok(())
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
-        // let reminder_bot = bot.clone();
-        // let _reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
-        //     .for_each(|_| {
-        //         // @todo Add a thread that would get once a minute a list of planned activities and
-        //         // notify when the time is closing in.
-        //         // e.g.
-        //         // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
-        //         info!("reminder check");
-        //         //     let connection = connection_pool.get().unwrap();
-        //         //     reminders::check(&reminders_bot, lfg_chat, &connection);
-        //         Ok(())
-        //     }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+        let reminder_bot = bot.clone();
+        let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
+            .for_each(move |_| {
+                // @todo Add a thread that would get once a minute a list of planned activities and
+                // notify when the time is closing in.
+                // e.g.
+                // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
+                info!("reminder check");
+                //     let connection = connection_pool.get().unwrap();
+                //     reminders::check(&reminders_bot, lfg_chat, &connection);
+                Ok(())
+            }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
         bot.inner.handle.spawn(alert_task);
-        // tokio::spawn(alert_task);
-        // tokio::spawn(reminder_task);
+        bot.inner.handle.spawn(reminder_task);
 
         core.run(stream.for_each(|_| Ok(())).into_future()).unwrap(); // @todo handle connection errors and restart bot after pause
     }
