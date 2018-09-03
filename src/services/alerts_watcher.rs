@@ -2,15 +2,17 @@ use chrono::NaiveDateTime;
 use diesel::*;
 use diesel_derives_traits::NewModel;
 use failure::Error;
+use futures::Future;
 use models::{Alert, NewAlert};
 use rss::{Channel, Guid};
 use schema::alerts::dsl::*;
+use telebot::{functions::*, RcBot};
 
 const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
 pub fn check(
-    _bot: &telebot::RcBot,
-    _chat_id: telebot::objects::Integer,
+    bot: &RcBot,
+    chat_id: telebot::objects::Integer,
     connection: &PgConnection,
 ) -> Result<(), Error> {
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
@@ -61,7 +63,13 @@ pub fn check(
     // Publish all new alerts
     for item in alert_list.iter().filter(|x| x.alert_type == "Alert") {
         println!("{}", item);
-        // api.spawn(chat_id.text("{}", item).parse_mode(ParseMode::Html));
+        bot.inner.handle.spawn(
+            bot.message(chat_id, format!("{}", item))
+                .parse_mode(ParseMode::HTML)
+                .send()
+                .map(|_| ())
+                .map_err(|e| error!("Error: {:?}", e)),
+        );
     }
 
     Ok(())
