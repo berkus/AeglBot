@@ -98,7 +98,8 @@ fn main() {
         // WhoisCommand::register(&api, &connection);
         // PsnCommand::register(&api, &connection);
 
-        let stream = bot.get_stream()
+        let stream = bot
+            .get_stream()
             .filter_map(|(bot, update)| update.message.map(|msg| (bot, msg)))
             .and_then(|(_, message)| {
                 debug!("{:#?}", message);
