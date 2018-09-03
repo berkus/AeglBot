@@ -1,5 +1,5 @@
 use crate::{
-    commands::bot_command::BotCommand,
+    commands::{bot_command::BotCommand, spawn_message},
     models::{Guardian, NewGuardian},
     schema::guardians::dsl::*,
 };
@@ -28,15 +28,13 @@ impl BotCommand for PsnCommand {
         info!("PSN command");
 
         if name.is_none() {
-            bot.inner.handle.spawn(
+            spawn_message(
+                bot,
                 bot.message(
                     message.chat.id,
                     "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE".into(),
                 ).parse_mode(ParseMode::HTML)
-                .reply_to_message_id(message.message_id)
-                .send()
-                .map(|_| ())
-                .map_err(|e| error!("Error: {:?}", e)),
+                .reply_to_message_id(message.message_id),
             );
             return;
         }
@@ -45,12 +43,10 @@ impl BotCommand for PsnCommand {
 
         let from = match message.from {
             None => {
-                bot.inner.handle.spawn(
+                spawn_message(
+                    bot,
                     bot.message(message.chat.id, "Message has no sender info.".into())
-                        .reply_to_message_id(message.message_id)
-                        .send()
-                        .map(|_| ())
-                        .map_err(|e| error!("Error: {:?}", e)),
+                        .reply_to_message_id(message.message_id),
                 );
                 return;
             }
@@ -59,15 +55,13 @@ impl BotCommand for PsnCommand {
 
         let username = match from.username {
             None => {
-                bot.inner.handle.spawn(
+                spawn_message(
+                    bot,
                     bot.message(
                         message.chat.id,
                         "You have no telegram username, register your telegram account first."
                             .into(),
-                    ).reply_to_message_id(message.message_id)
-                    .send()
-                    .map(|_| ())
-                    .map_err(|e| error!("Error: {:?}", e)),
+                    ).reply_to_message_id(message.message_id),
                 );
 
                 return;
@@ -79,16 +73,11 @@ impl BotCommand for PsnCommand {
             .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
             .limit(1)
             .load::<Guardian>(connection);
-        debug!("Queried guardian {}", username);
         match db_user {
             Ok(user) => {
                 if user.len() > 0 {
-                    debug!("Guardian {} found, erroring", username);
-                    debug!(
-                        "Sending to chat {} in reply to {}",
-                        message.chat.id, message.message_id
-                    );
-                    bot.inner.handle.spawn(
+                    spawn_message(
+                        bot,
                         bot.message(
                             message.chat.id,
                             format!(
@@ -96,14 +85,10 @@ impl BotCommand for PsnCommand {
                                 username = username,
                                 psn = user[0].psn_name
                             ),
-                        ).reply_to_message_id(message.message_id)
-                        .send()
-                        .map(|_| ())
-                        .map_err(|e| error!("Error: {:?}", e)),
+                        ).reply_to_message_id(message.message_id),
                     );
                     return;
                 } else {
-                    debug!("Guardian {} not found, adding", username);
                     use crate::schema::guardians;
 
                     let user_id = from.id.into();
@@ -119,7 +104,8 @@ impl BotCommand for PsnCommand {
                         .execute(connection)
                         .expect("Unexpected error saving guardian");
 
-                    bot.inner.handle.spawn(
+                    spawn_message(
+                        bot,
                         bot.message(
                             message.chat.id,
                             format!(
@@ -127,21 +113,16 @@ impl BotCommand for PsnCommand {
                                 username = username,
                                 psn = name
                             ),
-                        ).reply_to_message_id(message.message_id)
-                        .send()
-                        .map(|_| ())
-                        .map_err(|e| error!("Error: {:?}", e)),
+                        ).reply_to_message_id(message.message_id),
                     );
                     return;
                 }
             }
             Err(_) => {
-                bot.inner.handle.spawn(
+                spawn_message(
+                    bot,
                     bot.message(message.chat.id, "Error querying guardian name.".into())
-                        .reply_to_message_id(message.message_id)
-                        .send()
-                        .map(|_| ())
-                        .map_err(|e| error!("Error: {:?}", e)),
+                        .reply_to_message_id(message.message_id),
                 );
                 return;
             }

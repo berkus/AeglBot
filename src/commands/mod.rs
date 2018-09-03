@@ -27,26 +27,31 @@ use diesel::{pg::PgConnection, prelude::*};
 use futures::Future;
 use telebot::{functions::*, RcBot};
 
+pub fn spawn_message(bot: &RcBot, m: WrapperMessage) {
+    bot.inner
+        .handle
+        .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
+}
+
 pub fn validate_username(
     bot: &RcBot,
-    message: telebot::objects::Message,
+    message: &telebot::objects::Message,
     connection: &PgConnection,
 ) -> Option<Guardian> {
-    let username = match message.from.unwrap().username {
+    let username = match message.from.clone().unwrap().username {
         None => {
-            bot.inner.handle.spawn(
+            spawn_message(
+                bot,
                 bot.message(
                     message.chat.id,
                     "You have no telegram username, register your telegram account first.".into(),
-                ).reply_to_message_id(message.message_id)
-                .send()
-                .map(|_| ())
-                .map_err(|e| error!("Error: {:?}", e)),
+                ).reply_to_message_id(message.message_id),
             );
             return None;
         }
         Some(ref name) => name.clone(),
     };
+
     let db_user = guardians
         .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
         .limit(1)
@@ -55,24 +60,20 @@ pub fn validate_username(
         Ok(users) => if users.len() > 0 {
             Some(users[0].clone())
         } else {
-            bot.inner.handle.spawn(
+            spawn_message(
+                bot,
                 bot.message(
                     message.chat.id,
                     "You need to link your PSN account first: use /psn command".into(),
-                ).reply_to_message_id(message.message_id)
-                .send()
-                .map(|_| ())
-                .map_err(|e| error!("Error: {:?}", e)),
+                ).reply_to_message_id(message.message_id),
             );
             None
         },
         Err(_) => {
-            bot.inner.handle.spawn(
+            spawn_message(
+                bot,
                 bot.message(message.chat.id, "Error querying guardian info.".into())
-                    .reply_to_message_id(message.message_id)
-                    .send()
-                    .map(|_| ())
-                    .map_err(|e| error!("Error: {:?}", e)),
+                    .reply_to_message_id(message.message_id),
             );
             None
         }
