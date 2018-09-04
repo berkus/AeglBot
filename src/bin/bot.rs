@@ -111,25 +111,21 @@ fn main() {
                     WhoisCommand::execute(&bot, message, None, text, &connection);
                 } else if let (Some(_), text) = match_command(&message, "psn", &bot_name) {
                     PsnCommand::execute(&bot, message, None, text, &connection);
-                }
-                /*else if let (Some(_), text) = match_command(&message, "join", &bot_name) {
-                        JoinCommand::execute(&bot, message, None, text, &connection);
-                    } else if let (Some(_), text) = match_command(&message, "cancel", &bot_name) {
-                        CancelCommand::execute(&bot, message, None, text, &connection);
-                    } */
-                else if let (Some(_), text) = match_command(&message, "list", &bot_name) {
+                } else if let (Some(_), text) = match_command(&message, "join", &bot_name) {
+                    JoinCommand::execute(&bot, message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(&message, "cancel", &bot_name) {
+                    CancelCommand::execute(&bot, message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(&message, "list", &bot_name) {
                     ListCommand::execute(&bot, message, None, text, &connection);
                 } else if let (Some(_), text) = match_command(&message, "lfg", &bot_name) {
                     LfgCommand::execute(&bot, message, None, text, &connection);
-                }
-                /*else if let (Some(_), text) = match_command(&message, "details", &bot_name) {
-                        DetailsCommand::execute(&bot, message, None, text, &connection);
-                    }*/
-                else if let (Some(_), text) = match_command(&message, "activities", &bot_name) {
+                } else if let (Some(_), text) = match_command(&message, "details", &bot_name) {
+                    DetailsCommand::execute(&bot, message, None, text, &connection);
+                } else if let (Some(_), text) = match_command(&message, "activities", &bot_name) {
                     ActivitiesCommand::execute(&bot, message, None, text, &connection);
-                } /*else if let (Some(_), text) = match_command(&message, "help", &bot_name) {
-                        HelpCommand::execute(&bot, message, None, text, &connection);
-                    }*/
+                } else if let (Some(_), text) = match_command(&message, "help", &bot_name) {
+                    HelpCommand::execute(&bot, message, None, text, &connection);
+                }
 
                 Ok(())
             });

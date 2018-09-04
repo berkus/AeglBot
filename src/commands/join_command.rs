@@ -27,11 +27,26 @@
 //         }
 //     }
 // }
-use crate::commands::{validate_username, BotCommand};
-use diesel::PgConnection;
-use telegram_bot::{self, CanReplySendMessage};
+use crate::commands::{send_plain_reply, validate_username, BotCommand};
+use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use diesel_derives_traits::{Model, NewModel};
+use futures::Future;
+use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use telebot::{functions::*, RcBot};
 
 pub struct JoinCommand;
+
+impl JoinCommand {
+    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+        send_plain_reply(
+            bot,
+            &message,
+            "To join a fireteam provide fireteam id
+Fireteam IDs are available from output of /list command."
+                .into(),
+        );
+    }
+}
 
 impl BotCommand for JoinCommand {
     fn prefix() -> &'static str {
@@ -39,28 +54,24 @@ impl BotCommand for JoinCommand {
     }
 
     fn description() -> &'static str {
-        "Join existing fireteam from the list"
+        "Join existing activity from the list"
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         team_id: Option<String>,
         connection: &PgConnection,
     ) {
         if team_id.is_none() {
-            api.spawn(message.text_reply(
-                "To join a fireteam provide fireteam id
-Fireteam IDs are available from output of /list command.",
-            ));
-            return;
+            return JoinCommand::usage(bot, message);
         }
 
-        if let Some(_user) = validate_username(api, message, connection) {
+        if let Some(_user) = validate_username(bot, &message, connection) {
             // do stuff
             // if activity.too_old() msg(cannot join too old)
         }
-        api.spawn(message.text_reply("not implemented yet"));
+        send_plain_reply(bot, &message, "not implemented yet".into());
     }
 }

@@ -1,14 +1,4 @@
-//     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
-//     {
-//         if (arguments.size != 1) {
-//             sendReply(absSender, chat, "To leave a fireteam provide fireteam id\n"
-//             + "Fireteam IDs are available from output of /list command.")
-//             return
-//         }
-
 //         transaction {
-//             logger.addLogger(Slf4jSqlLogger())
-
 //             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
 
 //             if (dbUser == null) {
@@ -48,11 +38,26 @@
 //             }
 //         }
 //     }
-use crate::commands::BotCommand;
-use diesel::PgConnection;
-use telegram_bot::{self, CanReplySendMessage};
+use crate::commands::{send_plain_reply, BotCommand};
+use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use diesel_derives_traits::{Model, NewModel};
+use futures::Future;
+use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use telebot::{functions::*, RcBot};
 
 pub struct CancelCommand;
+
+impl CancelCommand {
+    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+        send_plain_reply(
+            bot,
+            &message,
+            "To leave a fireteam provide fireteam id
+Fireteam IDs are available from output of /list command."
+                .into(),
+        );
+    }
+}
 
 impl BotCommand for CancelCommand {
     fn prefix() -> &'static str {
@@ -60,16 +65,25 @@ impl BotCommand for CancelCommand {
     }
 
     fn description() -> &'static str {
-        "Cancel joining fireteam"
+        "Leave joined activity"
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
-        _name: Option<String>,
+        activity_id: Option<String>,
         _connection: &PgConnection,
     ) {
-        api.spawn(message.text_reply("not implemented yet"));
+        if activity_id.is_none() {
+            return CancelCommand::usage(bot, message);
+        }
+
+        let id = activity_id.unwrap().parse::<u32>();
+        if let Err(_) = id {
+            return CancelCommand::usage(bot, message);
+        }
+
+        send_plain_reply(bot, &message, "not implemented yet".into());
     }
 }

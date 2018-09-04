@@ -31,9 +31,12 @@
 //             }
 //         }
 //     }
-use crate::commands::BotCommand;
-use diesel::PgConnection;
-use telegram_bot::{self, CanReplySendMessage};
+use crate::commands::{send_plain_reply, BotCommand};
+use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use diesel_derives_traits::{Model, NewModel};
+use futures::Future;
+use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use telebot::{functions::*, RcBot};
 
 pub struct DetailsCommand;
 
@@ -47,12 +50,12 @@ impl BotCommand for DetailsCommand {
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         _name: Option<String>,
         _connection: &PgConnection,
     ) {
-        api.spawn(message.text_reply("not implemented yet"));
+        send_plain_reply(bot, &message, "not implemented yet".into());
     }
 }
