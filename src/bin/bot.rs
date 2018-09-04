@@ -239,6 +239,6 @@ fn test_planned_activities() {
 
     println!("Displaying {} planned activities", results.len());
     for act in results {
-        println!("{}", act);
+        println!("{}", act.display(&connection));
     }
 }
