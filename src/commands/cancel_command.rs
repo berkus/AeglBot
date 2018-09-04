@@ -1,48 +1,8 @@
-//         transaction {
-//             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
-
-//             if (dbUser == null) {
-//                 sendReply(absSender, chat, "You need to link your PSN account first: use /psn command")
-//             } else {
-
-//                 val planned = PlannedActivity
-//                     .findById(arguments[0].toInt())
-
-//                 if (planned == null) {
-//                     sendReply(absSender, chat, "Activity ${arguments[0]} was not found.")
-//                 } else {
-//                     val member = PlannedActivityMember.find {
-//                         (PlannedActivityMembers.userId eq dbUser.id) and
-//                         (PlannedActivityMembers.plannedActivityId eq planned.id)
-//                     }.singleOrNull()
-
-//                     if (member == null) {
-//                         sendReply(absSender, chat, "You are not part of this group.")
-//                     } else {
-//                         member.delete()
-
-//                         var suffix = planned.membersFormattedList() +" are going\n"+
-//                                      planned.joinPrompt()
-
-//                         if (planned.members.count() == 0) {
-//                             planned.delete()
-//                             suffix = "This fireteam is disbanded and can no longer be joined."
-//                         }
-
-//                         sendReply(absSender, chat,
-//                             dbUser.formatName() + " has left " + planned.activity.formatName()
-//                             + " group " + formatStartTime(planned.start).decapitalize() + "\n"
-//                             +suffix)
-//                     }
-//                 }
-//             }
-//         }
-//     }
-use crate::commands::{send_plain_reply, BotCommand};
+use crate::commands::{send_plain_reply, validate_username, BotCommand};
 use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
-use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use models::{Activity, PlannedActivity, PlannedActivityMember};
 use telebot::{functions::*, RcBot};
 
 pub struct CancelCommand;
@@ -73,17 +33,59 @@ impl BotCommand for CancelCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         activity_id: Option<String>,
-        _connection: &PgConnection,
+        connection: &PgConnection,
     ) {
         if activity_id.is_none() {
             return CancelCommand::usage(bot, message);
         }
 
-        let id = activity_id.unwrap().parse::<u32>();
-        if let Err(_) = id {
+        let activity_id = activity_id.unwrap().parse::<i32>();
+        if let Err(_) = activity_id {
             return CancelCommand::usage(bot, message);
         }
 
-        send_plain_reply(bot, &message, "not implemented yet".into());
+        let activity_id = activity_id.unwrap();
+
+        if let Some(guardian) = validate_username(bot, &message, connection) {
+            let planned =
+                PlannedActivity::find_one(connection, &activity_id).expect("Failed to run SQL");
+
+            if planned.is_none() {
+                return send_plain_reply(
+                    bot,
+                    &message,
+                    format!("Activity {} was not found.", activity_id),
+                );
+            }
+
+            let planned = planned.unwrap();
+
+            let member = planned.find_member(connection, guardian);
+
+            if member.is_none() {
+                return send_plain_reply(bot, &message, "You are not part of this group.".into());
+            }
+
+            let member = member.unwrap();
+
+            // if activity.too_old(2.hours) msg(cannot cancel too old)
+
+            member.destroy(connection);
+
+            // var suffix = planned.membersFormattedList() +" are going\n"+
+            //              planned.joinPrompt()
+
+            // if (planned.members.count() == 0) {
+            //     planned.delete()
+            //     suffix = "This fireteam is disbanded and can no longer be joined."
+            // }
+
+            // sendReply(absSender, chat,
+            //     dbUser.formatName() + " has left " + planned.activity.formatName()
+            //     + " group " + formatStartTime(planned.start).decapitalize() + "\n"
+            //     +suffix)
+
+            // if activity.too_old() msg(cannot join too old)
+        }
     }
 }

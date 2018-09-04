@@ -1,37 +1,11 @@
-// val planned = PlannedActivity
-//     .findById(arguments[0].toInt())
-
-// if (planned == null) {
-//     sendReply(absSender, chat, "Activity ${arguments[0]} was not found.")
-// } else {
-//     val member = PlannedActivityMember.find {
-//         (PlannedActivityMembers.userId eq dbUser.id) and
-//         (PlannedActivityMembers.plannedActivityId eq planned.id)
-//     }.singleOrNull()
-
-//     if (member != null) {
-//         sendReply(absSender, chat, "You are already part of this fireteam.")
-//     } else {
-//         if (planned.isFull()) {
-//             sendReply(absSender, chat, "This activity fireteam is full.")
-//         } else {
-//             PlannedActivityMember.new {
-//                 this.user = dbUser
-//                 this.activity = planned
-//             }
-
-//             sendReply(absSender, chat,
-//                 dbUser.formatName() + " has joined " + planned.activity.formatName()
-//                 +" group " + formatStartTime(planned.start).decapitalize() + "\n"
-//                 +planned.membersFormattedList() +" are going\n" + planned.joinPrompt())
-//         }
-//     }
-// }
-use crate::commands::{send_plain_reply, validate_username, BotCommand};
+use chrono::Local;
+use crate::commands::{
+    decapitalize, format_start_time, send_plain_reply, validate_username, BotCommand,
+};
 use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
-use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use models::{Activity, NewPlannedActivityMember, PlannedActivity, PlannedActivityMember};
 use telebot::{functions::*, RcBot};
 
 pub struct JoinCommand;
@@ -61,17 +35,72 @@ impl BotCommand for JoinCommand {
         bot: &RcBot,
         message: telebot::objects::Message,
         _command: Option<String>,
-        team_id: Option<String>,
+        activity_id: Option<String>,
         connection: &PgConnection,
     ) {
-        if team_id.is_none() {
+        if activity_id.is_none() {
             return JoinCommand::usage(bot, message);
         }
 
-        if let Some(_user) = validate_username(bot, &message, connection) {
-            // do stuff
-            // if activity.too_old() msg(cannot join too old)
+        let activity_id = activity_id.unwrap().parse::<i32>();
+        if let Err(_) = activity_id {
+            return JoinCommand::usage(bot, message);
         }
-        send_plain_reply(bot, &message, "not implemented yet".into());
+
+        let activity_id = activity_id.unwrap();
+
+        if let Some(guardian) = validate_username(bot, &message, connection) {
+            let planned =
+                PlannedActivity::find_one(connection, &activity_id).expect("Failed to run SQL");
+
+            if planned.is_none() {
+                return send_plain_reply(
+                    bot,
+                    &message,
+                    format!("Activity {} was not found.", activity_id),
+                );
+            }
+
+            let planned = planned.unwrap();
+
+            let member = planned.find_member(connection, guardian);
+
+            if !member.is_none() {
+                return send_plain_reply(
+                    bot,
+                    &message,
+                    "You are already part of this group.".into(),
+                );
+            }
+
+            if planned.is_full() {
+                return send_plain_reply(bot, &message, "This activity group is full.".into());
+            }
+
+            // if activity.too_old() msg(cannot join too old)
+
+            let planned_activity_member = NewPlannedActivityMember {
+                user_id: guardian.id,
+                planned_activity_id: planned.id,
+                added: Local::now().naive_local(),
+            };
+
+            planned_activity_member
+                .save(connection)
+                .expect("Unexpected error saving group joiner");
+
+            let text = format!(
+                "{guarName} has joined {actName} group {actTime}
+{otherGuars} are going
+{joinPrompt}",
+                guarName = guardian,
+                actName = planned.activity(connection).format_name(),
+                actTime = decapitalize(format_start_time(planned.start)),
+                otherGuars = planned.members_formatted_list(),
+                joinPrompt = planned.join_prompt()
+            );
+
+            send_plain_reply(bot, &message, text);
+        }
     }
 }
