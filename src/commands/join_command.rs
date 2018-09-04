@@ -97,7 +97,7 @@ impl BotCommand for JoinCommand {
                 guarName = guardian,
                 actName = planned.activity(connection).format_name(),
                 actTime = decapitalize(format_start_time(planned.start, reference_date())),
-                otherGuars = planned.members_formatted_list(),
+                otherGuars = planned.members_formatted_list(connection),
                 joinPrompt = planned.join_prompt()
             );
 

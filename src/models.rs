@@ -1,7 +1,7 @@
 use super::datetime::{format_start_time, reference_date};
 use super::schema::*;
 use chrono::prelude::*;
-use diesel::pg::PgConnection;
+use diesel::{pg::PgConnection, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 use diesel_derives_traits::{Model, NewModel};
 use serde_json::Value;
 use std::fmt;
@@ -134,6 +134,12 @@ pub struct NewGuardian<'a> {
     pub psn_name: &'a str,
 }
 
+impl Guardian {
+    pub fn format_name(&self) -> String {
+        format!("{} (t.me/{})", self.psn_name, self.telegram_name)
+    }
+}
+
 impl fmt::Display for Guardian {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} (t.me/{})", self.psn_name, self.telegram_name)
@@ -174,13 +180,22 @@ pub struct NewPlannedActivity {
 
 impl PlannedActivity {
     pub fn author(&self, connection: &PgConnection) -> Option<Guardian> {
-        Guardian::find_one(connection, &self.author_id).expect("Failed to run SQL")
+        Guardian::find_one(connection, &self.author_id)
+            .expect("Failed to load PlannedActivity author")
     }
 
     pub fn activity(&self, connection: &PgConnection) -> Activity {
         Activity::find_one(connection, &self.activity_id)
-            .expect("Failed to run SQL")
+            .expect("Failed to load associated Activity")
             .expect("PlannedActivity without Activity shouldn't exist")
+    }
+
+    pub fn members(&self, connection: &PgConnection) -> Vec<PlannedActivityMember> {
+        use schema::plannedactivitymembers::dsl::*;
+        plannedactivitymembers
+            .filter(planned_activity_id.eq(self.id))
+            .load::<PlannedActivityMember>(connection)
+            .expect("Failed to load PlannedActivity members")
     }
 
     pub fn join_link(&self) -> String {
@@ -217,17 +232,21 @@ impl PlannedActivity {
         }
     }
 
-    pub fn members_formatted(&self, joiner: &str) -> String {
-        // members.toList().joinToString(joiner) { it.user.formatName() }
-        joiner.to_owned()
+    pub fn members_formatted(&self, connection: &PgConnection, joiner: &str) -> String {
+        self.members(connection)
+            .into_iter()
+            .map(|guardian| guardian.format_name(connection))
+            .collect::<Vec<String>>()
+            .as_slice()
+            .join(joiner)
     }
 
-    pub fn members_formatted_list(&self) -> String {
-        self.members_formatted(", ")
+    pub fn members_formatted_list(&self, connection: &PgConnection) -> String {
+        self.members_formatted(connection, ", ")
     }
 
-    pub fn members_formatted_column(&self) -> String {
-        self.members_formatted("\n")
+    pub fn members_formatted_column(&self, connection: &PgConnection) -> String {
+        self.members_formatted(connection, "\n")
     }
 
     pub fn find_member(
@@ -235,7 +254,6 @@ impl PlannedActivity {
         connection: &PgConnection,
         g: &Guardian,
     ) -> Option<PlannedActivityMember> {
-        use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
         use schema::plannedactivitymembers::dsl::*;
 
         plannedactivitymembers
@@ -252,7 +270,7 @@ impl PlannedActivity {
             id = self.id,
             name = self.activity(connection).format_name(),
             details = self.format_details(),
-            members = self.members_formatted_column(),
+            members = self.members_formatted_column(connection),
             time = format_start_time(self.start, reference_date()),
             join = self.join_prompt()
         )
@@ -297,6 +315,15 @@ pub struct NewPlannedActivityMember {
     pub planned_activity_id: i32,
     pub user_id: i32,
     pub added: NaiveDateTime,
+}
+
+impl PlannedActivityMember {
+    pub fn format_name(&self, connection: &PgConnection) -> String {
+        Guardian::find_one(connection, &self.user_id)
+            .expect("Failed to load associated Guardian")
+            .expect("Failed to find associated activity member")
+            .format_name()
+    }
 }
 
 //
