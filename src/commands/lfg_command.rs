@@ -81,7 +81,7 @@ impl BotCommand for LfgCommand {
             } else {
                 let start_time = parse_date_string(timespec, Local::now(), Dialect::Us);
 
-                if let Err(e) = start_time {
+                if let Err(_) = start_time {
                     return send_plain_reply(
                         bot,
                         &message,
