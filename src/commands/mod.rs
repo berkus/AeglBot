@@ -19,11 +19,9 @@ pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
-use chrono::{prelude::*, Duration, Local};
 use crate::{models::Guardian, schema::guardians::dsl::*};
 use diesel::{pg::PgConnection, prelude::*};
 use futures::Future;
-use std::fmt::Write;
 use telebot::{functions::*, RcBot};
 
 pub fn decapitalize(s: String) -> String {
@@ -96,108 +94,5 @@ pub fn validate_username(
             send_plain_reply(bot, message, "Error querying guardian info.".into());
             None
         }
-    }
-}
-
-fn time_diff_string(duration: Duration) -> String {
-    let times = vec![
-        (Duration::days(365), "year"),
-        (Duration::days(30), "month"),
-        (Duration::days(1), "day"),
-        (Duration::hours(1), "hour"),
-        (Duration::minutes(1), "minute"),
-    ];
-
-    let mut dur = duration.num_minutes();
-    let mut text = String::new();
-
-    for item in times.iter() {
-        let (current, times_str) = item;
-        let current = current.num_minutes();
-        let temp = (dur / current).abs();
-
-        if temp > 0 {
-            dur -= temp * current;
-            write!(
-                &mut text,
-                "{} {}{} ",
-                temp,
-                times_str,
-                if temp != 1 { "s" } else { "" }
-            );
-        }
-    }
-
-    let text = text.trim();
-
-    if text.is_empty() {
-        format!("just now")
-    } else {
-        if duration > Duration::zero() {
-            format!("in {}", text)
-        } else {
-            format!("{} ago", text)
-        }
-    }
-}
-
-// "Today at 23:00 (starts in 3 hours)"
-pub fn format_start_time(time: DateTime<Local>) -> String {
-    let prefix = if time.date() == Local::today() {
-        //@fixme Date<MskTimeZone>
-        format!("Today")
-    } else {
-        format!("on {}", time.format("%a %b %e %Y"))
-    };
-
-    let prefix2 = time.format("%T");
-
-    let time_diff = time - Local::now();
-    let infix_str = if time_diff < Duration::zero() {
-        "started"
-    } else {
-        "starts"
-    };
-
-    format!(
-        "{} at {} ({} {})",
-        prefix,
-        prefix2,
-        infix_str,
-        time_diff_string(time_diff)
-    )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_time_diffs() {
-        assert_eq!(time_diff_string(Duration::minutes(2)), "in 2 minutes");
-        assert_eq!(time_diff_string(Duration::minutes(1)), "in 1 minute");
-        assert_eq!(time_diff_string(Duration::minutes(0)), "just now");
-        assert_eq!(time_diff_string(Duration::seconds(20)), "just now");
-        assert_eq!(time_diff_string(Duration::minutes(-1)), "1 minute ago");
-        assert_eq!(time_diff_string(Duration::minutes(-2)), "2 minutes ago");
-
-        assert_eq!(
-            time_diff_string(Duration::days(2) + Duration::hours(15) + Duration::minutes(33)),
-            "in 2 days 15 hours 33 minutes"
-        );
-    }
-
-    #[test]
-    fn test_start_time_formats() {
-        // let hours = 3600;
-        // let msk = FixedOffset::east(3 * hours);
-
-        let today = Local::now();
-        // let today = msk.from_utc_datetime(Utc::now());
-        // + Duration::hours(2) + Duration::minutes(30)
-        assert_eq!(
-            format_start_time(today),
-            format!("{}", today.format("Today at %H:%M:%S (started just now)"))
-        );
     }
 }

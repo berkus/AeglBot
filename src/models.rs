@@ -1,4 +1,4 @@
-use super::commands::format_start_time;
+use super::datetime::{format_start_time, reference_date};
 use super::schema::*;
 use chrono::prelude::*;
 use diesel::pg::PgConnection;
@@ -253,7 +253,7 @@ impl PlannedActivity {
             name = self.activity(connection).format_name(),
             details = self.format_details(),
             members = self.members_formatted_column(),
-            time = format_start_time(Local.from_local_datetime(&self.start).unwrap()),
+            time = format_start_time(self.start, reference_date()),
             join = self.join_prompt()
         )
     }

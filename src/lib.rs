@@ -7,6 +7,7 @@ extern crate r2d2;
 extern crate diesel;
 extern crate chrono;
 extern crate chrono_english;
+extern crate chrono_tz;
 extern crate dotenv;
 extern crate rss;
 extern crate serde_json;
@@ -26,6 +27,7 @@ use r2d2::Pool;
 use std::env;
 
 pub mod commands;
+pub mod datetime;
 pub mod models;
 pub mod schema;
 pub mod services;

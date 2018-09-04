@@ -1,6 +1,7 @@
 use chrono::Local;
-use crate::commands::{
-    decapitalize, format_start_time, send_plain_reply, validate_username, BotCommand,
+use crate::{
+    commands::{decapitalize, send_plain_reply, validate_username, BotCommand},
+    datetime::{format_start_time, reference_date},
 };
 use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
@@ -95,7 +96,7 @@ impl BotCommand for JoinCommand {
 {joinPrompt}",
                 guarName = guardian,
                 actName = planned.activity(connection).format_name(),
-                actTime = decapitalize(format_start_time(planned.start)),
+                actTime = decapitalize(format_start_time(planned.start, reference_date())),
                 otherGuars = planned.members_formatted_list(),
                 joinPrompt = planned.join_prompt()
             );

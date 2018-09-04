@@ -1,8 +1,9 @@
 use chrono::prelude::*;
 use chrono_english::{parse_date_string, Dialect};
-use crate::commands::{
-    bot_command::BotCommand, format_start_time, send_html_reply, send_plain_reply,
-    validate_username,
+use chrono_tz::Europe::Moscow;
+use crate::{
+    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply, validate_username},
+    datetime::{format_start_time, msk_to_naive, naive_to_msk, reference_date},
 };
 use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
@@ -79,7 +80,7 @@ impl BotCommand for LfgCommand {
                     ),
                 );
             } else {
-                let start_time = parse_date_string(timespec, Local::now(), Dialect::Us);
+                let start_time = parse_date_string(timespec, Local::now(), Dialect::Uk);
 
                 if let Err(_) = start_time {
                     return send_plain_reply(
@@ -89,7 +90,8 @@ impl BotCommand for LfgCommand {
                     );
                 }
 
-                let start_time = start_time.unwrap();
+                let msk_time = naive_to_msk(start_time.unwrap().naive_local());
+                let start_time = msk_to_naive(msk_time);
                 let act = act.unwrap();
 
                 info!("...parsed `{:?}`", start_time);
@@ -97,7 +99,7 @@ impl BotCommand for LfgCommand {
                 let planned_activity = NewPlannedActivity {
                     author_id: guardian.id,
                     activity_id: act.link,
-                    start: start_time.naive_local(),
+                    start: start_time,
                 };
 
                 use diesel::result::Error;
@@ -112,7 +114,7 @@ impl BotCommand for LfgCommand {
                     let planned_activity_member = NewPlannedActivityMember {
                         user_id: guardian.id,
                         planned_activity_id: planned_activity.id,
-                        added: Local::now().naive_local(),
+                        added: Local::now().naive_local(), // @todo MSK!!
                     };
 
                     planned_activity_member
@@ -133,7 +135,7 @@ impl BotCommand for LfgCommand {
 Enter `/details {actId} free form description text` to specify more details about the event.",
                             guarName = guardian,
                             groupName = activity.format_name(),
-                            onTime = format_start_time(start_time),
+                            onTime = format_start_time(start_time, reference_date()),
                             joinPrompt = planned_activity.join_prompt(),
                             actId = planned_activity.id
                         ),
