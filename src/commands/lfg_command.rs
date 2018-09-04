@@ -100,10 +100,11 @@ impl BotCommand for LfgCommand {
                     start: start_time.naive_local(),
                 };
 
+                use diesel::result::Error;
                 use schema::plannedactivities::dsl::*;
                 use schema::plannedactivitymembers::dsl::*;
 
-                connection.transaction(|| {
+                connection.transaction::<_, Error, _>(|| {
                     let planned_activity = planned_activity
                         .save(connection)
                         .expect("Unexpected error saving LFG group");
