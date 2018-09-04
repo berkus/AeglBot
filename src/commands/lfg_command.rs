@@ -65,8 +65,6 @@ impl BotCommand for LfgCommand {
         info!("Adding activity `{}` at `{}`", &activity, &timespec);
 
         if let Some(guardian) = validate_username(bot, &message, connection) {
-            use schema::activityshortcuts::dsl::*;
-
             let act = ActivityShortcut::find_one_by_name(connection, activity)
                 .expect("Failed to load Activity shortcut");
 
@@ -125,7 +123,6 @@ impl BotCommand for LfgCommand {
                         .expect("Couldn't find linked activity")
                         .unwrap();
 
-                    // Todo: always post to lfg chat?
                     send_plain_reply(
                         bot,
                         &message,
