@@ -26,6 +26,13 @@ use futures::Future;
 use std::fmt::Write;
 use telebot::{functions::*, RcBot};
 
+pub fn decapitalize(s: String) -> String {
+    s.chars()
+        .nth(0)
+        .map(|item| item.to_lowercase().chain(s.chars().skip(1)).collect())
+        .unwrap()
+}
+
 pub fn spawn_message(bot: &RcBot, m: telebot::functions::WrapperMessage) {
     bot.inner
         .handle

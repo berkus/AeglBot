@@ -2,6 +2,7 @@ use super::commands::format_start_time;
 use super::schema::*;
 use chrono::prelude::*;
 use diesel::pg::PgConnection;
+use diesel_derives_traits::{Model, NewModel};
 use serde_json::Value;
 use std::fmt;
 
@@ -21,7 +22,7 @@ pub struct ActivityShortcut {
 
 impl ActivityShortcut {
     pub fn find_one_by_name(
-        conn: &PgConnection,
+        connection: &PgConnection,
         act_name: &str,
     ) -> diesel::result::QueryResult<Option<Self>> {
         use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
@@ -29,7 +30,7 @@ impl ActivityShortcut {
 
         <Self as ::diesel::associations::HasTable>::table()
             .filter(name.eq(act_name))
-            .get_result::<Self>(conn)
+            .get_result::<Self>(connection)
             .optional()
             .map_err(|e| e.into())
     }
@@ -172,12 +173,15 @@ pub struct NewPlannedActivity {
 }
 
 impl PlannedActivity {
-    // pub fn author() -> Guardian {
-    //     guardians.find(self.author_id).first().load::<Guardian>();pffft
-    // }
-    // pub fn activity(&self) -> Activity {
-    //     PlannedActivity::belonging_to(self.activity_id)
-    // }
+    pub fn author(&self, connection: &PgConnection) -> Option<Guardian> {
+        Guardian::find_one(connection, &self.author_id).expect("Failed to run SQL")
+    }
+
+    pub fn activity(&self, connection: &PgConnection) -> Activity {
+        Activity::find_one(connection, &self.activity_id)
+            .expect("Failed to run SQL")
+            .expect("PlannedActivity without Activity shouldn't exist")
+    }
 
     pub fn join_link(&self) -> String {
         format!("/join{}", self.id)
@@ -185,7 +189,7 @@ impl PlannedActivity {
 
     pub fn join_prompt(&self) -> String {
         if self.is_full() {
-            format!("This activity fireteam is full.")
+            "This activity fireteam is full.".into()
         } else {
             let count = 5; //activity.max_fireteam_size - members.count();
             format!(
@@ -208,7 +212,7 @@ impl PlannedActivity {
 
     pub fn format_details(&self) -> String {
         match self.details {
-            None => "".to_string(),
+            None => String::new(),
             Some(ref x) => format!("{}\n", x),
         }
     }
@@ -225,15 +229,28 @@ impl PlannedActivity {
     pub fn members_formatted_column(&self) -> String {
         self.members_formatted("\n")
     }
-}
 
-impl fmt::Display for PlannedActivity {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+    pub fn find_member(
+        &self,
+        connection: &PgConnection,
+        g: Guardian,
+    ) -> Option<PlannedActivityMember> {
+        use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+        use schema::plannedactivitymembers::dsl::*;
+
+        plannedactivitymembers
+            .filter(user_id.eq(g.id))
+            .filter(planned_activity_id.eq(self.id))
+            .first::<PlannedActivityMember>(connection)
+            .optional()
+            .expect("Failed to run SQL")
+    }
+
+    pub fn display(&self, connection: &PgConnection) -> String {
+        format!(
             "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
             id = self.id,
-            name = "test", //self.activity().format_name(),
+            name = self.activity(connection).format_name(),
             details = self.format_details(),
             members = self.members_formatted_column(),
             time = format_start_time(Local.from_local_datetime(&self.start).unwrap()),
@@ -241,6 +258,22 @@ impl fmt::Display for PlannedActivity {
         )
     }
 }
+
+// @todo when/if PlannedActivity stores all necessary state locally..
+// impl fmt::Display for PlannedActivity {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(
+//             f,
+//             "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
+//             id = self.id,
+//             name = self.activity().format_name(),
+//             details = self.format_details(),
+//             members = self.members_formatted_column(),
+//             time = format_start_time(Local.from_local_datetime(&self.start).unwrap()),
+//             join = self.join_prompt()
+//         )
+//     }
+// }
 
 //
 // PlannedActivityMember
