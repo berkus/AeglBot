@@ -198,15 +198,25 @@ impl PlannedActivity {
             .expect("Failed to load PlannedActivity members")
     }
 
+    pub fn members_count(&self, connection: &PgConnection) -> usize {
+        //@TODO replace with proper diesel query
+        self.members(connection).len()
+    }
+
     pub fn join_link(&self) -> String {
         format!("/join{}", self.id)
     }
 
-    pub fn join_prompt(&self) -> String {
-        if self.is_full() {
+    pub fn cancel_link(&self) -> String {
+        format!("/cancel{}", self.id)
+    }
+
+    pub fn join_prompt(&self, connection: &PgConnection) -> String {
+        if self.is_full(connection) {
             "This activity fireteam is full.".into()
         } else {
-            let count = 5; //activity.max_fireteam_size - members.count();
+            let count = self.activity(connection).max_fireteam_size as usize
+                - self.members_count(connection);
             format!(
                 "Enter `{joinLink}` to join this group. Up to {count} more can join.",
                 joinLink = self.join_link(),
@@ -215,14 +225,12 @@ impl PlannedActivity {
         }
     }
 
-    // fun isFull(): Boolean = members.count() >= activity.maxFireteamSize
-    pub fn is_full(&self) -> bool {
-        false
+    pub fn is_full(&self, connection: &PgConnection) -> bool {
+        self.members(connection).len() >= self.activity(connection).max_fireteam_size as usize
     }
 
-    //     fun requiresMoreMembers(): Boolean = members.count() < activity.minFireteamSize
-    pub fn requires_more_members(&self) -> bool {
-        false
+    pub fn requires_more_members(&self, connection: &PgConnection) -> bool {
+        self.members(connection).len() < self.activity(connection).min_fireteam_size as usize
     }
 
     pub fn format_details(&self) -> String {
@@ -264,15 +272,23 @@ impl PlannedActivity {
             .expect("Failed to run SQL")
     }
 
-    pub fn display(&self, connection: &PgConnection) -> String {
+    pub fn display(&self, connection: &PgConnection, g: &Guardian) -> String {
         format!(
-            "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
+            "<b>{id}</b>: <b>{name}</b>
+{details}{members}
+⏰ <b>{time}</b>
+{join}{leave}",
             id = self.id,
             name = self.activity(connection).format_name(),
             details = self.format_details(),
             members = self.members_formatted_column(connection),
             time = format_start_time(self.start, reference_date()),
-            join = self.join_prompt()
+            join = self.join_prompt(connection),
+            leave = if !self.find_member(connection, g).is_none() {
+                format!("\nEnter `{}` to leave this group.", self.cancel_link())
+            } else {
+                String::new()
+            }
         )
     }
 }

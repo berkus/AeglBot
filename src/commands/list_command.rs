@@ -1,5 +1,5 @@
 use crate::{
-    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply},
+    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply, validate_username},
     models::PlannedActivity,
 };
 use diesel::{
@@ -47,12 +47,14 @@ impl BotCommand for ListCommand {
             return;
         }
 
-        let text = upcoming_events
-            .iter()
-            .fold("Planned activities:\n\n".to_owned(), |acc, event| {
-                acc + &format!("{}\n", event.display(connection))
-            });
+        if let Some(guardian) = validate_username(bot, &message, connection) {
+            let text = upcoming_events
+                .iter()
+                .fold("Planned activities:\n\n".to_owned(), |acc, event| {
+                    acc + &format!("{}\n", event.display(connection, &guardian))
+                });
 
-        send_html_reply(bot, &message, text);
+            send_html_reply(bot, &message, text);
+        }
     }
 }

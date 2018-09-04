@@ -74,7 +74,7 @@ impl BotCommand for JoinCommand {
                 );
             }
 
-            if planned.is_full() {
+            if planned.is_full(connection) {
                 return send_plain_reply(bot, &message, "This activity group is full.".into());
             }
 
@@ -98,7 +98,7 @@ impl BotCommand for JoinCommand {
                 actName = planned.activity(connection).format_name(),
                 actTime = decapitalize(format_start_time(planned.start, reference_date())),
                 otherGuars = planned.members_formatted_list(connection),
-                joinPrompt = planned.join_prompt()
+                joinPrompt = planned.join_prompt(connection)
             );
 
             send_plain_reply(bot, &message, text);

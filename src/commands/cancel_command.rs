@@ -86,7 +86,7 @@ impl BotCommand for CancelCommand {
                     "{} are going
 {}",
                     planned.members_formatted_list(connection),
-                    planned.join_prompt()
+                    planned.join_prompt(connection)
                 )
             };
 

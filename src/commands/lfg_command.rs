@@ -133,7 +133,7 @@ Enter `/details {actId} free form description text` to specify more details abou
                             guarName = guardian,
                             groupName = activity.format_name(),
                             onTime = format_start_time(start_time, reference_date()),
-                            joinPrompt = planned_activity.join_prompt(),
+                            joinPrompt = planned_activity.join_prompt(connection),
                             actId = planned_activity.id
                         ),
                     );
