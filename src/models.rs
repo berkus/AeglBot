@@ -1,6 +1,7 @@
 use super::commands::format_start_time;
 use super::schema::*;
 use chrono::prelude::*;
+use diesel::pg::PgConnection;
 use serde_json::Value;
 use std::fmt;
 
@@ -16,6 +17,22 @@ pub struct ActivityShortcut {
     pub name: String,
     pub game: String,
     pub link: i32,
+}
+
+impl ActivityShortcut {
+    pub fn find_one_by_name(
+        conn: &PgConnection,
+        act_name: &str,
+    ) -> diesel::result::QueryResult<Option<Self>> {
+        use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+        use schema::activityshortcuts::dsl::*;
+
+        <Self as ::diesel::associations::HasTable>::table()
+            .filter(name.eq(act_name))
+            .get_result::<Self>(conn)
+            .optional()
+            .map_err(|e| e.into())
+    }
 }
 
 //
