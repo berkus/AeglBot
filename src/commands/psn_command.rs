@@ -1,5 +1,5 @@
 use crate::{
-    commands::{bot_command::BotCommand, spawn_message},
+    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply},
     models::{Guardian, NewGuardian},
     schema::guardians::dsl::*,
 };
@@ -28,13 +28,10 @@ impl BotCommand for PsnCommand {
         info!("PSN command");
 
         if name.is_none() {
-            spawn_message(
+            send_html_reply(
                 bot,
-                bot.message(
-                    message.chat.id,
-                    "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE".into(),
-                ).parse_mode(ParseMode::HTML)
-                .reply_to_message_id(message.message_id),
+                message,
+                "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE".into(),
             );
             return;
         }
@@ -43,11 +40,7 @@ impl BotCommand for PsnCommand {
 
         let from = match message.from {
             None => {
-                spawn_message(
-                    bot,
-                    bot.message(message.chat.id, "Message has no sender info.".into())
-                        .reply_to_message_id(message.message_id),
-                );
+                send_plain_reply(bot, message, "Message has no sender info.".into());
                 return;
             }
             Some(from) => from,
@@ -55,15 +48,11 @@ impl BotCommand for PsnCommand {
 
         let username = match from.username {
             None => {
-                spawn_message(
+                send_plain_reply(
                     bot,
-                    bot.message(
-                        message.chat.id,
-                        "You have no telegram username, register your telegram account first."
-                            .into(),
-                    ).reply_to_message_id(message.message_id),
+                    message,
+                    "You have no telegram username, register your telegram account first.".into(),
                 );
-
                 return;
             }
             Some(name) => name,
@@ -76,16 +65,14 @@ impl BotCommand for PsnCommand {
         match db_user {
             Ok(user) => {
                 if user.len() > 0 {
-                    spawn_message(
+                    send_plain_reply(
                         bot,
-                        bot.message(
-                            message.chat.id,
-                            format!(
-                                "Your telegram @{username} is already linked with psn {psn}",
-                                username = username,
-                                psn = user[0].psn_name
-                            ),
-                        ).reply_to_message_id(message.message_id),
+                        message,
+                        format!(
+                            "Your telegram @{username} is already linked with psn {psn}",
+                            username = username,
+                            psn = user[0].psn_name
+                        ),
                     );
                     return;
                 } else {
@@ -104,26 +91,20 @@ impl BotCommand for PsnCommand {
                         .execute(connection)
                         .expect("Unexpected error saving guardian");
 
-                    spawn_message(
+                    send_plain_reply(
                         bot,
-                        bot.message(
-                            message.chat.id,
-                            format!(
-                                "Linking telegram @{username} with psn {psn}",
-                                username = username,
-                                psn = name
-                            ),
-                        ).reply_to_message_id(message.message_id),
+                        message,
+                        format!(
+                            "Linking telegram @{username} with psn {psn}",
+                            username = username,
+                            psn = name
+                        ),
                     );
                     return;
                 }
             }
             Err(_) => {
-                spawn_message(
-                    bot,
-                    bot.message(message.chat.id, "Error querying guardian name.".into())
-                        .reply_to_message_id(message.message_id),
-                );
+                send_plain_reply(bot, message, "Error querying guardian name.".into());
                 return;
             }
         };

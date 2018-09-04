@@ -25,10 +25,27 @@ use diesel::{pg::PgConnection, prelude::*};
 use futures::Future;
 use telebot::{functions::*, RcBot};
 
-pub fn spawn_message(bot: &RcBot, m: WrapperMessage) {
+pub fn spawn_message(bot: &RcBot, m: telebot::functions::WrapperMessage) {
     bot.inner
         .handle
         .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
+}
+
+pub fn send_plain_reply(bot: &RcBot, source: telebot::objects::Message, t: String) {
+    spawn_message(
+        bot,
+        bot.message(source.chat.id, t)
+            .reply_to_message_id(source.message_id),
+    );
+}
+
+pub fn send_html_reply(bot: &RcBot, source: telebot::objects::Message, t: String) {
+    spawn_message(
+        bot,
+        bot.message(source.chat.id, t)
+            .reply_to_message_id(source.message_id)
+            .parse_mode(ParseMode::HTML),
+    );
 }
 
 pub fn validate_username(
@@ -38,12 +55,10 @@ pub fn validate_username(
 ) -> Option<Guardian> {
     let username = match message.from.as_ref().unwrap().username {
         None => {
-            spawn_message(
+            send_plain_reply(
                 bot,
-                bot.message(
-                    message.chat.id,
-                    "You have no telegram username, register your telegram account first.".into(),
-                ).reply_to_message_id(message.message_id),
+                *message,
+                "You have no telegram username, register your telegram account first.".into(),
             );
             return None;
         }
@@ -58,21 +73,15 @@ pub fn validate_username(
         Ok(users) => if users.len() > 0 {
             Some(users[0].clone())
         } else {
-            spawn_message(
+            send_plain_reply(
                 bot,
-                bot.message(
-                    message.chat.id,
-                    "You need to link your PSN account first: use /psn command".into(),
-                ).reply_to_message_id(message.message_id),
+                *message,
+                "You need to link your PSN account first: use /psn command".into(),
             );
             None
         },
         Err(_) => {
-            spawn_message(
-                bot,
-                bot.message(message.chat.id, "Error querying guardian info.".into())
-                    .reply_to_message_id(message.message_id),
-            );
+            send_plain_reply(bot, *message, "Error querying guardian info.".into());
             None
         }
     }

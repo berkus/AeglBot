@@ -1,5 +1,5 @@
 use crate::{
-    commands::{bot_command::BotCommand, spawn_message},
+    commands::{bot_command::BotCommand, send_html_reply},
     models::{Activity, ActivityShortcut},
 };
 use diesel::{self, pg::PgConnection, prelude::*};
@@ -57,11 +57,7 @@ impl BotCommand for ActivitiesCommand {
             }
             text += "\n";
         }
-        spawn_message(
-            bot,
-            bot.message(message.chat.id, text)
-                .parse_mode(ParseMode::HTML)
-                .reply_to_message_id(message.message_id),
-        );
+
+        send_html_reply(bot, message, text);
     }
 }

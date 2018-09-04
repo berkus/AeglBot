@@ -1,5 +1,5 @@
 use crate::{
-    commands::{bot_command::BotCommand, spawn_message},
+    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply},
     models::PlannedActivity,
 };
 use diesel::{
@@ -39,12 +39,10 @@ impl BotCommand for ListCommand {
             .expect("TEMP loading @FIXME");
 
         if upcoming_events.is_empty() {
-            spawn_message(
+            send_plain_reply(
                 bot,
-                bot.message(
-                    message.chat.id,
-                    "No activities planned, add something with /lfg".into(),
-                ).reply_to_message_id(message.message_id),
+                message,
+                "No activities planned, add something with /lfg".into(),
             );
             return;
         }
@@ -55,11 +53,6 @@ impl BotCommand for ListCommand {
                 acc + &format!("{}\n", event)
             });
 
-        spawn_message(
-            bot,
-            bot.message(message.chat.id, text)
-                .parse_mode(ParseMode::HTML)
-                .reply_to_message_id(message.message_id),
-        );
+        send_html_reply(bot, message, text);
     }
 }

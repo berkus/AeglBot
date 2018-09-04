@@ -1,5 +1,5 @@
 use crate::{
-    commands::{bot_command::BotCommand, spawn_message, validate_username},
+    commands::{bot_command::BotCommand, send_plain_reply, validate_username},
     models::Guardian,
     schema::guardians::dsl::*,
 };
@@ -26,12 +26,10 @@ impl BotCommand for WhoisCommand {
         connection: &PgConnection,
     ) {
         if name.is_none() {
-            spawn_message(
+            send_plain_reply(
                 bot,
-                bot.message(
-                    message.chat.id,
-                    "To query user provide his @TelegramId (starting with @) or PsnId".into(),
-                ).reply_to_message_id(message.message_id),
+                message,
+                "To query user provide his @TelegramId (starting with @) or PsnId".into(),
             );
             return;
         }
@@ -57,31 +55,21 @@ impl BotCommand for WhoisCommand {
         match guardian {
             Ok(guardian) => {
                 if guardian.len() > 0 {
-                    spawn_message(
+                    send_plain_reply(
                         bot,
-                        bot.message(
-                            message.chat.id,
-                            format!(
-                                "Guardian @{telegram_name} PSN {psn_name}",
-                                telegram_name = guardian[0].telegram_name,
-                                psn_name = guardian[0].psn_name
-                            ),
-                        ).reply_to_message_id(message.message_id),
+                        message,
+                        format!(
+                            "Guardian @{telegram_name} PSN {psn_name}",
+                            telegram_name = guardian[0].telegram_name,
+                            psn_name = guardian[0].psn_name
+                        ),
                     );
                 } else {
-                    spawn_message(
-                        bot,
-                        bot.message(message.chat.id, format!("Guardian {} was not found.", name))
-                            .reply_to_message_id(message.message_id),
-                    );
+                    send_plain_reply(bot, message, format!("Guardian {} was not found.", name));
                 }
             }
             Err(_) => {
-                spawn_message(
-                    bot,
-                    bot.message(message.chat.id, "Error querying guardian name.".into())
-                        .reply_to_message_id(message.message_id),
-                );
+                send_plain_reply(bot, message, "Error querying guardian name.".into());
             }
         }
     }
