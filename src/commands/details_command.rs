@@ -1,44 +1,24 @@
-//     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>)
-//     {
-//         if (arguments.size < 2) {
-//             sendReply(absSender, chat, "To update fireteam details enter /details ID freeform text\n"
-//             + "To delete details use /details ID del.\n"
-//             + "Fireteam IDs are available from output of /list command.")
-//             return
-//         }
-
-//         transaction {
-//             logger.addLogger(Slf4jSqlLogger())
-
-//             val dbUser = Guardian.find { Guardians.telegramName eq user.getUserName() }.singleOrNull()
-
-//             if (dbUser == null) {
-//                 sendReply(absSender, chat, "You need to link your PSN account first: use /psn command")
-//             } else {
-
-//                 val planned = PlannedActivity
-//                     .findById(arguments[0].toInt())
-
-//                 if (planned == null) {
-//                     sendReply(absSender, chat, "Activity ${arguments[0]} was not found.")
-//                 } else {
-
-//                     planned.details = if (arguments[1] == "del") { "" }
-//                                       else { arguments.drop(1).joinToString(" ") }
-
-//                     sendReply(absSender, chat, "Details updated.")
-//                 }
-//             }
-//         }
-//     }
-use crate::commands::{send_plain_reply, BotCommand};
+use crate::commands::{send_html_reply, send_plain_reply, validate_username, BotCommand};
 use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
-use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use models::PlannedActivity;
 use telebot::{functions::*, RcBot};
 
 pub struct DetailsCommand;
+
+impl DetailsCommand {
+    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+        send_html_reply(
+            bot,
+            &message,
+            "To update fireteam details enter /details ID freeform text
+To delete details use `/details ID del`.
+Fireteam IDs are available from output of /list command."
+                .into(),
+        );
+    }
+}
 
 impl BotCommand for DetailsCommand {
     fn prefix() -> &'static str {
@@ -53,9 +33,59 @@ impl BotCommand for DetailsCommand {
         bot: &RcBot,
         message: telebot::objects::Message,
         _command: Option<String>,
-        _name: Option<String>,
-        _connection: &PgConnection,
+        args: Option<String>,
+        connection: &PgConnection,
     ) {
-        send_plain_reply(bot, &message, "not implemented yet".into());
+        info!("args are {:?}", args);
+
+        if args.is_none() {
+            return DetailsCommand::usage(bot, message);
+        }
+
+        // Split args in two:
+        // activity spec,
+        // and description text
+        let args = args.unwrap();
+        let args: Vec<&str> = args.splitn(2, ' ').collect();
+
+        if args.len() < 2 {
+            return DetailsCommand::usage(bot, message);
+        }
+
+        let activity = args[0];
+        let description = args[1];
+
+        info!("Activity `{}`, description `{}`", activity, description);
+
+        let activity_id = activity.parse::<i32>();
+        if let Err(_) = activity_id {
+            return DetailsCommand::usage(bot, message);
+        }
+
+        let activity_id = activity_id.unwrap();
+
+        if let Some(_) = validate_username(bot, &message, connection) {
+            let planned =
+                PlannedActivity::find_one(connection, &activity_id).expect("Failed to run SQL");
+
+            if planned.is_none() {
+                return send_plain_reply(
+                    bot,
+                    &message,
+                    format!("Activity {} was not found.", activity_id),
+                );
+            }
+
+            let mut planned = planned.unwrap();
+
+            planned.details = if description == "del" {
+                Some(String::new())
+            } else {
+                Some(description.to_string())
+            };
+            planned.save(connection);
+
+            send_plain_reply(bot, &message, "Details updated.".into());
+        }
     }
 }
