@@ -1,4 +1,7 @@
-use crate::commands::{send_plain_reply, validate_username, BotCommand};
+use crate::{
+    commands::{decapitalize, send_plain_reply, validate_username, BotCommand},
+    datetime::{format_start_time, reference_date},
+};
 use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
@@ -68,24 +71,37 @@ impl BotCommand for CancelCommand {
 
             let member = member.unwrap();
 
-            // if activity.too_old(2.hours) msg(cannot cancel too old)
+            // @TODO if activity.too_old(2.hours) msg(cannot cancel too old)
 
             member.destroy(connection);
 
-            // var suffix = planned.membersFormattedList() +" are going\n"+
-            //              planned.joinPrompt()
+            let actName = planned.activity(connection).format_name();
+            let actTime = decapitalize(format_start_time(planned.start, reference_date()));
 
-            // if (planned.members.count() == 0) {
-            //     planned.delete()
-            //     suffix = "This fireteam is disbanded and can no longer be joined."
-            // }
+            let suffix = if planned.members(connection).len() == 0 {
+                planned.destroy(connection);
+                "This fireteam is disbanded and can no longer be joined.".into()
+            } else {
+                format!(
+                    "{} are going
+{}",
+                    planned.members_formatted_list(connection),
+                    planned.join_prompt()
+                )
+            };
 
-            // sendReply(absSender, chat,
-            //     dbUser.formatName() + " has left " + planned.activity.formatName()
-            //     + " group " + formatStartTime(planned.start).decapitalize() + "\n"
-            //     +suffix)
-
-            // if activity.too_old() msg(cannot join too old)
+            send_plain_reply(
+                bot,
+                &message,
+                format!(
+                    "{guarName} has left {actName} group {actTime}
+{suffix}",
+                    guarName = guardian.format_name(),
+                    actName = actName,
+                    actTime = actTime,
+                    suffix = suffix
+                ),
+            );
         }
     }
 }
