@@ -23,6 +23,7 @@ use chrono::{prelude::*, Duration, Local};
 use crate::{models::Guardian, schema::guardians::dsl::*};
 use diesel::{pg::PgConnection, prelude::*};
 use futures::Future;
+use std::fmt::Write;
 use telebot::{functions::*, RcBot};
 
 pub fn spawn_message(bot: &RcBot, m: telebot::functions::WrapperMessage) {
@@ -97,7 +98,7 @@ fn time_diff_string(duration: Duration) -> String {
     ];
 
     let mut dur = duration.num_minutes();
-    let mut text = "".to_owned();
+    let mut text = String::new();
 
     for item in times.iter() {
         let (current, times_str) = item;
@@ -106,7 +107,8 @@ fn time_diff_string(duration: Duration) -> String {
 
         if temp > 0 {
             dur -= temp * current;
-            text += &format!(
+            write!(
+                &mut text,
                 "{} {}{} ",
                 temp,
                 times_str,
@@ -117,7 +119,7 @@ fn time_diff_string(duration: Duration) -> String {
 
     let text = text.trim();
 
-    if text == "" {
+    if text.is_empty() {
         return format!("just now");
     } else {
         if duration > Duration::zero() {
