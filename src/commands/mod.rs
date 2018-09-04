@@ -124,12 +124,12 @@ fn time_diff_string(duration: Duration) -> String {
     let text = text.trim();
 
     if text.is_empty() {
-        return format!("just now");
+        format!("just now")
     } else {
         if duration > Duration::zero() {
-            return format!("in {}", text);
+            format!("in {}", text)
         } else {
-            return format!("{} ago", text);
+            format!("{} ago", text)
         }
     }
 }
