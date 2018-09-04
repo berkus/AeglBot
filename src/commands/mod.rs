@@ -36,7 +36,9 @@ pub fn send_plain_reply(bot: &RcBot, source: &telebot::objects::Message, t: Stri
     spawn_message(
         bot,
         bot.message(source.chat.id, t)
-            .reply_to_message_id(source.message_id),
+            .reply_to_message_id(source.message_id)
+            .disable_notificaton(true)
+            .disable_web_page_preview(true),
     );
 }
 
@@ -45,7 +47,9 @@ pub fn send_html_reply(bot: &RcBot, source: &telebot::objects::Message, t: Strin
         bot,
         bot.message(source.chat.id, t)
             .reply_to_message_id(source.message_id)
-            .parse_mode(ParseMode::HTML),
+            .parse_mode(ParseMode::HTML)
+            .disable_notificaton(true)
+            .disable_web_page_preview(true),
     );
 }
 
