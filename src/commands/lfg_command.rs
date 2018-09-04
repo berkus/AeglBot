@@ -1,22 +1,26 @@
 use chrono::prelude::*;
 use chrono_english::{parse_date_string, Dialect};
-use crate::commands::{bot_command::BotCommand, validate_username};
-use diesel::PgConnection;
-use log::info;
-use telegram_bot::{self, types::ParseMode, CanReplySendMessage};
+use crate::commands::{
+    bot_command::BotCommand, format_start_time, send_html_reply, send_plain_reply,
+    validate_username,
+};
+use diesel::{self, pg::PgConnection, prelude::*};
+use futures::Future;
+use models::{ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use telebot::{functions::*, RcBot};
 
 pub struct LfgCommand;
 
 impl LfgCommand {
-    fn usage(api: &telegram_bot::Api, message: &telegram_bot::Message) {
-        api.spawn(
-            message
-                .text_reply(
-                    "LFG usage: /lfg <b>activity</b> timespec
+    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+        send_html_reply(
+            bot,
+            message,
+            "LFG usage: /lfg <b>activity</b> timespec
 For a list of activity codes: /activities
 Example: /lfg kf tomorrow 23:00
-(NB: times are in MSK timezone by default)",
-                ).parse_mode(ParseMode::Html),
+(NB: times are in MSK timezone by default)"
+                .into(),
         );
     }
 }
@@ -31,8 +35,8 @@ impl BotCommand for LfgCommand {
     }
 
     fn execute(
-        api: &telegram_bot::Api,
-        message: &telegram_bot::Message,
+        bot: &RcBot,
+        message: telebot::objects::Message,
         _command: Option<String>,
         args: Option<String>,
         connection: &PgConnection,
@@ -40,7 +44,7 @@ impl BotCommand for LfgCommand {
         info!("args are {:?}", args);
 
         if args.is_none() {
-            return LfgCommand::usage(api, message);
+            return LfgCommand::usage(bot, message);
         }
 
         // Split args in two:
@@ -50,7 +54,7 @@ impl BotCommand for LfgCommand {
         let args: Vec<&str> = args.splitn(2, ' ').collect();
 
         if args.len() < 2 {
-            return LfgCommand::usage(api, message);
+            return LfgCommand::usage(bot, message);
         }
 
         let activity = args[0];
@@ -58,38 +62,68 @@ impl BotCommand for LfgCommand {
 
         info!("Adding activity `{}` at `{}`", &activity, &timespec);
 
-        let date_time = parse_date_string(timespec, Local::now(), Dialect::Us);
+        if let Some(guardian) = validate_username(bot, &message, connection) {
+            use schema::activityshortcuts::dsl::*;
 
-        info!("...parsed `{:?}`", date_time);
+            let act = activityshortcuts
+                .filter(name.eq(activity))
+                .optional::<ActivityShortcut>(&connection)
+                .expect("Failed to load Activity shortcut");
 
-        if let Some(_guardian) = validate_username(api, message, connection) {
-            // val act = ActivityShortcut
-            //     .find { ActivityShortcuts.name eq arguments[0] }
-            //     .singleOrNull()
+            if act.is_none() {
+                send_plain_reply(
+                    bot,
+                    message,
+                    format!(
+                        "Activity {} was not found. Use /activities for a list.",
+                        activity
+                    ),
+                );
+            } else {
+                let start_time = parse_date_string(timespec, Local::now(), Dialect::Us);
 
-            // if (act == null) {
-            //     sendReply(absSender, chat, "Activity ${arguments[0]} was not found. Use /activities for a list.")
-            // } else {
-            //     val startTime = parseTimeSpec(arguments.drop(1).joinToString(" "))
+                info!("...parsed `{:?}`", start_time);
 
-            //     val plannedActivity = PlannedActivity.new {
-            //         author = dbUser
-            //         activity = act.link
-            //         start = startTime
-            //         // set these later using "/details id text" command
-            //         details = ""
-            //     }
+                let planned_activity = NewPlannedActivity {
+                    author: guardian.id,
+                    activity: act.link,
+                    start: start_time,
+                };
 
-            //     PlannedActivityMember.new {
-            //         this.user = dbUser
-            //         this.activity = plannedActivity
-            //     }
+                use schema::plannedactivities::dsl::*;
+                use schema::plannedactivitymembers::dsl::*;
 
-            //     sendReply(absSender, chat, // Todo: always post to lfg chat?
-            //         "${dbUser.formatName()} is looking for ${act.link.formatName()} group ${formatStartTime(startTime)}\n"
-            //         +plannedActivity.joinPrompt()+"\n"
-            //         +"Enter `/details ${plannedActivity.id} free form description text` to specify more details about the event.")
-            // }
+                diesel::insert_into(plannedactivities::table)
+                    .values(&planned_activity)
+                    .execute(connection)
+                    .expect("Unexpected error saving LFG group");
+
+                let planned_activity_member = NewPlannedActivityMember {
+                    user: guardian.id,
+                    activity: planned_activity.id,
+                };
+
+                diesel::insert_into(plannedactivitymembers::table)
+                    .values(&planned_activity_member)
+                    .execute(connection)
+                    .expect("Unexpected error saving LFG group creator");
+
+                // Todo: always post to lfg chat?
+                send_plain_reply(
+                    bot,
+                    message,
+                    format!(
+                        "{guarName} is looking for {groupName} group {onTime}
+{joinPrompt}
+Enter `/details {actId} free form description text` to specify more details about the event.",
+                        guarName = guardian,
+                        groupName = act.link.format_name(),
+                        onTime = format_start_time(start_time),
+                        joinPrompt = planned_activity.join_prompt(),
+                        actId = planned_activity.id
+                    ),
+                );
+            }
         }
     }
 }

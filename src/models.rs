@@ -145,6 +145,15 @@ pub struct PlannedActivity {
     pub start: NaiveDateTime,
 }
 
+#[derive(Insertable, NewModel)]
+#[table_name = "plannedactivities"]
+#[model(PlannedActivity)]
+pub struct NewPlannedActivity {
+    pub author_id: i32,   // refs Guardians
+    pub activity_id: i32, // refs Activities
+    pub start: NaiveDateTime,
+}
+
 impl PlannedActivity {
     // pub fn author() -> Guardian {
     //     guardians.find(self.author_id).first().load::<Guardian>();pffft
@@ -226,6 +235,15 @@ impl fmt::Display for PlannedActivity {
 #[table_name = "plannedactivitymembers"]
 pub struct PlannedActivityMember {
     pub id: i32,
+    pub planned_activity_id: i32,
+    pub user_id: i32,
+    pub added: NaiveDateTime,
+}
+
+#[derive(Insertable, NewModel)]
+#[table_name = "plannedactivitymembers"]
+#[model(PlannedActivityMember)]
+pub struct NewPlannedActivityMember {
     pub planned_activity_id: i32,
     pub user_id: i32,
     pub added: NaiveDateTime,
