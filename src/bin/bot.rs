@@ -45,7 +45,7 @@ fn match_command(
         return (None, None);
     }
 
-    let data = msg.text.clone().unwrap();
+    let data = msg.text.as_ref().unwrap();
     debug!("matching text {:#?}", data);
 
     let command = "/".to_owned() + &command;

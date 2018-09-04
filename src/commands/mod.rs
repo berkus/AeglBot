@@ -36,7 +36,7 @@ pub fn validate_username(
     message: &telebot::objects::Message,
     connection: &PgConnection,
 ) -> Option<Guardian> {
-    let username = match message.from.clone().unwrap().username {
+    let username = match message.from.as_ref().unwrap().username {
         None => {
             spawn_message(
                 bot,
