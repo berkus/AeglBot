@@ -4,9 +4,10 @@ use crate::commands::{
     bot_command::BotCommand, format_start_time, send_html_reply, send_plain_reply,
     validate_username,
 };
-use diesel::{self, pg::PgConnection, prelude::*};
+use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
-use models::{ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
+use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
 use telebot::{functions::*, RcBot};
 
 pub struct LfgCommand;
@@ -65,9 +66,7 @@ impl BotCommand for LfgCommand {
         if let Some(guardian) = validate_username(bot, &message, connection) {
             use schema::activityshortcuts::dsl::*;
 
-            let act = activityshortcuts
-                .filter(name.eq(activity))
-                .optional::<ActivityShortcut>(&connection)
+            let act = ActivityShortcut::find_one_by_name(connection, activity)
                 .expect("Failed to load Activity shortcut");
 
             if act.is_none() {
@@ -82,47 +81,65 @@ impl BotCommand for LfgCommand {
             } else {
                 let start_time = parse_date_string(timespec, Local::now(), Dialect::Us);
 
+                if let Err(e) = start_time {
+                    return send_plain_reply(
+                        bot,
+                        message,
+                        format!("Failed to parse time {}", timespec),
+                    );
+                }
+
+                let start_time = start_time.unwrap();
+                let act = act.unwrap();
+
                 info!("...parsed `{:?}`", start_time);
 
                 let planned_activity = NewPlannedActivity {
-                    author: guardian.id,
-                    activity: act.link,
-                    start: start_time,
+                    author_id: guardian.id,
+                    activity_id: act.link,
+                    start: start_time.naive_local(),
                 };
 
                 use schema::plannedactivities::dsl::*;
                 use schema::plannedactivitymembers::dsl::*;
 
-                diesel::insert_into(plannedactivities::table)
-                    .values(&planned_activity)
-                    .execute(connection)
-                    .expect("Unexpected error saving LFG group");
+                connection.transaction(|| {
+                    let planned_activity = planned_activity
+                        .save(connection)
+                        .expect("Unexpected error saving LFG group");
 
-                let planned_activity_member = NewPlannedActivityMember {
-                    user: guardian.id,
-                    activity: planned_activity.id,
-                };
+                    let planned_activity_member = NewPlannedActivityMember {
+                        user_id: guardian.id,
+                        planned_activity_id: planned_activity.id,
+                        added: Local::now().naive_local(),
+                    };
 
-                diesel::insert_into(plannedactivitymembers::table)
-                    .values(&planned_activity_member)
-                    .execute(connection)
-                    .expect("Unexpected error saving LFG group creator");
+                    planned_activity_member
+                        .save(connection)
+                        .expect("Unexpected error saving LFG group creator");
 
-                // Todo: always post to lfg chat?
-                send_plain_reply(
-                    bot,
-                    message,
-                    format!(
-                        "{guarName} is looking for {groupName} group {onTime}
+                    let activity = Activity::find_one(connection, &act.link)
+                        .expect("Couldn't find linked activity")
+                        .unwrap();
+
+                    // Todo: always post to lfg chat?
+                    send_plain_reply(
+                        bot,
+                        message,
+                        format!(
+                            "{guarName} is looking for {groupName} group {onTime}
 {joinPrompt}
 Enter `/details {actId} free form description text` to specify more details about the event.",
-                        guarName = guardian,
-                        groupName = act.link.format_name(),
-                        onTime = format_start_time(start_time),
-                        joinPrompt = planned_activity.join_prompt(),
-                        actId = planned_activity.id
-                    ),
-                );
+                            guarName = guardian,
+                            groupName = activity.format_name(),
+                            onTime = format_start_time(start_time),
+                            joinPrompt = planned_activity.join_prompt(),
+                            actId = planned_activity.id
+                        ),
+                    );
+
+                    Ok(())
+                });
             }
         }
     }
