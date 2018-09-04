@@ -63,7 +63,7 @@ impl BotCommand for JoinCommand {
 
             let planned = planned.unwrap();
 
-            let member = planned.find_member(connection, guardian);
+            let member = planned.find_member(connection, &guardian);
 
             if !member.is_none() {
                 return send_plain_reply(

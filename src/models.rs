@@ -233,7 +233,7 @@ impl PlannedActivity {
     pub fn find_member(
         &self,
         connection: &PgConnection,
-        g: Guardian,
+        g: &Guardian,
     ) -> Option<PlannedActivityMember> {
         use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
         use schema::plannedactivitymembers::dsl::*;

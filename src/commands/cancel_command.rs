@@ -60,7 +60,7 @@ impl BotCommand for CancelCommand {
 
             let planned = planned.unwrap();
 
-            let member = planned.find_member(connection, guardian);
+            let member = planned.find_member(connection, &guardian);
 
             if member.is_none() {
                 return send_plain_reply(bot, &message, "You are not part of this group.".into());
