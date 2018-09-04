@@ -28,7 +28,7 @@ impl BotCommand for WhoisCommand {
         if name.is_none() {
             send_plain_reply(
                 bot,
-                message,
+                &message,
                 "To query user provide his @TelegramId (starting with @) or PsnId".into(),
             );
             return;
@@ -57,7 +57,7 @@ impl BotCommand for WhoisCommand {
                 if guardian.len() > 0 {
                     send_plain_reply(
                         bot,
-                        message,
+                        &message,
                         format!(
                             "Guardian @{telegram_name} PSN {psn_name}",
                             telegram_name = guardian[0].telegram_name,
@@ -65,11 +65,11 @@ impl BotCommand for WhoisCommand {
                         ),
                     );
                 } else {
-                    send_plain_reply(bot, message, format!("Guardian {} was not found.", name));
+                    send_plain_reply(bot, &message, format!("Guardian {} was not found.", name));
                 }
             }
             Err(_) => {
-                send_plain_reply(bot, message, "Error querying guardian name.".into());
+                send_plain_reply(bot, &message, "Error querying guardian name.".into());
             }
         }
     }

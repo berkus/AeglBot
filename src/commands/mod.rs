@@ -32,7 +32,7 @@ pub fn spawn_message(bot: &RcBot, m: telebot::functions::WrapperMessage) {
         .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
 }
 
-pub fn send_plain_reply(bot: &RcBot, source: telebot::objects::Message, t: String) {
+pub fn send_plain_reply(bot: &RcBot, source: &telebot::objects::Message, t: String) {
     spawn_message(
         bot,
         bot.message(source.chat.id, t)
@@ -40,7 +40,7 @@ pub fn send_plain_reply(bot: &RcBot, source: telebot::objects::Message, t: Strin
     );
 }
 
-pub fn send_html_reply(bot: &RcBot, source: telebot::objects::Message, t: String) {
+pub fn send_html_reply(bot: &RcBot, source: &telebot::objects::Message, t: String) {
     spawn_message(
         bot,
         bot.message(source.chat.id, t)
@@ -58,7 +58,7 @@ pub fn validate_username(
         None => {
             send_plain_reply(
                 bot,
-                *message,
+                message,
                 "You have no telegram username, register your telegram account first.".into(),
             );
             return None;
@@ -76,13 +76,13 @@ pub fn validate_username(
         } else {
             send_plain_reply(
                 bot,
-                *message,
+                message,
                 "You need to link your PSN account first: use /psn command".into(),
             );
             None
         },
         Err(_) => {
-            send_plain_reply(bot, *message, "Error querying guardian info.".into());
+            send_plain_reply(bot, message, "Error querying guardian info.".into());
             None
         }
     }

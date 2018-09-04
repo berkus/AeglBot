@@ -30,7 +30,7 @@ impl BotCommand for PsnCommand {
         if name.is_none() {
             send_html_reply(
                 bot,
-                message,
+                &message,
                 "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE".into(),
             );
             return;
@@ -40,22 +40,22 @@ impl BotCommand for PsnCommand {
 
         let from = match message.from {
             None => {
-                send_plain_reply(bot, message, "Message has no sender info.".into());
+                send_plain_reply(bot, &message, "Message has no sender info.".into());
                 return;
             }
-            Some(from) => from,
+            Some(ref from) => from,
         };
 
         let username = match from.username {
             None => {
                 send_plain_reply(
                     bot,
-                    message,
+                    &message,
                     "You have no telegram username, register your telegram account first.".into(),
                 );
                 return;
             }
-            Some(name) => name,
+            Some(ref name) => name,
         };
 
         let db_user = guardians
@@ -67,7 +67,7 @@ impl BotCommand for PsnCommand {
                 if user.len() > 0 {
                     send_plain_reply(
                         bot,
-                        message,
+                        &message,
                         format!(
                             "Your telegram @{username} is already linked with psn {psn}",
                             username = username,
@@ -93,7 +93,7 @@ impl BotCommand for PsnCommand {
 
                     send_plain_reply(
                         bot,
-                        message,
+                        &message,
                         format!(
                             "Linking telegram @{username} with psn {psn}",
                             username = username,
@@ -104,7 +104,7 @@ impl BotCommand for PsnCommand {
                 }
             }
             Err(_) => {
-                send_plain_reply(bot, message, "Error querying guardian name.".into());
+                send_plain_reply(bot, &message, "Error querying guardian name.".into());
                 return;
             }
         };

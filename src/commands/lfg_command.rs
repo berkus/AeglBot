@@ -16,7 +16,7 @@ impl LfgCommand {
     fn usage(bot: &RcBot, message: telebot::objects::Message) {
         send_html_reply(
             bot,
-            message,
+            &message,
             "LFG usage: /lfg <b>activity</b> timespec
 For a list of activity codes: /activities
 Example: /lfg kf tomorrow 23:00
@@ -72,7 +72,7 @@ impl BotCommand for LfgCommand {
             if act.is_none() {
                 send_plain_reply(
                     bot,
-                    message,
+                    &message,
                     format!(
                         "Activity {} was not found. Use /activities for a list.",
                         activity
@@ -84,7 +84,7 @@ impl BotCommand for LfgCommand {
                 if let Err(e) = start_time {
                     return send_plain_reply(
                         bot,
-                        message,
+                        &message,
                         format!("Failed to parse time {}", timespec),
                     );
                 }
@@ -125,7 +125,7 @@ impl BotCommand for LfgCommand {
                     // Todo: always post to lfg chat?
                     send_plain_reply(
                         bot,
-                        message,
+                        &message,
                         format!(
                             "{guarName} is looking for {groupName} group {onTime}
 {joinPrompt}

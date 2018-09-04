@@ -58,6 +58,6 @@ impl BotCommand for ActivitiesCommand {
             text += "\n";
         }
 
-        send_html_reply(bot, message, text);
+        send_html_reply(bot, &message, text);
     }
 }

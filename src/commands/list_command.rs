@@ -41,7 +41,7 @@ impl BotCommand for ListCommand {
         if upcoming_events.is_empty() {
             send_plain_reply(
                 bot,
-                message,
+                &message,
                 "No activities planned, add something with /lfg".into(),
             );
             return;
@@ -53,6 +53,6 @@ impl BotCommand for ListCommand {
                 acc + &format!("{}\n", event)
             });
 
-        send_html_reply(bot, message, text);
+        send_html_reply(bot, &message, text);
     }
 }
