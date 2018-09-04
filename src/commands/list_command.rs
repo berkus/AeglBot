@@ -33,7 +33,7 @@ impl BotCommand for ListCommand {
 
         let upcoming_events = plannedactivities
             // val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
-            .filter(start.ge(now - 60_i32.minutes()))
+            .filter(start.ge(now - 60_i32.minutes())) // FIXME this will sort based on DB local TZ
             .order(start.asc())
             .load::<PlannedActivity>(connection)
             .expect("TEMP loading @FIXME");
