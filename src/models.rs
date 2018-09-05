@@ -276,7 +276,7 @@ impl PlannedActivity {
             .expect("Failed to run SQL")
     }
 
-    pub fn display(&self, connection: &DbConnection, g: &Guardian) -> String {
+    pub fn display(&self, connection: &DbConnection, g: Option<&Guardian>) -> String {
         format!(
             "<b>{id}</b>: <b>{name}</b>
 {details}{members}
@@ -288,8 +288,12 @@ impl PlannedActivity {
             members = self.members_formatted_column(connection),
             time = format_start_time(self.start, reference_date()),
             join = self.join_prompt(connection),
-            leave = if !self.find_member(connection, g).is_none() {
-                format!("\nEnter `{}` to leave this group.", self.cancel_link())
+            leave = if !g.is_none() {
+                if !self.find_member(connection, g.unwrap()).is_none() {
+                    format!("\nEnter `{}` to leave this group.", self.cancel_link())
+                } else {
+                    String::new()
+                }
             } else {
                 String::new()
             }

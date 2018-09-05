@@ -51,7 +51,7 @@ impl BotCommand for ListCommand {
             let text = upcoming_events
                 .iter()
                 .fold("Planned activities:\n\n".to_owned(), |acc, event| {
-                    acc + &format!("{}\n\n", event.display(connection, &guardian))
+                    acc + &format!("{}\n\n", event.display(connection, Some(&guardian)))
                 });
 
             send_html_reply(bot, &message, text);
