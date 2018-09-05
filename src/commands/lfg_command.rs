@@ -18,10 +18,10 @@ impl LfgCommand {
         send_html_reply(
             bot,
             &message,
-            "LFG usage: /lfg <b>activity</b> timespec
+            "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
 For a list of activity codes: /activities
-Example: /lfg kf tomorrow 23:00
-(NB: times are in MSK timezone by default)"
+Example: /lfg kf 2018-09-10 23:00
+Times are in Moscow (MSK) timezone."
                 .into(),
         );
     }
