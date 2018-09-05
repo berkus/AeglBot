@@ -80,7 +80,7 @@ fn main() {
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
-    let _lfg_chat = env::var("BOT_LFG_CHAT_ID")
+    let lfg_chat = env::var("BOT_LFG_CHAT_ID")
         .expect("BOT_LFG_CHAT_ID must be set")
         .parse::<i64>()
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
@@ -136,10 +136,11 @@ fn main() {
                 info!("alerts check");
                 let connection = alerts_pool.get().unwrap();
                 alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection);
-                Ok(())
+                Ok(()) // @todo forward return from check()
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
         let reminder_bot = bot.clone();
+        let reminder_pool = connection_pool.clone();
         let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
             .for_each(move |_| {
                 // @todo Add a thread that would get once a minute a list of planned activities and
@@ -147,9 +148,9 @@ fn main() {
                 // e.g.
                 // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
                 info!("reminder check");
-                //     let connection = connection_pool.get().unwrap();
-                //     reminders::check(&reminders_bot, lfg_chat, &connection);
-                Ok(())
+                let connection = reminder_pool.get().unwrap();
+                reminder::check(&reminder_bot, lfg_chat, &connection);
+                Ok(()) // @todo forward return from check()
             }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
         bot.inner.handle.spawn(alert_task);

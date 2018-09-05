@@ -26,3 +26,18 @@
 //         }
 //     }
 // }
+use chrono::NaiveDateTime;
+use crate::commands::send_html_message;
+use diesel::prelude::*;
+use diesel_derives_traits::Model;
+use failure::Error;
+use futures::Future;
+use telebot::{functions::*, RcBot};
+
+pub fn check(
+    _bot: &RcBot,
+    _chat_id: telebot::objects::Integer,
+    _connection: &PgConnection,
+) -> Result<(), Error> {
+    Ok(())
+}
