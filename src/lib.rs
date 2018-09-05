@@ -8,6 +8,7 @@ extern crate diesel;
 extern crate chrono;
 extern crate chrono_english;
 extern crate chrono_tz;
+extern crate diesel_logger;
 extern crate dotenv;
 extern crate rss;
 extern crate serde_json;
@@ -22,6 +23,7 @@ extern crate log;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use diesel_logger::LoggingConnection;
 use dotenv::dotenv;
 use r2d2::Pool;
 use std::env;
@@ -32,13 +34,16 @@ pub mod models;
 pub mod schema;
 pub mod services;
 
-pub fn establish_connection() -> Pool<diesel::r2d2::ConnectionManager<PgConnection>> {
+pub type DbConnection = LoggingConnection<PgConnection>;
+
+pub fn establish_connection() -> Pool<diesel::r2d2::ConnectionManager<DbConnection>> {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
 
     r2d2::Pool::builder()
+        .min_idle(Some(1))
         .max_size(15)
         .build(manager)
         .expect(&format!("Error connecting to {}", database_url))

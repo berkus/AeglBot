@@ -1,5 +1,5 @@
 use crate::commands::{send_html_reply, BotCommand};
-use diesel::{self, pg::PgConnection, prelude::*};
+use crate::DbConnection;
 use telebot::RcBot;
 
 pub struct HelpCommand;
@@ -18,7 +18,7 @@ impl BotCommand for HelpCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         _name: Option<String>,
-        _connection: &PgConnection,
+        _connection: &DbConnection,
     ) {
         //         commandRegistry.getRegisteredCommands().forEach { botCommand: BotCommand ->
         //             helpMessageBuilder.append(botCommand.toString()).append("\n\n")

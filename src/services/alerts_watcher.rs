@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use crate::commands::send_html_message;
+use crate::DbConnection;
 use diesel::*;
 use diesel_derives_traits::NewModel;
 use failure::Error;
@@ -14,7 +15,7 @@ const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May
 pub fn check(
     bot: &RcBot,
     chat_id: telebot::objects::Integer,
-    connection: &PgConnection,
+    connection: &DbConnection,
 ) -> Result<(), Error> {
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
     let mut alert_list = vec![];

@@ -1,3 +1,4 @@
+use crate::DbConnection;
 use crate::{
     commands::{bot_command::BotCommand, send_html_reply, send_plain_reply, validate_username},
     models::PlannedActivity,
@@ -5,7 +6,6 @@ use crate::{
 use diesel::{
     self,
     dsl::{now, IntervalDsl},
-    pg::PgConnection,
     prelude::*,
 };
 use futures::Future;
@@ -27,7 +27,7 @@ impl BotCommand for ListCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         _args: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     ) {
         use schema::plannedactivities::dsl::*;
 

@@ -1,4 +1,4 @@
-use diesel::PgConnection;
+use crate::DbConnection;
 
 pub trait BotCommand {
     fn prefix() -> &'static str;
@@ -8,6 +8,6 @@ pub trait BotCommand {
         message: telebot::objects::Message,
         command: Option<String>,
         text: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     );
 }

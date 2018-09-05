@@ -1,7 +1,8 @@
-use super::datetime::{format_start_time, reference_date};
-use super::schema::*;
 use chrono::prelude::*;
-use diesel::{pg::PgConnection, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+use crate::datetime::{format_start_time, reference_date};
+use crate::schema::*;
+use crate::DbConnection;
+use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 use diesel_derives_traits::{Model, NewModel};
 use serde_json::Value;
 use std::fmt;
@@ -22,7 +23,7 @@ pub struct ActivityShortcut {
 
 impl ActivityShortcut {
     pub fn find_one_by_name(
-        connection: &PgConnection,
+        connection: &DbConnection,
         act_name: &str,
     ) -> diesel::result::QueryResult<Option<Self>> {
         use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
@@ -179,18 +180,18 @@ pub struct NewPlannedActivity {
 }
 
 impl PlannedActivity {
-    pub fn author(&self, connection: &PgConnection) -> Option<Guardian> {
+    pub fn author(&self, connection: &DbConnection) -> Option<Guardian> {
         Guardian::find_one(connection, &self.author_id)
             .expect("Failed to load PlannedActivity author")
     }
 
-    pub fn activity(&self, connection: &PgConnection) -> Activity {
+    pub fn activity(&self, connection: &DbConnection) -> Activity {
         Activity::find_one(connection, &self.activity_id)
             .expect("Failed to load associated Activity")
             .expect("PlannedActivity without Activity shouldn't exist")
     }
 
-    pub fn members(&self, connection: &PgConnection) -> Vec<PlannedActivityMember> {
+    pub fn members(&self, connection: &DbConnection) -> Vec<PlannedActivityMember> {
         use schema::plannedactivitymembers::dsl::*;
         plannedactivitymembers
             .filter(planned_activity_id.eq(self.id))
@@ -198,7 +199,7 @@ impl PlannedActivity {
             .expect("Failed to load PlannedActivity members")
     }
 
-    pub fn members_count(&self, connection: &PgConnection) -> usize {
+    pub fn members_count(&self, connection: &DbConnection) -> usize {
         //@TODO replace with proper diesel query
         self.members(connection).len()
     }
@@ -211,7 +212,7 @@ impl PlannedActivity {
         format!("/cancel{}", self.id)
     }
 
-    pub fn join_prompt(&self, connection: &PgConnection) -> String {
+    pub fn join_prompt(&self, connection: &DbConnection) -> String {
         if self.is_full(connection) {
             "This activity fireteam is full.".into()
         } else {
@@ -225,11 +226,11 @@ impl PlannedActivity {
         }
     }
 
-    pub fn is_full(&self, connection: &PgConnection) -> bool {
+    pub fn is_full(&self, connection: &DbConnection) -> bool {
         self.members(connection).len() >= self.activity(connection).max_fireteam_size as usize
     }
 
-    pub fn requires_more_members(&self, connection: &PgConnection) -> bool {
+    pub fn requires_more_members(&self, connection: &DbConnection) -> bool {
         self.members(connection).len() < self.activity(connection).min_fireteam_size as usize
     }
 
@@ -243,7 +244,7 @@ impl PlannedActivity {
         }
     }
 
-    pub fn members_formatted(&self, connection: &PgConnection, joiner: &str) -> String {
+    pub fn members_formatted(&self, connection: &DbConnection, joiner: &str) -> String {
         self.members(connection)
             .into_iter()
             .map(|guardian| guardian.format_name(connection))
@@ -252,17 +253,17 @@ impl PlannedActivity {
             .join(joiner)
     }
 
-    pub fn members_formatted_list(&self, connection: &PgConnection) -> String {
+    pub fn members_formatted_list(&self, connection: &DbConnection) -> String {
         self.members_formatted(connection, ", ")
     }
 
-    pub fn members_formatted_column(&self, connection: &PgConnection) -> String {
+    pub fn members_formatted_column(&self, connection: &DbConnection) -> String {
         self.members_formatted(connection, "\n")
     }
 
     pub fn find_member(
         &self,
-        connection: &PgConnection,
+        connection: &DbConnection,
         g: &Guardian,
     ) -> Option<PlannedActivityMember> {
         use schema::plannedactivitymembers::dsl::*;
@@ -275,7 +276,7 @@ impl PlannedActivity {
             .expect("Failed to run SQL")
     }
 
-    pub fn display(&self, connection: &PgConnection, g: &Guardian) -> String {
+    pub fn display(&self, connection: &DbConnection, g: &Guardian) -> String {
         format!(
             "<b>{id}</b>: <b>{name}</b>
 {details}{members}
@@ -337,7 +338,7 @@ pub struct NewPlannedActivityMember {
 }
 
 impl PlannedActivityMember {
-    pub fn format_name(&self, connection: &PgConnection) -> String {
+    pub fn format_name(&self, connection: &DbConnection) -> String {
         Guardian::find_one(connection, &self.user_id)
             .expect("Failed to load associated Guardian")
             .expect("Failed to find associated activity member")

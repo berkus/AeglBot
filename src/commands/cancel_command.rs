@@ -1,8 +1,9 @@
+use crate::DbConnection;
 use crate::{
     commands::{decapitalize, send_plain_reply, validate_username, BotCommand},
     datetime::{format_start_time, reference_date},
 };
-use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use models::{Activity, PlannedActivity, PlannedActivityMember};
@@ -36,7 +37,7 @@ impl BotCommand for CancelCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         activity_id: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     ) {
         if activity_id.is_none() {
             return CancelCommand::usage(bot, message);

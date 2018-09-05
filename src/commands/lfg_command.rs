@@ -1,11 +1,12 @@
 use chrono::prelude::*;
 use chrono_english::{parse_date_string, Dialect};
 use chrono_tz::Europe::Moscow;
+use crate::DbConnection;
 use crate::{
     commands::{bot_command::BotCommand, send_html_reply, send_plain_reply, validate_username},
     datetime::{format_start_time, msk_to_naive, naive_to_msk, reference_date},
 };
-use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
@@ -41,7 +42,7 @@ impl BotCommand for LfgCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         args: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     ) {
         info!("args are {:?}", args);
 

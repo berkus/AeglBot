@@ -1,8 +1,9 @@
+use crate::DbConnection;
 use crate::{
     commands::{bot_command::BotCommand, send_html_reply},
     models::{Activity, ActivityShortcut},
 };
-use diesel::{self, pg::PgConnection, prelude::*};
+use diesel::{self, prelude::*};
 use futures::Future;
 use telebot::{functions::*, RcBot};
 
@@ -22,7 +23,7 @@ impl BotCommand for ActivitiesCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         _unused: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     ) {
         use schema::activities::dsl::{activities, id};
         use schema::activityshortcuts::dsl::{activityshortcuts, game, name};

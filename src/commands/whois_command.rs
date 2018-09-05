@@ -1,9 +1,10 @@
+use crate::DbConnection;
 use crate::{
     commands::{bot_command::BotCommand, send_plain_reply, validate_username},
     models::Guardian,
     schema::guardians::dsl::*,
 };
-use diesel::{pg::PgConnection, prelude::*};
+use diesel::prelude::*;
 use futures::Future;
 use telebot::{functions::*, RcBot};
 
@@ -23,7 +24,7 @@ impl BotCommand for WhoisCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         name: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     ) {
         if name.is_none() {
             send_plain_reply(

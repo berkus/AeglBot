@@ -19,8 +19,9 @@ pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
+use crate::DbConnection;
 use crate::{models::Guardian, schema::guardians::dsl::*};
-use diesel::{pg::PgConnection, prelude::*};
+use diesel::prelude::*;
 use futures::Future;
 use telebot::{functions::*, RcBot};
 
@@ -71,7 +72,7 @@ pub fn send_html_message(bot: &RcBot, chat: telebot::objects::Integer, t: String
 pub fn validate_username(
     bot: &RcBot,
     message: &telebot::objects::Message,
-    connection: &PgConnection,
+    connection: &DbConnection,
 ) -> Option<Guardian> {
     let username = match message.from.as_ref().unwrap().username {
         None => {

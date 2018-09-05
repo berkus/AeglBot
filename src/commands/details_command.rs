@@ -1,5 +1,6 @@
 use crate::commands::{send_html_reply, send_plain_reply, validate_username, BotCommand};
-use diesel::{self, associations::HasTable, pg::PgConnection, prelude::*};
+use crate::DbConnection;
+use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use models::PlannedActivity;
@@ -34,7 +35,7 @@ impl BotCommand for DetailsCommand {
         message: telebot::objects::Message,
         _command: Option<String>,
         args: Option<String>,
-        connection: &PgConnection,
+        connection: &DbConnection,
     ) {
         info!("args are {:?}", args);
 
