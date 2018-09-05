@@ -236,7 +236,10 @@ impl PlannedActivity {
     pub fn format_details(&self) -> String {
         match self.details {
             None => String::new(),
-            Some(ref x) => format!("{}\n", x),
+            Some(ref x) => match x.as_ref() {
+                "" => String::new(),
+                _ => format!("{}\n", x),
+            },
         }
     }
 
