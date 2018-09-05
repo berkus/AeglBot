@@ -58,6 +58,16 @@ pub fn send_html_reply(bot: &RcBot, source: &telebot::objects::Message, t: Strin
     );
 }
 
+pub fn send_html_message(bot: &RcBot, chat: telebot::objects::Integer, t: String) {
+    spawn_message(
+        bot,
+        bot.message(chat, t)
+            .parse_mode(ParseMode::HTML)
+            .disable_notificaton(true)
+            .disable_web_page_preview(true),
+    );
+}
+
 pub fn validate_username(
     bot: &RcBot,
     message: &telebot::objects::Message,

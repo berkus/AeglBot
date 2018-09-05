@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use crate::commands::send_html_message;
 use diesel::*;
 use diesel_derives_traits::NewModel;
 use failure::Error;
@@ -63,13 +64,7 @@ pub fn check(
     // Publish all new alerts
     for item in alert_list.iter().filter(|x| x.alert_type == "Alert") {
         println!("{}", item);
-        bot.inner.handle.spawn(
-            bot.message(chat_id, format!("{}", item))
-                .parse_mode(ParseMode::HTML)
-                .send()
-                .map(|_| ())
-                .map_err(|e| error!("Error: {:?}", e)),
-        );
+        send_html_message(bot, chat_id, format!("{}", item));
     }
 
     Ok(())
