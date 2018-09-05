@@ -20,7 +20,6 @@ extern crate log;
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
-use diesel::{dsl::*, prelude::*, PgConnection};
 use dotenv::dotenv;
 use futures::{Future, IntoFuture, Stream};
 use std::env;
