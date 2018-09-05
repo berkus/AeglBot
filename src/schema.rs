@@ -25,7 +25,7 @@ table! {
         guid -> Text,
         title -> Text,
         #[sql_name = "type"]
-        type_ -> Text,
+        kind -> Text,
         startdate -> Timestamp,
         expirydate -> Nullable<Timestamp>,
         faction -> Nullable<Text>,

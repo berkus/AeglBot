@@ -33,7 +33,7 @@ pub fn check(
             let alert = NewAlert {
                 guid: guid_value,
                 title: item.title().unwrap_or(""),
-                alert_type: item.author(),
+                kind: item.author(),
                 start_date: NaiveDateTime::parse_from_str(
                     item.pub_date().unwrap_or(""),
                     RSS_DATE_FORMAT,
@@ -63,7 +63,7 @@ pub fn check(
     alert_list.sort_by_key(|x| x.expiry_date);
 
     // Publish all new alerts
-    for item in alert_list.iter().filter(|x| x.alert_type == "Alert") {
+    for item in alert_list.iter().filter(|x| x.kind == "Alert") {
         trace!("{}", item);
         send_html_message(bot, chat_id, format!("{}", item));
     }

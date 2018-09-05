@@ -75,8 +75,7 @@ pub struct Alert {
     pub id: i32,
     pub guid: String,
     pub title: String,
-    #[column_name = "type_"]
-    pub alert_type: String,
+    pub kind: String,
     #[column_name = "startdate"]
     pub start_date: NaiveDateTime,
     #[column_name = "expirydate"]
@@ -91,8 +90,7 @@ pub struct Alert {
 pub struct NewAlert<'a> {
     pub guid: &'a str,
     pub title: &'a str,
-    #[column_name = "type_"]
-    pub alert_type: Option<&'a str>,
+    pub kind: Option<&'a str>,
     #[column_name = "startdate"]
     pub start_date: Option<NaiveDateTime>,
     #[column_name = "expirydate"]
