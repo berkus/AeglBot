@@ -15,12 +15,16 @@
 //     //sendReply(absSender, chat, "Planned activities:\n\n" + objs, true)
 // }
 use chrono::NaiveDateTime;
-use crate::commands::send_html_message;
-use crate::DbConnection;
-use diesel::prelude::*;
+use crate::{commands::send_html_message, datetime::reference_date, DbConnection};
+use diesel::{
+    self,
+    dsl::{now, IntervalDsl},
+    prelude::*,
+};
 use diesel_derives_traits::Model;
 use failure::Error;
 use futures::Future;
+use models::PlannedActivity;
 use telebot::{functions::*, RcBot};
 
 pub fn check(

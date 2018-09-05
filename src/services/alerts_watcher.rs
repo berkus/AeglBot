@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use crate::commands::send_html_message;
 use crate::DbConnection;
-use diesel::*;
+use diesel::prelude::*;
 use diesel_derives_traits::NewModel;
 use failure::Error;
 use futures::Future;
