@@ -75,8 +75,8 @@ impl BotCommand for CancelCommand {
 
             member.destroy(connection);
 
-            let actName = planned.activity(connection).format_name();
-            let actTime = decapitalize(format_start_time(planned.start, reference_date()));
+            let act_name = planned.activity(connection).format_name();
+            let act_time = decapitalize(format_start_time(planned.start, reference_date()));
 
             let suffix = if planned.members(connection).len() == 0 {
                 planned.destroy(connection);
@@ -97,8 +97,8 @@ impl BotCommand for CancelCommand {
                     "{guarName} has left {actName} group {actTime}
 {suffix}",
                     guarName = guardian.format_name(),
-                    actName = actName,
-                    actTime = actTime,
+                    actName = act_name,
+                    actTime = act_time,
                     suffix = suffix
                 ),
             );
