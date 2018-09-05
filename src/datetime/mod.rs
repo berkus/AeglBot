@@ -22,13 +22,13 @@ fn time_diff_string(duration: Duration) -> String {
         (Duration::minutes(1), "minute"),
     ];
 
-    let mut dur = duration.num_minutes();
+    let mut dur = duration.num_minutes().abs();
     let mut text = String::new();
 
     for item in times.iter() {
         let (current, times_str) = item;
         let current = current.num_minutes();
-        let temp = (dur / current).abs();
+        let temp = dur / current;
 
         if temp > 0 {
             dur -= temp * current;
@@ -113,6 +113,10 @@ mod tests {
         assert_eq!(time_diff_string(Duration::seconds(20)), "just now");
         assert_eq!(time_diff_string(Duration::minutes(-1)), "1 minute ago");
         assert_eq!(time_diff_string(Duration::minutes(-2)), "2 minutes ago");
+        assert_eq!(
+            time_diff_string(Duration::minutes(-67)),
+            "1 hour 7 minutes ago"
+        );
 
         assert_eq!(
             time_diff_string(Duration::days(2) + Duration::hours(15) + Duration::minutes(33)),
