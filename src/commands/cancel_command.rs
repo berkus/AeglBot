@@ -1,3 +1,4 @@
+use chrono::Duration;
 use crate::DbConnection;
 use crate::{
     commands::{decapitalize, send_plain_reply, validate_username, BotCommand},
@@ -70,9 +71,11 @@ impl BotCommand for CancelCommand {
                 return send_plain_reply(bot, &message, "You are not part of this group.".into());
             }
 
-            let member = member.unwrap();
+            if planned.start < reference_date() - Duration::hours(1) {
+                return send_plain_reply(bot, &message, "You can not leave past activities.".into());
+            }
 
-            // @TODO if activity.too_old(2.hours) msg(cannot cancel too old)
+            let member = member.unwrap();
 
             member.destroy(connection);
 

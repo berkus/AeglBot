@@ -1,4 +1,4 @@
-use chrono::Local;
+use chrono::{Duration, Local};
 use crate::DbConnection;
 use crate::{
     commands::{decapitalize, send_plain_reply, validate_username, BotCommand},
@@ -79,7 +79,9 @@ impl BotCommand for JoinCommand {
                 return send_plain_reply(bot, &message, "This activity group is full.".into());
             }
 
-            // if activity.too_old() msg(cannot join too old)
+            if planned.start < reference_date() - Duration::hours(1) {
+                return send_plain_reply(bot, &message, "You can not join past activities.".into());
+            }
 
             let planned_activity_member = NewPlannedActivityMember {
                 user_id: guardian.id,
