@@ -44,9 +44,15 @@ pub fn check(
 
     let upcoming_events: Vec<&PlannedActivity> = upcoming_events
         .iter()
-        .filter(|event| match (event.start - reference).num_minutes() {
-            60 | 30 | 15 | 5 => true,
-            _ => false,
+        .filter(|event| {
+            if event.start > reference {
+                match (event.start - reference).num_minutes() {
+                    60 | 30 | 15 | 5 | 0 => true,
+                    _ => false,
+                }
+            } else {
+                false
+            }
         }).collect();
 
     if upcoming_events.is_empty() {
