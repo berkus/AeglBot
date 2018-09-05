@@ -47,7 +47,7 @@ pub fn check(
         .filter(|event| {
             if event.start > reference {
                 match (event.start - reference).num_minutes() {
-                    60 | 30 | 15 | 5 | 0 => true,
+                    60 | 15 | 0 => true,
                     _ => false,
                 }
             } else {
