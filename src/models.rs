@@ -349,22 +349,3 @@ impl PlannedActivityMember {
             .format_name()
     }
 }
-
-//
-// PlannedActivityReminder
-//
-
-//     var user by Guardian referencedOn PlannedActivityReminders.userId
-//     var activity by PlannedActivity referencedOn PlannedActivityReminders.plannedActivityId
-//     var reminder by PlannedActivityReminders.remind
-
-#[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
-#[belongs_to(Guardian, foreign_key = "user_id")]
-#[belongs_to(Activity, foreign_key = "planned_activity_id")]
-#[table_name = "plannedactivityreminders"]
-pub struct PlannedActivityReminder {
-    pub id: i32,
-    pub planned_activity_id: i32, // refs planned_activities
-    pub user_id: i32,             // refs Guardians
-    pub remind: NaiveDateTime,
-}

@@ -68,22 +68,11 @@ table! {
     }
 }
 
-table! {
-    plannedactivityreminders (id) {
-        id -> Int4,
-        planned_activity_id -> Int4,
-        user_id -> Int4,
-        remind -> Timestamp,
-    }
-}
-
 joinable!(activityshortcuts -> activities (link));
 joinable!(plannedactivities -> activities (activity_id));
 joinable!(plannedactivities -> guardians (author_id));
 joinable!(plannedactivitymembers -> guardians (user_id));
 joinable!(plannedactivitymembers -> plannedactivities (planned_activity_id));
-joinable!(plannedactivityreminders -> guardians (user_id));
-joinable!(plannedactivityreminders -> plannedactivities (planned_activity_id));
 
 allow_tables_to_appear_in_same_query!(
     activities,
@@ -92,5 +81,4 @@ allow_tables_to_appear_in_same_query!(
     guardians,
     plannedactivities,
     plannedactivitymembers,
-    plannedactivityreminders,
 );
