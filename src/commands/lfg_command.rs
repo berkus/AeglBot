@@ -4,7 +4,7 @@ use chrono_tz::Europe::Moscow;
 use crate::DbConnection;
 use crate::{
     commands::{bot_command::BotCommand, send_html_reply, send_plain_reply, validate_username},
-    datetime::{format_start_time, msk_to_naive, naive_to_msk, reference_date},
+    datetime::{format_start_time, reference_date, BotDateTime},
 };
 use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
@@ -79,7 +79,9 @@ impl BotCommand for LfgCommand {
                     ),
                 );
             } else {
-                let start_time = parse_date_string(timespec, Local::now(), Dialect::Uk);
+                // Parse input in MSK timezone...
+                let start_time =
+                    parse_date_string(timespec, Local::now().with_timezone(&Moscow), Dialect::Uk);
 
                 if let Err(_) = start_time {
                     return send_plain_reply(
@@ -89,8 +91,9 @@ impl BotCommand for LfgCommand {
                     );
                 }
 
-                let msk_time = naive_to_msk(start_time.unwrap().naive_local());
-                let start_time = msk_to_naive(msk_time);
+                // ...then convert back to UTC.
+                let start_time = start_time.unwrap().with_timezone(&Utc);
+
                 let act = act.unwrap();
 
                 info!("...parsed `{:?}`", start_time);
@@ -113,7 +116,7 @@ impl BotCommand for LfgCommand {
                     let planned_activity_member = NewPlannedActivityMember {
                         user_id: guardian.id,
                         planned_activity_id: planned_activity.id,
-                        added: Local::now().naive_local(), // @todo MSK!!
+                        added: reference_date(),
                     };
 
                     planned_activity_member

@@ -1,9 +1,9 @@
-use chrono::NaiveDateTime;
 use crate::{commands::send_html_message, datetime::reference_date, DbConnection};
 use diesel::{
     self,
     dsl::{now, IntervalDsl},
     prelude::*,
+    sql_types::Timestamptz,
 };
 use diesel_derives_traits::Model;
 use failure::Error;
@@ -21,7 +21,7 @@ pub fn check(
     let reference = reference_date();
 
     let upcoming_events = plannedactivities
-        .filter(start.ge(now - 60_i32.minutes())) // FIXME this will sort based on DB local TZ
+        .filter(start.ge(now.into_sql::<Timestamptz>() - 60_i32.minutes()))
         .order(start.asc())
         .load::<PlannedActivity>(connection)
         .expect("TEMP loading @FIXME");

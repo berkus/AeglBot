@@ -86,7 +86,7 @@ impl BotCommand for JoinCommand {
             let planned_activity_member = NewPlannedActivityMember {
                 user_id: guardian.id,
                 planned_activity_id: planned.id,
-                added: Local::now().naive_local(),
+                added: reference_date(),
             };
 
             planned_activity_member

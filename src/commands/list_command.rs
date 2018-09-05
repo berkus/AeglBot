@@ -7,6 +7,7 @@ use diesel::{
     self,
     dsl::{now, IntervalDsl},
     prelude::*,
+    sql_types::Timestamptz,
 };
 use futures::Future;
 use telebot::{functions::*, RcBot};
@@ -32,8 +33,7 @@ impl BotCommand for ListCommand {
         use schema::plannedactivities::dsl::*;
 
         let upcoming_events = plannedactivities
-            // val hourAgo = DateTime.now(DateTimeZone.forID("Europe/Moscow")).minusHours(1)
-            .filter(start.ge(now - 60_i32.minutes())) // FIXME this will sort based on DB local TZ
+            .filter(start.ge(now.into_sql::<Timestamptz>() - 60_i32.minutes()))
             .order(start.asc())
             .load::<PlannedActivity>(connection)
             .expect("TEMP loading @FIXME");

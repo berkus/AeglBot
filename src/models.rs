@@ -77,9 +77,9 @@ pub struct Alert {
     pub title: String,
     pub kind: String,
     #[column_name = "startdate"]
-    pub start_date: NaiveDateTime,
+    pub start_date: DateTime<Utc>,
     #[column_name = "expirydate"]
-    pub expiry_date: Option<NaiveDateTime>,
+    pub expiry_date: Option<DateTime<Utc>>,
     pub faction: Option<String>,
     pub flavor: Option<String>,
 }
@@ -92,9 +92,9 @@ pub struct NewAlert<'a> {
     pub title: &'a str,
     pub kind: Option<&'a str>,
     #[column_name = "startdate"]
-    pub start_date: Option<NaiveDateTime>,
+    pub start_date: Option<DateTime<Utc>>,
     #[column_name = "expirydate"]
-    pub expiry_date: Option<NaiveDateTime>,
+    pub expiry_date: Option<DateTime<Utc>>,
     pub faction: Option<&'a str>,
     pub flavor: Option<&'a str>,
 }
@@ -117,9 +117,9 @@ pub struct Guardian {
     pub psn_name: String,
     pub email: Option<String>,
     pub psn_clan: Option<String>,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
-    pub deleted_at: Option<NaiveDateTime>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
     pub tokens: Option<Value>,
     pub pending_activation_code: Option<String>,
 }
@@ -165,7 +165,7 @@ pub struct PlannedActivity {
     pub author_id: i32,   // refs Guardians
     pub activity_id: i32, // refs Activities
     pub details: Option<String>,
-    pub start: NaiveDateTime,
+    pub start: DateTime<Utc>,
 }
 
 #[derive(Insertable, NewModel)]
@@ -174,7 +174,7 @@ pub struct PlannedActivity {
 pub struct NewPlannedActivity {
     pub author_id: i32,   // refs Guardians
     pub activity_id: i32, // refs Activities
-    pub start: NaiveDateTime,
+    pub start: DateTime<Utc>,
 }
 
 impl PlannedActivity {
@@ -327,7 +327,7 @@ pub struct PlannedActivityMember {
     pub id: i32,
     pub planned_activity_id: i32,
     pub user_id: i32,
-    pub added: NaiveDateTime,
+    pub added: DateTime<Utc>,
 }
 
 #[derive(Insertable, NewModel)]
@@ -336,7 +336,7 @@ pub struct PlannedActivityMember {
 pub struct NewPlannedActivityMember {
     pub planned_activity_id: i32,
     pub user_id: i32,
-    pub added: NaiveDateTime,
+    pub added: DateTime<Utc>,
 }
 
 impl PlannedActivityMember {

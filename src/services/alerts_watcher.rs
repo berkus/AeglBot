@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::prelude::*;
 use crate::commands::send_html_message;
 use crate::DbConnection;
 use diesel::prelude::*;
@@ -34,19 +34,19 @@ pub fn check(
                 guid: guid_value,
                 title: item.title().unwrap_or(""),
                 kind: item.author(),
-                start_date: NaiveDateTime::parse_from_str(
+                start_date: DateTime::parse_from_str(
                     item.pub_date().unwrap_or(""),
                     RSS_DATE_FORMAT,
-                ).map(|v| Some(v))
+                ).map(|v| Some(v.with_timezone(&Utc)))
                 .unwrap_or(None),
-                expiry_date: NaiveDateTime::parse_from_str(
+                expiry_date: DateTime::parse_from_str(
                     item.extensions()
                         .get("wf")
                         .and_then(|ext| ext.get("wf:expiry"))
                         .map(|v| v[0].value().unwrap_or(""))
                         .unwrap_or(""),
                     RSS_DATE_FORMAT,
-                ).map(|v| Some(v))
+                ).map(|v| Some(v.with_timezone(&Utc)))
                 .unwrap_or(None),
                 faction: item
                     .extensions()

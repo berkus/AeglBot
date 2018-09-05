@@ -1,17 +1,12 @@
 use chrono::{prelude::*, Duration, Local};
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::{Europe::Moscow, Tz};
 use std::fmt::Write;
 
-// NaiveDateTime is stored as MSK in the DB
+// All internal date representation and storage is in UTC.
+// MSK time used only to parse input time and to display times.
 
-pub fn naive_to_msk(ts: NaiveDateTime) -> DateTime<Tz> {
-    Moscow.from_local_datetime(&ts).unwrap()
-}
-
-pub fn msk_to_naive(ts: DateTime<Tz>) -> NaiveDateTime {
-    ts.with_timezone(&Moscow).naive_local()
-}
+pub type BotDateTime = chrono::DateTime<chrono::Utc>;
 
 fn time_diff_string(duration: Duration) -> String {
     let times = vec![
@@ -56,18 +51,19 @@ fn time_diff_string(duration: Duration) -> String {
 }
 
 /// Return today() but in MSK timezone
-pub fn reference_date() -> NaiveDateTime {
-    Moscow
-        .from_utc_datetime(&Utc::now().naive_utc())
-        .naive_local()
+pub fn reference_date() -> BotDateTime {
+    Utc::now()
+}
+
+pub fn display_time(t: BotDateTime) -> DateTime<Tz> {
+    Moscow.from_utc_datetime(&t.naive_utc())
 }
 
 /// Time and reference are in MSK timezone!
 ///
 /// `"Today at 23:00 (starts in 3 hours)"`
-pub fn format_start_time(time: NaiveDateTime, reference: NaiveDateTime) -> String {
-    let time = naive_to_msk(time);
-    let ref_date = naive_to_msk(reference.date().and_hms(0, 0, 0));
+pub fn format_start_time(time: BotDateTime, reference: BotDateTime) -> String {
+    let ref_date = reference.date().and_hms(0, 0, 0);
 
     let prefix = if time.date() == ref_date.date() {
         format!("Today")
@@ -75,9 +71,9 @@ pub fn format_start_time(time: NaiveDateTime, reference: NaiveDateTime) -> Strin
         format!("on {}", time.format("%a %b %e %Y"))
     };
 
-    let prefix2 = time.format("%T");
+    let prefix2 = display_time(time).format("%T");
 
-    let time_diff = time - naive_to_msk(reference);
+    let time_diff = time - reference;
     let infix_str = if time_diff < Duration::zero() {
         "started"
     } else {

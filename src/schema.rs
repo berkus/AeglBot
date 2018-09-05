@@ -26,8 +26,8 @@ table! {
         title -> Text,
         #[sql_name = "type"]
         kind -> Text,
-        startdate -> Timestamp,
-        expirydate -> Nullable<Timestamp>,
+        startdate -> Timestamptz,
+        expirydate -> Nullable<Timestamptz>,
         faction -> Nullable<Text>,
         flavor -> Nullable<Text>,
     }
@@ -41,9 +41,9 @@ table! {
         psn_name -> Text,
         email -> Nullable<Text>,
         psn_clan -> Nullable<Text>,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-        deleted_at -> Nullable<Timestamp>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        deleted_at -> Nullable<Timestamptz>,
         tokens -> Nullable<Jsonb>,
         pending_activation_code -> Nullable<Text>,
     }
@@ -55,7 +55,7 @@ table! {
         author_id -> Int4,
         activity_id -> Int4,
         details -> Nullable<Text>,
-        start -> Timestamp,
+        start -> Timestamptz,
     }
 }
 
@@ -64,7 +64,7 @@ table! {
         id -> Int4,
         planned_activity_id -> Int4,
         user_id -> Int4,
-        added -> Timestamp,
+        added -> Timestamptz,
     }
 }
 
