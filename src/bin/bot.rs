@@ -3,13 +3,12 @@
 // To make it usable it misses natty parsing lib implementation in rust
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-#![feature(futures_api, async_await, await_macro)]
+#![feature(futures_api, async_await, await_macro, extern_prelude)]
 
 extern crate aegl_bot;
 extern crate diesel;
 extern crate dotenv;
 extern crate futures;
-extern crate pretty_env_logger;
 extern crate r2d2;
 extern crate rss;
 extern crate telebot;
@@ -17,6 +16,7 @@ extern crate tokio;
 extern crate tokio_core;
 #[macro_use]
 extern crate log;
+extern crate fern;
 
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
@@ -72,9 +72,63 @@ fn match_command(
     (None, None)
 }
 
+fn setup_logging() -> Result<(), fern::InitError> {
+    use fern::colors::{Color, ColoredLevelConfig};
+
+    // Color setup from fern examples
+    let colors_line = ColoredLevelConfig::new()
+        .error(Color::Red)
+        .warn(Color::Yellow)
+        .info(Color::White)
+        .debug(Color::White)
+        .trace(Color::BrightBlack);
+    let colors_level = colors_line.clone().info(Color::Green);
+
+    let console_config = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            out.finish(format_args!(
+                "{color_line}{date}[{target}][{level}{color_line}] {message}\x1B[0m",
+                color_line = format_args!(
+                    "\x1B[{}m",
+                    colors_line.get_color(&record.level()).to_fg_str()
+                ),
+                date = chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                target = record.target(),
+                level = colors_level.color(record.level()),
+                message = message,
+            ))
+        }).level(log::LevelFilter::Info)
+        .chain(std::io::stdout());
+
+    let file_config = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        }).level(log::LevelFilter::Trace)
+        .chain(
+            std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(false) // don't overwrite log file each run
+            .open(format!("logs/bot-{}.log", chrono::Local::now().format("%Y%m%d-%H%M%S")))?,
+        );
+
+    fern::Dispatch::new()
+        .chain(console_config)
+        .chain(file_config)
+        .apply()?;
+
+    Ok(())
+}
+
 fn main() {
     dotenv().ok();
-    pretty_env_logger::init();
+    setup_logging().expect("failed to initialize logging");
 
     let connection_pool = aegl_bot::establish_connection();
 

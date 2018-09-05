@@ -5,9 +5,10 @@ build/
 local.properties
 application.properties
 
-/target/
+target/
+logs/
 **/*.rs.bk
 Cargo.lock
-bot.log
+bot-*.log
 
 aeglbot.sql
