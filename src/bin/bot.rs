@@ -193,8 +193,8 @@ fn main() {
             .for_each(move |_| {
                 info!("alerts check");
                 let connection = alerts_pool.get().unwrap();
-                alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection)
-                    .map_err(|_| tokio::timer::Error::at_capacity())
+                alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection);
+                Ok(())
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
         let reminder_bot = bot.clone();
@@ -207,8 +207,8 @@ fn main() {
                 // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
                 info!("reminder check");
                 let connection = reminder_pool.get().unwrap();
-                reminder::check(&reminder_bot, lfg_chat, &connection)
-                    .map_err(|_| tokio::timer::Error::at_capacity())
+                reminder::check(&reminder_bot, lfg_chat, &connection);
+                Ok(())
             }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
         bot.inner.handle.spawn(alert_task);
