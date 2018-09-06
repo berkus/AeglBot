@@ -8,6 +8,7 @@
 extern crate aegl_bot;
 extern crate diesel;
 extern crate dotenv;
+extern crate failure;
 extern crate futures;
 extern crate r2d2;
 extern crate rss;
@@ -21,6 +22,7 @@ extern crate fern;
 use aegl_bot::commands::*;
 use aegl_bot::services::*;
 use dotenv::dotenv;
+use failure::Error;
 use futures::{Future, IntoFuture, Stream};
 use std::env;
 use std::time::{Duration, Instant};
