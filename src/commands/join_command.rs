@@ -13,7 +13,7 @@ use telebot::{functions::*, RcBot};
 pub struct JoinCommand;
 
 impl JoinCommand {
-    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
         send_plain_reply(
             bot,
             &message,
@@ -41,12 +41,12 @@ impl BotCommand for JoinCommand {
         connection: &DbConnection,
     ) {
         if activity_id.is_none() {
-            return JoinCommand::usage(bot, message);
+            return JoinCommand::usage(bot, &message);
         }
 
         let activity_id = activity_id.unwrap().parse::<i32>();
-        if let Err(_) = activity_id {
-            return JoinCommand::usage(bot, message);
+        if activity_id.is_err() {
+            return JoinCommand::usage(bot, &message);
         }
 
         let activity_id = activity_id.unwrap();
@@ -67,7 +67,7 @@ impl BotCommand for JoinCommand {
 
             let member = planned.find_member(connection, &guardian);
 
-            if !member.is_none() {
+            if member.is_some() {
                 return send_plain_reply(
                     bot,
                     &message,
@@ -99,7 +99,7 @@ impl BotCommand for JoinCommand {
 {joinPrompt}",
                 guarName = guardian,
                 actName = planned.activity(connection).format_name(),
-                actTime = decapitalize(format_start_time(planned.start, reference_date())),
+                actTime = decapitalize(&format_start_time(planned.start, reference_date())),
                 otherGuars = planned.members_formatted_list(connection),
                 joinPrompt = planned.join_prompt(connection)
             );

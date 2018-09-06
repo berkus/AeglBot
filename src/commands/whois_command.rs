@@ -37,11 +37,11 @@ impl BotCommand for WhoisCommand {
 
         let name = name.unwrap();
 
-        if let None = validate_username(bot, &message, connection) {
+        if validate_username(bot, &message, connection).is_none() {
             return;
         }
 
-        let guardian = if name.starts_with("@") {
+        let guardian = if name.starts_with('@') {
             guardians
                 .filter(telegram_name.eq(&name[1..]))
                 .limit(1)
@@ -55,7 +55,7 @@ impl BotCommand for WhoisCommand {
 
         match guardian {
             Ok(guardian) => {
-                if guardian.len() > 0 {
+                if !guardian.is_empty() {
                     send_plain_reply(
                         bot,
                         &message,

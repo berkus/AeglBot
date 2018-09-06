@@ -10,7 +10,7 @@ use rss::{Channel, Guid};
 use schema::alerts::dsl::*;
 use telebot::{functions::*, RcBot};
 
-const RSS_DATE_FORMAT: &'static str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
+const RSS_DATE_FORMAT: &str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
 pub fn check(
     bot: &RcBot,

@@ -9,7 +9,7 @@ use telebot::{functions::*, RcBot};
 pub struct DetailsCommand;
 
 impl DetailsCommand {
-    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
         send_html_reply(
             bot,
             &message,
@@ -40,7 +40,7 @@ impl BotCommand for DetailsCommand {
         info!("args are {:?}", args);
 
         if args.is_none() {
-            return DetailsCommand::usage(bot, message);
+            return DetailsCommand::usage(bot, &message);
         }
 
         // Split args in two:
@@ -50,7 +50,7 @@ impl BotCommand for DetailsCommand {
         let args: Vec<&str> = args.splitn(2, ' ').collect();
 
         if args.len() < 2 {
-            return DetailsCommand::usage(bot, message);
+            return DetailsCommand::usage(bot, &message);
         }
 
         let activity = args[0];
@@ -59,13 +59,13 @@ impl BotCommand for DetailsCommand {
         info!("Activity `{}`, description `{}`", activity, description);
 
         let activity_id = activity.parse::<i32>();
-        if let Err(_) = activity_id {
-            return DetailsCommand::usage(bot, message);
+        if activity_id.is_err() {
+            return DetailsCommand::usage(bot, &message);
         }
 
         let activity_id = activity_id.unwrap();
 
-        if let Some(_) = validate_username(bot, &message, connection) {
+        if validate_username(bot, &message, connection).is_some() {
             let planned =
                 PlannedActivity::find_one(connection, &activity_id).expect("Failed to run SQL");
 
@@ -84,7 +84,9 @@ impl BotCommand for DetailsCommand {
             } else {
                 Some(description.to_string())
             };
-            planned.save(connection);
+            if planned.save(connection).is_err() {
+                return send_plain_reply(bot, &message, "Failed to update details.".into());
+            }
 
             send_plain_reply(bot, &message, "Details updated.".into());
         }

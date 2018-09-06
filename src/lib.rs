@@ -46,7 +46,7 @@ pub fn establish_connection() -> Pool<diesel::r2d2::ConnectionManager<DbConnecti
         .min_idle(Some(1))
         .max_size(15)
         .build(manager)
-        .expect(&format!("Error connecting to {}", database_url))
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
 // TODO: Implement BotCommands, make them register with bot?

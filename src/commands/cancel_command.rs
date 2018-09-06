@@ -13,7 +13,7 @@ use telebot::{functions::*, RcBot};
 pub struct CancelCommand;
 
 impl CancelCommand {
-    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
         send_plain_reply(
             bot,
             &message,
@@ -41,12 +41,12 @@ impl BotCommand for CancelCommand {
         connection: &DbConnection,
     ) {
         if activity_id.is_none() {
-            return CancelCommand::usage(bot, message);
+            return CancelCommand::usage(bot, &message);
         }
 
         let activity_id = activity_id.unwrap().parse::<i32>();
-        if let Err(_) = activity_id {
-            return CancelCommand::usage(bot, message);
+        if activity_id.is_err() {
+            return CancelCommand::usage(bot, &message);
         }
 
         let activity_id = activity_id.unwrap();
@@ -77,13 +77,21 @@ impl BotCommand for CancelCommand {
 
             let member = member.unwrap();
 
-            member.destroy(connection);
+            if member.destroy(connection).is_err() {
+                return send_plain_reply(bot, &message, "Failed to remove group member".into());
+            }
 
             let act_name = planned.activity(connection).format_name();
-            let act_time = decapitalize(format_start_time(planned.start, reference_date()));
+            let act_time = decapitalize(&format_start_time(planned.start, reference_date()));
 
-            let suffix = if planned.members(connection).len() == 0 {
-                planned.destroy(connection);
+            let suffix = if planned.members(connection).is_empty() {
+                if planned.destroy(connection).is_err() {
+                    return send_plain_reply(
+                        bot,
+                        &message,
+                        "Failed to remove planned activity".into(),
+                    );
+                }
                 "This fireteam is disbanded and can no longer be joined.".into()
             } else {
                 format!(

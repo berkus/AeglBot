@@ -15,7 +15,7 @@ use telebot::{functions::*, RcBot};
 pub struct LfgCommand;
 
 impl LfgCommand {
-    fn usage(bot: &RcBot, message: telebot::objects::Message) {
+    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
         send_html_reply(
             bot,
             &message,
@@ -47,7 +47,7 @@ impl BotCommand for LfgCommand {
         info!("args are {:?}", args);
 
         if args.is_none() {
-            return LfgCommand::usage(bot, message);
+            return LfgCommand::usage(bot, &message);
         }
 
         // Split args in two:
@@ -57,7 +57,7 @@ impl BotCommand for LfgCommand {
         let args: Vec<&str> = args.splitn(2, ' ').collect();
 
         if args.len() < 2 {
-            return LfgCommand::usage(bot, message);
+            return LfgCommand::usage(bot, &message);
         }
 
         let activity = args[0];
@@ -83,7 +83,7 @@ impl BotCommand for LfgCommand {
                 let start_time =
                     parse_date_string(timespec, Local::now().with_timezone(&Moscow), Dialect::Uk);
 
-                if let Err(_) = start_time {
+                if start_time.is_err() {
                     return send_plain_reply(
                         bot,
                         &message,
@@ -108,42 +108,43 @@ impl BotCommand for LfgCommand {
                 use schema::plannedactivities::dsl::*;
                 use schema::plannedactivitymembers::dsl::*;
 
-                connection.transaction::<_, Error, _>(|| {
-                    let planned_activity = planned_activity
-                        .save(connection)
-                        .expect("Unexpected error saving LFG group");
+                connection
+                    .transaction::<_, Error, _>(|| {
+                        let planned_activity = planned_activity
+                            .save(connection)
+                            .expect("Unexpected error saving LFG group");
 
-                    let planned_activity_member = NewPlannedActivityMember {
-                        user_id: guardian.id,
-                        planned_activity_id: planned_activity.id,
-                        added: reference_date(),
-                    };
+                        let planned_activity_member = NewPlannedActivityMember {
+                            user_id: guardian.id,
+                            planned_activity_id: planned_activity.id,
+                            added: reference_date(),
+                        };
 
-                    planned_activity_member
-                        .save(connection)
-                        .expect("Unexpected error saving LFG group creator");
+                        planned_activity_member
+                            .save(connection)
+                            .expect("Unexpected error saving LFG group creator");
 
-                    let activity = Activity::find_one(connection, &act.link)
-                        .expect("Couldn't find linked activity")
-                        .unwrap();
+                        let activity = Activity::find_one(connection, &act.link)
+                            .expect("Couldn't find linked activity")
+                            .unwrap();
 
-                    send_plain_reply(
-                        bot,
-                        &message,
-                        format!(
-                            "{guarName} is looking for {groupName} group {onTime}
+                        send_plain_reply(
+                            bot,
+                            &message,
+                            format!(
+                                "{guarName} is looking for {groupName} group {onTime}
 {joinPrompt}
 Enter `/details {actId} free form description text` to specify more details about the event.",
-                            guarName = guardian,
-                            groupName = activity.format_name(),
-                            onTime = format_start_time(start_time, reference_date()),
-                            joinPrompt = planned_activity.join_prompt(connection),
-                            actId = planned_activity.id
-                        ),
-                    );
+                                guarName = guardian,
+                                groupName = activity.format_name(),
+                                onTime = format_start_time(start_time, reference_date()),
+                                joinPrompt = planned_activity.join_prompt(connection),
+                                actId = planned_activity.id
+                            ),
+                        );
 
-                    Ok(())
-                });
+                        Ok(())
+                    }).expect("never happens, but please implement error handling");
             }
         }
     }

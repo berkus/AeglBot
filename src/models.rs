@@ -33,7 +33,7 @@ impl ActivityShortcut {
             .filter(name.eq(act_name))
             .get_result::<Self>(connection)
             .optional()
-            .map_err(|e| e.into())
+            .map_err(|e| e)
     }
 }
 

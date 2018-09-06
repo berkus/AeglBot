@@ -37,14 +37,14 @@ impl BotCommand for ActivitiesCommand {
 
         let mut text = "Activities: use a short name:\n".to_owned();
 
-        for game_name in games.into_iter() {
+        for game_name in games {
             text += &format!("*** <b>{0}</b>:\n", game_name);
             let shortcuts = activityshortcuts
                 .filter(game.eq(game_name))
                 .order(name.asc())
                 .load::<ActivityShortcut>(connection)
                 .expect("TEMP loading @FIXME");
-            for shortcut in shortcuts.into_iter() {
+            for shortcut in shortcuts {
                 let link_name = activities
                     .filter(id.eq(shortcut.link))
                     .first::<Activity>(connection)

@@ -40,14 +40,14 @@ fn match_command(
     command: &str,
     bot_name: &str,
 ) -> (Option<String>, Option<String>) {
-    if let None = msg.text {
+    if msg.text.is_none() {
         return (None, None);
     }
 
     let data = msg.text.as_ref().unwrap();
     debug!("matching text {:#?}", data);
 
-    let command = "/".to_owned() + &command;
+    let command = "/".to_owned() + command;
     let long_command = format!("{}@{}", command, bot_name);
     debug!("matching {:#?} against {:#?}", data, long_command);
     if data.starts_with(&long_command) {
@@ -56,7 +56,7 @@ fn match_command(
             Some(long_command.clone()),
             data.get(long_command.len()..)
                 .map(|x| x.trim_left().to_string())
-                .filter(|y| y.len() != 0),
+                .filter(|y| !y.is_empty()),
         );
     }
     debug!("matching {:#?} against {:#?}", data, command);
@@ -66,7 +66,7 @@ fn match_command(
             Some(command.clone()),
             data.get(command.len()..)
                 .map(|x| x.trim_left().to_string())
-                .filter(|y| y.len() != 0),
+                .filter(|y| !y.is_empty()),
         );
     }
     (None, None)
@@ -82,7 +82,7 @@ fn setup_logging() -> Result<(), fern::InitError> {
         .info(Color::White)
         .debug(Color::White)
         .trace(Color::BrightBlack);
-    let colors_level = colors_line.clone().info(Color::Green);
+    let colors_level = colors_line.info(Color::Green);
 
     let console_config = fern::Dispatch::new()
         .format(move |out, message, record| {
@@ -112,10 +112,13 @@ fn setup_logging() -> Result<(), fern::InitError> {
         }).level(log::LevelFilter::Trace)
         .chain(
             std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(false) // don't overwrite log file each run
-            .open(format!("logs/bot-{}.log", chrono::Local::now().format("%Y%m%d-%H%M%S")))?,
+                .write(true)
+                .create(true)
+                .truncate(false) // don't overwrite log file each run
+                .open(format!(
+                    "logs/bot-{}.log",
+                    chrono::Local::now().format("%Y%m%d-%H%M%S")
+                ))?,
         );
 
     fern::Dispatch::new()
@@ -189,8 +192,8 @@ fn main() {
             .for_each(move |_| {
                 info!("alerts check");
                 let connection = alerts_pool.get().unwrap();
-                alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection);
-                Ok(()) // @todo forward return from check()
+                alerts_watcher::check(&alerts_bot, wf_alerts_chat, &connection)
+                    .map_err(|_| tokio::timer::Error::at_capacity())
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
         let reminder_bot = bot.clone();
@@ -203,8 +206,8 @@ fn main() {
                 // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
                 info!("reminder check");
                 let connection = reminder_pool.get().unwrap();
-                reminder::check(&reminder_bot, lfg_chat, &connection);
-                Ok(()) // @todo forward return from check()
+                reminder::check(&reminder_bot, lfg_chat, &connection)
+                    .map_err(|_| tokio::timer::Error::at_capacity())
             }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
         bot.inner.handle.spawn(alert_task);

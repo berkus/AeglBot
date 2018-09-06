@@ -65,7 +65,7 @@ impl BotCommand for PsnCommand {
             .load::<Guardian>(connection);
         match db_user {
             Ok(user) => {
-                if user.len() > 0 {
+                if !user.is_empty() {
                     send_plain_reply(
                         bot,
                         &message,
@@ -79,7 +79,7 @@ impl BotCommand for PsnCommand {
                 } else {
                     use crate::schema::guardians;
 
-                    let user_id = from.id.into();
+                    let user_id = from.id;
 
                     let guardian = NewGuardian {
                         telegram_name: &username,

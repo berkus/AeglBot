@@ -20,7 +20,7 @@ fn time_diff_string(duration: Duration) -> String {
     let mut dur = duration.num_minutes().abs();
     let mut text = String::new();
 
-    for item in times.iter() {
+    for item in &times {
         let (current, times_str) = item;
         let current = current.num_minutes();
         let temp = dur / current;
@@ -40,13 +40,11 @@ fn time_diff_string(duration: Duration) -> String {
     let text = text.trim();
 
     if text.is_empty() {
-        format!("just now")
+        "just now".to_string()
+    } else if duration > Duration::zero() {
+        format!("in {}", text)
     } else {
-        if duration > Duration::zero() {
-            format!("in {}", text)
-        } else {
-            format!("{} ago", text)
-        }
+        format!("{} ago", text)
     }
 }
 
@@ -66,7 +64,7 @@ pub fn format_start_time(time: BotDateTime, reference: BotDateTime) -> String {
     let ref_date = reference.date().and_hms(0, 0, 0);
 
     let prefix = if time.date() == ref_date.date() {
-        format!("Today")
+        "Today".to_string()
     } else {
         format!("on {}", time.format("%a %b %e %Y"))
     };

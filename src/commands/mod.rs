@@ -25,7 +25,7 @@ use diesel::prelude::*;
 use futures::Future;
 use telebot::{functions::*, RcBot};
 
-pub fn decapitalize(s: String) -> String {
+pub fn decapitalize(s: &str) -> String {
     s.chars()
         .nth(0)
         .map(|item| item.to_lowercase().chain(s.chars().skip(1)).collect())
@@ -88,19 +88,19 @@ pub fn validate_username(
 
     let db_user = guardians
         .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
-        .limit(1)
-        .load::<Guardian>(connection);
+        .first::<Guardian>(connection)
+        .optional();
+
     match db_user {
-        Ok(users) => if users.len() > 0 {
-            Some(users[0].clone())
-        } else {
+        Ok(Some(user)) => Some(user),
+        Ok(None) => {
             send_plain_reply(
                 bot,
                 message,
                 "You need to link your PSN account first: use /psn command".into(),
             );
             None
-        },
+        }
         Err(_) => {
             send_plain_reply(bot, message, "Error querying guardian info.".into());
             None
