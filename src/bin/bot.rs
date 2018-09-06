@@ -163,6 +163,7 @@ fn main() {
                 let connection = connection_pool.get().unwrap();
 
                 // @todo Plug awesome-bot style routing in here
+                // Use Bot struct from lib.rs
                 if let (Some(_), text) = match_command(&message, "whois", &bot_name) {
                     WhoisCommand::execute(&bot, message, None, text, &connection);
                 } else if let (Some(_), text) = match_command(&message, "psn", &bot_name) {
