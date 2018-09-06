@@ -92,14 +92,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn hours_in_msk_match_naive_local() {
-        let orig = Moscow.ymd(2018, 9, 4).and_hms(20, 20, 0);
-        let db = msk_to_naive(orig);
-        assert_eq!(orig.to_string(), "2018-09-04 20:20:00 MSK");
-        assert_eq!(db.to_string(), "2018-09-04 20:20:00");
-    }
-
-    #[test]
     fn test_time_diffs() {
         assert_eq!(time_diff_string(Duration::minutes(2)), "in 2 minutes");
         assert_eq!(time_diff_string(Duration::minutes(1)), "in 1 minute");
@@ -120,15 +112,16 @@ mod tests {
 
     #[test]
     fn test_start_time_formats() {
-        // let hours = 3600;
-        // let msk = FixedOffset::east(3 * hours);
-
-        let today = Local::now().naive_local();
+        let today = reference_date();
         // let today = msk.from_utc_datetime(Utc::now());
+        let msk_time = Moscow.from_utc_datetime(&today.naive_utc());
         // + Duration::hours(2) + Duration::minutes(30)
         assert_eq!(
             format_start_time(today, reference_date()),
-            format!("{}", today.format("Today at %H:%M:%S (started just now)"))
+            format!(
+                "{}",
+                msk_time.format("Today at %H:%M:%S (started just now)")
+            )
         );
     }
 }

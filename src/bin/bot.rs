@@ -218,85 +218,91 @@ fn main() {
     }
 }
 
-#[test]
-fn test_guardians() {
-    use aegl_bot::models::Guardian;
-    use aegl_bot::schema::guardians::dsl::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use diesel::prelude::*;
 
-    dotenv().ok();
+    #[test]
+    fn test_guardians() {
+        use aegl_bot::models::Guardian;
+        use aegl_bot::schema::guardians::dsl::*;
 
-    let connection = aegl_bot::establish_connection().get().unwrap();
+        dotenv().ok();
 
-    let results = guardians
-        // .filter(published.eq(true))
-        .limit(5)
-        .load::<Guardian>(&connection)
-        .expect("Error loading guardians");
+        let connection = aegl_bot::establish_connection().get().unwrap();
 
-    println!("Displaying {} guardians", results.len());
-    for guar in results {
-        println!("{}", guar);
+        let results = guardians
+            // .filter(published.eq(true))
+            .limit(5)
+            .load::<Guardian>(&connection)
+            .expect("Error loading guardians");
+
+        println!("Displaying {} guardians", results.len());
+        for guar in results {
+            println!("{}", guar);
+        }
     }
-}
 
-#[test]
-fn test_activities() {
-    use aegl_bot::models::Activity;
-    use aegl_bot::schema::activities::dsl::*;
+    #[test]
+    fn test_activities() {
+        use aegl_bot::models::Activity;
+        use aegl_bot::schema::activities::dsl::*;
 
-    dotenv().ok();
+        dotenv().ok();
 
-    let connection = aegl_bot::establish_connection().get().unwrap();
+        let connection = aegl_bot::establish_connection().get().unwrap();
 
-    let results = activities
-        .load::<Activity>(&connection)
-        .expect("Error loading activities");
+        let results = activities
+            .load::<Activity>(&connection)
+            .expect("Error loading activities");
 
-    println!("Displaying {} activities", results.len());
-    for act in results {
-        println!("{}", act.format_name());
+        println!("Displaying {} activities", results.len());
+        for act in results {
+            println!("{}", act.format_name());
+        }
     }
-}
 
-#[test]
-fn test_alerts() {
-    use aegl_bot::models::Alert;
-    use aegl_bot::schema::alerts::dsl::*;
+    #[test]
+    fn test_alerts() {
+        use aegl_bot::models::Alert;
+        use aegl_bot::schema::alerts::dsl::*;
 
-    dotenv().ok();
+        dotenv().ok();
 
-    let connection = aegl_bot::establish_connection().get().unwrap();
+        let connection = aegl_bot::establish_connection().get().unwrap();
 
-    let results = alerts
-        .limit(5)
-        .load::<Alert>(&connection)
-        .expect("Error loading alerts");
+        let results = alerts
+            .limit(5)
+            .load::<Alert>(&connection)
+            .expect("Error loading alerts");
 
-    println!("Displaying {} alerts", results.len());
-    for alrt in results {
-        println!("{}", alrt.title);
+        println!("Displaying {} alerts", results.len());
+        for alrt in results {
+            println!("{}", alrt.title);
+        }
     }
-}
 
-#[test]
-fn test_planned_activities() {
-    use aegl_bot::models::{Guardian, PlannedActivity};
-    use aegl_bot::schema::guardians::dsl::*;
+    #[test]
+    fn test_planned_activities() {
+        use aegl_bot::models::{Guardian, PlannedActivity};
+        use aegl_bot::schema::guardians::dsl::*;
 
-    dotenv().ok();
+        dotenv().ok();
 
-    let connection = aegl_bot::establish_connection().get().unwrap();
+        let connection = aegl_bot::establish_connection().get().unwrap();
 
-    let guar = guardians
-        .find(1)
-        .first::<Guardian>(&connection)
-        .expect("Guardian with id 1 not found");
-    let results = PlannedActivity::belonging_to(&guar)
-        .load::<PlannedActivity>(&connection)
-        .expect("Error loading activities");
+        let guar = guardians
+            .find(1)
+            .first::<Guardian>(&connection)
+            .expect("Guardian with id 1 not found");
+        let results = PlannedActivity::belonging_to(&guar)
+            .load::<PlannedActivity>(&connection)
+            .expect("Error loading activities");
 
-    println!("Displaying {} planned activities", results.len());
-    for act in results {
-        println!("{}", act.display(&connection, &guar));
+        println!("Displaying {} planned activities", results.len());
+        for act in results {
+            println!("{}", act.display(&connection, Some(&guar)));
+        }
     }
 }
