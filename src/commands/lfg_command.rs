@@ -82,6 +82,7 @@ impl BotCommand for LfgCommand {
                 // Parse input in MSK timezone...
                 let start_time =
                     parse_date_string(timespec, Local::now().with_timezone(&Moscow), Dialect::Uk);
+                // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
                     return send_plain_reply(
