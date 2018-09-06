@@ -1,6 +1,5 @@
 use chrono::prelude::*;
-use crate::commands::send_html_message;
-use crate::DbConnection;
+use crate::{Bot, DbConnection};
 use diesel::prelude::*;
 use diesel_derives_traits::NewModel;
 use failure::Error;
@@ -12,11 +11,8 @@ use telebot::{functions::*, RcBot};
 
 const RSS_DATE_FORMAT: &str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
-pub fn check(
-    bot: &RcBot,
-    chat_id: telebot::objects::Integer,
-    connection: &DbConnection,
-) -> Result<(), Error> {
+pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+    let connection = bot.connection();
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
     let mut alert_list = vec![];
     for item in channel.into_items() {
@@ -27,7 +23,7 @@ pub fn check(
         let existing_alert_count = alerts
             .filter(guid.eq(guid_value))
             .count()
-            .first::<i64>(connection);
+            .first::<i64>(&connection);
 
         if existing_alert_count == Ok(0) {
             let alert = NewAlert {
@@ -56,7 +52,7 @@ pub fn check(
                 flavor: item.description(),
             };
 
-            alert_list.push(alert.save(connection)?);
+            alert_list.push(alert.save(&connection)?);
         }
     }
 
@@ -65,7 +61,7 @@ pub fn check(
     // Publish all new alerts
     for item in alert_list.iter().filter(|x| x.kind == "Alert") {
         trace!("{}", item);
-        send_html_message(bot, chat_id, format!("{}", item));
+        bot.send_html_message(chat_id, format!("{}", item));
     }
 
     Ok(())

@@ -1,21 +1,19 @@
 use chrono::Duration;
-use crate::DbConnection;
 use crate::{
-    commands::{decapitalize, send_plain_reply, validate_username, BotCommand},
+    commands::{decapitalize, validate_username},
     datetime::{format_start_time, reference_date},
 };
+use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use models::{Activity, PlannedActivity, PlannedActivityMember};
-use telebot::{functions::*, RcBot};
 
 pub struct CancelCommand;
 
 impl CancelCommand {
-    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
-        send_plain_reply(
-            bot,
+    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+        bot.send_plain_reply(
             &message,
             "To leave a fireteam provide fireteam id
 Fireteam IDs are available from output of /list command."
@@ -25,20 +23,20 @@ Fireteam IDs are available from output of /list command."
 }
 
 impl BotCommand for CancelCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "cancel"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "Leave joined activity"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         activity_id: Option<String>,
-        connection: &DbConnection,
     ) {
         if activity_id.is_none() {
             return CancelCommand::usage(bot, &message);
@@ -50,60 +48,54 @@ impl BotCommand for CancelCommand {
         }
 
         let activity_id = activity_id.unwrap();
+        let connection = bot.connection();
 
-        if let Some(guardian) = validate_username(bot, &message, connection) {
+        if let Some(guardian) = validate_username(bot, &message, &connection) {
             let planned =
-                PlannedActivity::find_one(connection, &activity_id).expect("Failed to run SQL");
+                PlannedActivity::find_one(&connection, &activity_id).expect("Failed to run SQL");
 
             if planned.is_none() {
-                return send_plain_reply(
-                    bot,
-                    &message,
-                    format!("Activity {} was not found.", activity_id),
-                );
+                return bot
+                    .send_plain_reply(&message, format!("Activity {} was not found.", activity_id));
             }
 
             let planned = planned.unwrap();
 
-            let member = planned.find_member(connection, &guardian);
+            let member = planned.find_member(&connection, &guardian);
 
             if member.is_none() {
-                return send_plain_reply(bot, &message, "You are not part of this group.".into());
+                return bot.send_plain_reply(&message, "You are not part of this group.".into());
             }
 
             if planned.start < reference_date() - Duration::hours(1) {
-                return send_plain_reply(bot, &message, "You can not leave past activities.".into());
+                return bot.send_plain_reply(&message, "You can not leave past activities.".into());
             }
 
             let member = member.unwrap();
 
-            if member.destroy(connection).is_err() {
-                return send_plain_reply(bot, &message, "Failed to remove group member".into());
+            if member.destroy(&connection).is_err() {
+                return bot.send_plain_reply(&message, "Failed to remove group member".into());
             }
 
-            let act_name = planned.activity(connection).format_name();
+            let act_name = planned.activity(&connection).format_name();
             let act_time = decapitalize(&format_start_time(planned.start, reference_date()));
 
-            let suffix = if planned.members(connection).is_empty() {
-                if planned.destroy(connection).is_err() {
-                    return send_plain_reply(
-                        bot,
-                        &message,
-                        "Failed to remove planned activity".into(),
-                    );
+            let suffix = if planned.members(&connection).is_empty() {
+                if planned.destroy(&connection).is_err() {
+                    return bot
+                        .send_plain_reply(&message, "Failed to remove planned activity".into());
                 }
                 "This fireteam is disbanded and can no longer be joined.".into()
             } else {
                 format!(
                     "{} are going
 {}",
-                    planned.members_formatted_list(connection),
-                    planned.join_prompt(connection)
+                    planned.members_formatted_list(&connection),
+                    planned.join_prompt(&connection)
                 )
             };
 
-            send_plain_reply(
-                bot,
+            bot.send_plain_reply(
                 &message,
                 format!(
                     "{guarName} has left {actName} group {actTime}

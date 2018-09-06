@@ -1,23 +1,21 @@
 use chrono::prelude::*;
 use chrono_english::{parse_date_string, Dialect};
 use chrono_tz::Europe::Moscow;
-use crate::DbConnection;
 use crate::{
-    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply, validate_username},
+    commands::validate_username,
     datetime::{format_start_time, reference_date, BotDateTime},
 };
+use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
-use telebot::{functions::*, RcBot};
 
 pub struct LfgCommand;
 
 impl LfgCommand {
-    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
-        send_html_reply(
-            bot,
+    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+        bot.send_html_reply(
             &message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
 For a list of activity codes: /activities
@@ -29,20 +27,20 @@ Times are in Moscow (MSK) timezone."
 }
 
 impl BotCommand for LfgCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "lfg"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "Create a new Looking For Group event"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         args: Option<String>,
-        connection: &DbConnection,
     ) {
         info!("args are {:?}", args);
 
@@ -62,16 +60,16 @@ impl BotCommand for LfgCommand {
 
         let activity = args[0];
         let timespec = args[1];
+        let connection = bot.connection();
 
         info!("Adding activity `{}` at `{}`", &activity, &timespec);
 
-        if let Some(guardian) = validate_username(bot, &message, connection) {
-            let act = ActivityShortcut::find_one_by_name(connection, activity)
+        if let Some(guardian) = validate_username(bot, &message, &connection) {
+            let act = ActivityShortcut::find_one_by_name(&connection, activity)
                 .expect("Failed to load Activity shortcut");
 
             if act.is_none() {
-                send_plain_reply(
-                    bot,
+                bot.send_plain_reply(
                     &message,
                     format!(
                         "Activity {} was not found. Use /activities for a list.",
@@ -85,11 +83,8 @@ impl BotCommand for LfgCommand {
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
-                    return send_plain_reply(
-                        bot,
-                        &message,
-                        format!("Failed to parse time {}", timespec),
-                    );
+                    return bot
+                        .send_plain_reply(&message, format!("Failed to parse time {}", timespec));
                 }
 
                 // ...then convert back to UTC.
@@ -112,7 +107,7 @@ impl BotCommand for LfgCommand {
                 connection
                     .transaction::<_, Error, _>(|| {
                         let planned_activity = planned_activity
-                            .save(connection)
+                            .save(&connection)
                             .expect("Unexpected error saving LFG group");
 
                         let planned_activity_member = NewPlannedActivityMember {
@@ -122,15 +117,14 @@ impl BotCommand for LfgCommand {
                         };
 
                         planned_activity_member
-                            .save(connection)
+                            .save(&connection)
                             .expect("Unexpected error saving LFG group creator");
 
-                        let activity = Activity::find_one(connection, &act.link)
+                        let activity = Activity::find_one(&connection, &act.link)
                             .expect("Couldn't find linked activity")
                             .unwrap();
 
-                        send_plain_reply(
-                            bot,
+                        bot.send_plain_reply(
                             &message,
                             format!(
                                 "{guarName} is looking for {groupName} group {onTime}
@@ -139,7 +133,7 @@ Enter `/details {actId} free form description text` to specify more details abou
                                 guarName = guardian,
                                 groupName = activity.format_name(),
                                 onTime = format_start_time(start_time, reference_date()),
-                                joinPrompt = planned_activity.join_prompt(connection),
+                                joinPrompt = planned_activity.join_prompt(&connection),
                                 actId = planned_activity.id
                             ),
                         );

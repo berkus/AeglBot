@@ -1,76 +1,68 @@
-use crate::DbConnection;
-use crate::{
-    commands::{bot_command::BotCommand, send_plain_reply, validate_username},
-    models::Guardian,
-    schema::guardians::dsl::*,
-};
+use crate::{commands::validate_username, models::Guardian, schema::guardians::dsl::*};
+use crate::{Bot, BotCommand, DbConnection};
 use diesel::prelude::*;
 use futures::Future;
-use telebot::{functions::*, RcBot};
 
 pub struct WhoisCommand;
 
 impl BotCommand for WhoisCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "whois"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "Query telegram or PSN id"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         name: Option<String>,
-        connection: &DbConnection,
     ) {
         if name.is_none() {
-            send_plain_reply(
-                bot,
+            return bot.send_plain_reply(
                 &message,
                 "To query user provide his @TelegramId (starting with @) or PsnId".into(),
             );
-            return;
         }
 
         let name = name.unwrap();
+        let connection = bot.connection();
 
-        if validate_username(bot, &message, connection).is_none() {
+        if validate_username(bot, &message, &connection).is_none() {
             return;
         }
 
         let guardian = if name.starts_with('@') {
             guardians
                 .filter(telegram_name.eq(&name[1..]))
-                .limit(1)
-                .load::<Guardian>(connection)
+                .first::<Guardian>(&connection)
+                .optional()
         } else {
             guardians
                 .filter(psn_name.eq(&name))
-                .limit(1)
-                .load::<Guardian>(connection)
+                .first::<Guardian>(&connection)
+                .optional()
         };
 
         match guardian {
-            Ok(guardian) => {
-                if !guardian.is_empty() {
-                    send_plain_reply(
-                        bot,
-                        &message,
-                        format!(
-                            "Guardian @{telegram_name} PSN {psn_name}",
-                            telegram_name = guardian[0].telegram_name,
-                            psn_name = guardian[0].psn_name
-                        ),
-                    );
-                } else {
-                    send_plain_reply(bot, &message, format!("Guardian {} was not found.", name));
-                }
+            Ok(Some(guardian)) => {
+                bot.send_plain_reply(
+                    &message,
+                    format!(
+                        "Guardian @{telegram_name} PSN {psn_name}",
+                        telegram_name = guardian.telegram_name,
+                        psn_name = guardian.psn_name
+                    ),
+                );
+            }
+            Ok(None) => {
+                bot.send_plain_reply(&message, format!("Guardian {} was not found.", name));
             }
             Err(_) => {
-                send_plain_reply(bot, &message, "Error querying guardian name.".into());
+                bot.send_plain_reply(&message, "Error querying guardian name.".into());
             }
         }
     }

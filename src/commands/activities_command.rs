@@ -1,38 +1,36 @@
-use crate::DbConnection;
-use crate::{
-    commands::{bot_command::BotCommand, send_html_reply},
-    models::{Activity, ActivityShortcut},
-};
+use crate::models::{Activity, ActivityShortcut};
+use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, prelude::*};
 use futures::Future;
-use telebot::{functions::*, RcBot};
 
 pub struct ActivitiesCommand;
 
 impl BotCommand for ActivitiesCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "activities"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "List available activity shortcuts"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         _unused: Option<String>,
-        connection: &DbConnection,
     ) {
         use schema::activities::dsl::{activities, id};
         use schema::activityshortcuts::dsl::{activityshortcuts, game, name};
+
+        let connection = bot.connection();
 
         let games = activityshortcuts
             .select(game)
             .distinct()
             .order(game.asc())
-            .load::<String>(connection)
+            .load::<String>(&connection)
             .expect("TEMP loading @FIXME");
 
         let mut text = "Activities: use a short name:\n".to_owned();
@@ -42,12 +40,12 @@ impl BotCommand for ActivitiesCommand {
             let shortcuts = activityshortcuts
                 .filter(game.eq(game_name))
                 .order(name.asc())
-                .load::<ActivityShortcut>(connection)
+                .load::<ActivityShortcut>(&connection)
                 .expect("TEMP loading @FIXME");
             for shortcut in shortcuts {
                 let link_name = activities
                     .filter(id.eq(shortcut.link))
-                    .first::<Activity>(connection)
+                    .first::<Activity>(&connection)
                     .expect("TEMP loading @FIXME");
 
                 text += &format!(
@@ -59,6 +57,6 @@ impl BotCommand for ActivitiesCommand {
             text += "\n";
         }
 
-        send_html_reply(bot, &message, text);
+        bot.send_html_reply(&message, text);
     }
 }

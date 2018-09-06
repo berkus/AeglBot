@@ -1,112 +1,100 @@
-use crate::DbConnection;
 use crate::{
-    commands::{bot_command::BotCommand, send_html_reply, send_plain_reply},
     models::{Guardian, NewGuardian},
     schema::guardians::dsl::*,
 };
+use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, prelude::*};
 use futures::Future;
-use telebot::{functions::*, RcBot};
 
 pub struct PsnCommand;
 
 impl BotCommand for PsnCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "psn"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "Link your telegram user to PSN"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         name: Option<String>,
-        connection: &DbConnection,
     ) {
         info!("PSN command");
 
         if name.is_none() {
-            send_html_reply(
-                bot,
+            return bot.send_html_reply(
                 &message,
                 "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE".into(),
             );
-            return;
         }
 
         let name = name.unwrap();
 
         let from = match message.from {
             None => {
-                send_plain_reply(bot, &message, "Message has no sender info.".into());
-                return;
+                return bot.send_plain_reply(&message, "Message has no sender info.".into());
             }
             Some(ref from) => from,
         };
 
         let username = match from.username {
             None => {
-                send_plain_reply(
-                    bot,
+                return bot.send_plain_reply(
                     &message,
                     "You have no telegram username, register your telegram account first.".into(),
                 );
-                return;
             }
             Some(ref name) => name,
         };
 
+        let connection = bot.connection();
+
         let db_user = guardians
             .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
-            .limit(1)
-            .load::<Guardian>(connection);
+            .first::<Guardian>(&connection)
+            .optional();
+
         match db_user {
-            Ok(user) => {
-                if !user.is_empty() {
-                    send_plain_reply(
-                        bot,
-                        &message,
-                        format!(
-                            "Your telegram @{username} is already linked with psn {psn}",
-                            username = username,
-                            psn = user[0].psn_name
-                        ),
-                    );
-                    return;
-                } else {
-                    use crate::schema::guardians;
+            Ok(Some(user)) => bot.send_plain_reply(
+                &message,
+                format!(
+                    "Your telegram @{username} is already linked with psn {psn}",
+                    username = username,
+                    psn = user.psn_name
+                ),
+            ),
+            Ok(None) => {
+                use crate::schema::guardians;
 
-                    let user_id = from.id;
+                let user_id = from.id;
 
-                    let guardian = NewGuardian {
-                        telegram_name: &username,
-                        telegram_id: user_id,
-                        psn_name: &name,
-                    };
+                let guardian = NewGuardian {
+                    telegram_name: &username,
+                    telegram_id: user_id,
+                    psn_name: &name,
+                };
 
-                    diesel::insert_into(guardians::table)
-                        .values(&guardian)
-                        .execute(connection)
-                        .expect("Unexpected error saving guardian");
+                diesel::insert_into(guardians::table)
+                    .values(&guardian)
+                    .execute(&connection)
+                    .expect("Unexpected error saving guardian");
 
-                    send_plain_reply(
-                        bot,
-                        &message,
-                        format!(
-                            "Linking telegram @{username} with psn {psn}",
-                            username = username,
-                            psn = name
-                        ),
-                    );
-                    return;
-                }
+                bot.send_plain_reply(
+                    &message,
+                    format!(
+                        "Linking telegram @{username} with psn {psn}",
+                        username = username,
+                        psn = name
+                    ),
+                );
             }
             Err(_) => {
-                send_plain_reply(bot, &message, "Error querying guardian name.".into());
-                return;
+                bot.send_plain_reply(&message, "Error querying guardian name.".into());
             }
         };
     }

@@ -1,7 +1,5 @@
 mod activities_command;
 pub use self::activities_command::*;
-mod bot_command;
-pub use self::bot_command::*;
 mod cancel_command;
 pub use self::cancel_command::*;
 mod details_command;
@@ -19,11 +17,10 @@ pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
-use crate::DbConnection;
 use crate::{models::Guardian, schema::guardians::dsl::*};
+use crate::{Bot, DbConnection};
 use diesel::prelude::*;
 use futures::Future;
-use telebot::{functions::*, RcBot};
 
 pub fn decapitalize(s: &str) -> String {
     s.chars()
@@ -32,52 +29,14 @@ pub fn decapitalize(s: &str) -> String {
         .unwrap()
 }
 
-pub fn spawn_message(bot: &RcBot, m: telebot::functions::WrapperMessage) {
-    bot.inner
-        .handle
-        .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
-}
-
-pub fn send_plain_reply(bot: &RcBot, source: &telebot::objects::Message, t: String) {
-    spawn_message(
-        bot,
-        bot.message(source.chat.id, t)
-            .reply_to_message_id(source.message_id)
-            .disable_notificaton(true)
-            .disable_web_page_preview(true),
-    );
-}
-
-pub fn send_html_reply(bot: &RcBot, source: &telebot::objects::Message, t: String) {
-    spawn_message(
-        bot,
-        bot.message(source.chat.id, t)
-            .reply_to_message_id(source.message_id)
-            .parse_mode(ParseMode::HTML)
-            .disable_notificaton(true)
-            .disable_web_page_preview(true),
-    );
-}
-
-pub fn send_html_message(bot: &RcBot, chat: telebot::objects::Integer, t: String) {
-    spawn_message(
-        bot,
-        bot.message(chat, t)
-            .parse_mode(ParseMode::HTML)
-            .disable_notificaton(true)
-            .disable_web_page_preview(true),
-    );
-}
-
 pub fn validate_username(
-    bot: &RcBot,
+    bot: &Bot,
     message: &telebot::objects::Message,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     let username = match message.from.as_ref().unwrap().username {
         None => {
-            send_plain_reply(
-                bot,
+            bot.send_plain_reply(
                 message,
                 "You have no telegram username, register your telegram account first.".into(),
             );
@@ -94,15 +53,14 @@ pub fn validate_username(
     match db_user {
         Ok(Some(user)) => Some(user),
         Ok(None) => {
-            send_plain_reply(
-                bot,
+            bot.send_plain_reply(
                 message,
                 "You need to link your PSN account first: use /psn command".into(),
             );
             None
         }
         Err(_) => {
-            send_plain_reply(bot, message, "Error querying guardian info.".into());
+            bot.send_plain_reply(message, "Error querying guardian info.".into());
             None
         }
     }

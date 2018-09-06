@@ -1,30 +1,27 @@
-use crate::commands::{send_html_reply, BotCommand};
-use crate::DbConnection;
-use telebot::RcBot;
+use crate::{Bot, BotCommand, DbConnection};
 
 pub struct HelpCommand;
 
 impl BotCommand for HelpCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "help"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "List available commands"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         _name: Option<String>,
-        _connection: &DbConnection,
     ) {
         //         commandRegistry.getRegisteredCommands().forEach { botCommand: BotCommand ->
         //             helpMessageBuilder.append(botCommand.toString()).append("\n\n")
         //         }
-        send_html_reply(
-            bot,
+        bot.send_html_reply(
             &message,
             "<b>Help</b> 🚑\nThese are the registered commands for this Bot:\n\n".into(),
         );

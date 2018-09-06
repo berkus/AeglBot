@@ -1,17 +1,15 @@
-use crate::commands::{send_html_reply, send_plain_reply, validate_username, BotCommand};
-use crate::DbConnection;
+use crate::commands::validate_username;
+use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, associations::HasTable, prelude::*};
 use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use models::PlannedActivity;
-use telebot::{functions::*, RcBot};
 
 pub struct DetailsCommand;
 
 impl DetailsCommand {
-    fn usage(bot: &RcBot, message: &telebot::objects::Message) {
-        send_html_reply(
-            bot,
+    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+        bot.send_html_reply(
             &message,
             "To update fireteam details enter /details ID freeform text
 To delete details use `/details ID del`.
@@ -22,20 +20,20 @@ Fireteam IDs are available from output of /list command."
 }
 
 impl BotCommand for DetailsCommand {
-    fn prefix() -> &'static str {
+    fn prefix(&self) -> &'static str {
         "details"
     }
 
-    fn description() -> &'static str {
+    fn description(&self) -> &'static str {
         "Set group details as freeform text"
     }
 
     fn execute(
-        bot: &RcBot,
+        &self,
+        bot: &Bot,
         message: telebot::objects::Message,
         _command: Option<String>,
         args: Option<String>,
-        connection: &DbConnection,
     ) {
         info!("args are {:?}", args);
 
@@ -64,17 +62,15 @@ impl BotCommand for DetailsCommand {
         }
 
         let activity_id = activity_id.unwrap();
+        let connection = bot.connection();
 
-        if validate_username(bot, &message, connection).is_some() {
+        if validate_username(bot, &message, &connection).is_some() {
             let planned =
-                PlannedActivity::find_one(connection, &activity_id).expect("Failed to run SQL");
+                PlannedActivity::find_one(&connection, &activity_id).expect("Failed to run SQL");
 
             if planned.is_none() {
-                return send_plain_reply(
-                    bot,
-                    &message,
-                    format!("Activity {} was not found.", activity_id),
-                );
+                return bot
+                    .send_plain_reply(&message, format!("Activity {} was not found.", activity_id));
             }
 
             let mut planned = planned.unwrap();
@@ -84,11 +80,11 @@ impl BotCommand for DetailsCommand {
             } else {
                 Some(description.to_string())
             };
-            if planned.save(connection).is_err() {
-                return send_plain_reply(bot, &message, "Failed to update details.".into());
+            if planned.save(&connection).is_err() {
+                return bot.send_plain_reply(&message, "Failed to update details.".into());
             }
 
-            send_plain_reply(bot, &message, "Details updated.".into());
+            bot.send_plain_reply(&message, "Details updated.".into());
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{commands::send_html_message, datetime::reference_date, DbConnection};
+use crate::{datetime::reference_date, Bot, DbConnection};
 use diesel::{
     self,
     dsl::{now, IntervalDsl},
@@ -11,19 +11,16 @@ use futures::Future;
 use models::PlannedActivity;
 use telebot::{functions::*, RcBot};
 
-pub fn check(
-    bot: &RcBot,
-    chat_id: telebot::objects::Integer,
-    connection: &DbConnection,
-) -> Result<(), Error> {
+pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
     use schema::plannedactivities::dsl::*;
 
     let reference = reference_date();
+    let connection = bot.connection();
 
     let upcoming_events = plannedactivities
         .filter(start.ge(now.into_sql::<Timestamptz>() - 60_i32.minutes()))
         .order(start.asc())
-        .load::<PlannedActivity>(connection)
+        .load::<PlannedActivity>(&connection)
         .expect("TEMP loading @FIXME");
 
     let upcoming_events: Vec<&PlannedActivity> = upcoming_events
@@ -46,10 +43,10 @@ pub fn check(
     let text = upcoming_events
         .into_iter()
         .fold("Activities starting soon:\n\n".to_owned(), |acc, event| {
-            acc + &format!("{}\n\n", event.display(connection, None))
+            acc + &format!("{}\n\n", event.display(&connection, None))
         });
 
-    send_html_message(bot, chat_id, text);
+    bot.send_html_message(chat_id, text);
 
     Ok(())
 }
