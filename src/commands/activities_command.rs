@@ -5,6 +5,12 @@ use futures::Future;
 
 pub struct ActivitiesCommand;
 
+impl ActivitiesCommand {
+    pub fn new() -> Box<Self> {
+        Box::new(ActivitiesCommand)
+    }
+}
+
 impl BotCommand for ActivitiesCommand {
     fn prefix(&self) -> &'static str {
         "/activities"

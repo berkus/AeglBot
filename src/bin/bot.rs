@@ -104,17 +104,17 @@ fn main() {
     let mut core = Core::new().unwrap();
     loop {
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-        let bot = Bot::new(&bot_name, core.handle(), &token);
+        let mut bot = Bot::new(&bot_name, core.handle(), &token);
 
-        // bot.register_command(ActivitiesCommand);
-        // bot.register_command(CancelCommand);
-        // bot.register_command(DetailsCommand);
-        // bot.register_command(HelpCommand);
-        // bot.register_command(JoinCommand);
-        // bot.register_command(LfgCommand);
-        // bot.register_command(ListCommand);
-        // bot.register_command(PsnCommand);
-        // bot.register_command(WhoisCommand);
+        bot.register_command(ActivitiesCommand::new());
+        bot.register_command(CancelCommand::new());
+        bot.register_command(DetailsCommand::new());
+        bot.register_command(HelpCommand::new());
+        bot.register_command(JoinCommand::new());
+        bot.register_command(LfgCommand::new());
+        bot.register_command(ListCommand::new());
+        bot.register_command(PsnCommand::new());
+        bot.register_command(WhoisCommand::new());
 
         let stream = bot.process_messages();
 

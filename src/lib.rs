@@ -78,9 +78,10 @@ impl Bot {
         }
     }
 
-    pub fn register_catchall(cmd: Box<BotCommand>) {}
+    // pub fn register_catchall(cmd: Box<BotCommand>) {}
 
-    pub fn register_command(cmd: Box<BotCommand>) {
+    pub fn register_command(&mut self, cmd: Box<BotCommand>) {
+        self.commands.write().unwrap().insert(0, cmd);
         // insert into commands while maintaining certain property:
         // - if command is a prefix of another inserted command, it must be inserted after
         //   that command.
@@ -117,26 +118,6 @@ impl Bot {
                 cmd.execute(&self, message, Some(cmdname), text);
             }
         }
-
-        // if let (Some(_), text) = Self::match_command(&message, "whois", &bot_name) {
-        //     WhoisCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "psn", &bot_name) {
-        //     PsnCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "join", &bot_name) {
-        //     JoinCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "cancel", &bot_name) {
-        //     CancelCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "list", &bot_name) {
-        //     ListCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "lfg", &bot_name) {
-        //     LfgCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "details", &bot_name) {
-        //     DetailsCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "activities", &bot_name) {
-        //     ActivitiesCommand::execute(&bot, message, None, text, &connection);
-        // } else if let (Some(_), text) = Self::match_command(&message, "help", &bot_name) {
-        //     HelpCommand::execute(&bot, message, None, text, &connection);
-        // }
     }
 
     pub fn establish_connection() -> DbConnPool {

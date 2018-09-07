@@ -14,6 +14,10 @@ use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityM
 pub struct LfgCommand;
 
 impl LfgCommand {
+    pub fn new() -> Box<Self> {
+        Box::new(LfgCommand)
+    }
+
     fn usage(bot: &Bot, message: &telebot::objects::Message) {
         bot.send_html_reply(
             &message,

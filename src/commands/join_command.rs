@@ -12,6 +12,10 @@ use models::{Activity, NewPlannedActivityMember, PlannedActivity, PlannedActivit
 pub struct JoinCommand;
 
 impl JoinCommand {
+    pub fn new() -> Box<Self> {
+        Box::new(JoinCommand)
+    }
+
     fn usage(bot: &Bot, message: &telebot::objects::Message) {
         bot.send_plain_reply(
             &message,

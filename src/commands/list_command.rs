@@ -10,6 +10,12 @@ use futures::Future;
 
 pub struct ListCommand;
 
+impl ListCommand {
+    pub fn new() -> Box<Self> {
+        Box::new(ListCommand)
+    }
+}
+
 impl BotCommand for ListCommand {
     fn prefix(&self) -> &'static str {
         "/list"

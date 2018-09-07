@@ -2,6 +2,12 @@ use crate::{Bot, BotCommand, DbConnection};
 
 pub struct HelpCommand;
 
+impl HelpCommand {
+    pub fn new() -> Box<Self> {
+        Box::new(HelpCommand)
+    }
+}
+
 impl BotCommand for HelpCommand {
     fn prefix(&self) -> &'static str {
         "/help"

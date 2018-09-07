@@ -8,6 +8,10 @@ use models::PlannedActivity;
 pub struct DetailsCommand;
 
 impl DetailsCommand {
+    pub fn new() -> Box<Self> {
+        Box::new(DetailsCommand)
+    }
+
     fn usage(bot: &Bot, message: &telebot::objects::Message) {
         bot.send_html_reply(
             &message,
