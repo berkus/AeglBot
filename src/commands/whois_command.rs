@@ -17,7 +17,7 @@ impl BotCommand for WhoisCommand {
     fn execute(
         &self,
         bot: &Bot,
-        message: telebot::objects::Message,
+        message: &telebot::objects::Message,
         _command: Option<String>,
         name: Option<String>,
     ) {

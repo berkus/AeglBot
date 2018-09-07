@@ -22,7 +22,7 @@ impl BotCommand for ListCommand {
     fn execute(
         &self,
         bot: &Bot,
-        message: telebot::objects::Message,
+        message: &telebot::objects::Message,
         _command: Option<String>,
         _args: Option<String>,
     ) {

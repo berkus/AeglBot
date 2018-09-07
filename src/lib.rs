@@ -48,7 +48,7 @@ pub trait BotCommand {
     fn execute(
         &self,
         bot: &Bot,
-        message: telebot::objects::Message,
+        message: &telebot::objects::Message,
         command: Option<String>,
         text: Option<String>,
     );
@@ -86,10 +86,10 @@ impl Bot {
         self.bot
             .get_stream()
             .filter_map(|(bot, update)| update.message.map(|msg| (bot, msg)))
-            .and_then(|(_, message)| {
+            .and_then(move |(_, message)| {
                 debug!("{:#?}", message);
 
-                self.process_message(message);
+                self.process_message(&message);
 
                 Ok(()) // @todo return (RcBot, telebot::objects::Update) here?
             })
@@ -104,12 +104,10 @@ impl Bot {
 
     // Internal helpers
 
-    pub fn process_message(&self, message: telebot::objects::Message) {
-        let connection = self.connection_pool.get().unwrap();
-
+    pub fn process_message(&self, message: &telebot::objects::Message) {
         for cmd in self.commands {
             if let (Some(cmdname), text) =
-                Self::match_command(&message, cmd.prefix(), &self.bot_name)
+                Self::match_command(message, cmd.prefix(), &self.bot_name)
             {
                 cmd.execute(&self, message, Some(cmdname), text);
             }

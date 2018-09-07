@@ -34,7 +34,7 @@ impl BotCommand for CancelCommand {
     fn execute(
         &self,
         bot: &Bot,
-        message: telebot::objects::Message,
+        message: &telebot::objects::Message,
         _command: Option<String>,
         activity_id: Option<String>,
     ) {

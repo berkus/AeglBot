@@ -38,7 +38,7 @@ impl BotCommand for LfgCommand {
     fn execute(
         &self,
         bot: &Bot,
-        message: telebot::objects::Message,
+        message: &telebot::objects::Message,
         _command: Option<String>,
         args: Option<String>,
     ) {

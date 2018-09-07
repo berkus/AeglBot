@@ -17,7 +17,7 @@ impl BotCommand for ActivitiesCommand {
     fn execute(
         &self,
         bot: &Bot,
-        message: telebot::objects::Message,
+        message: &telebot::objects::Message,
         _command: Option<String>,
         _unused: Option<String>,
     ) {
