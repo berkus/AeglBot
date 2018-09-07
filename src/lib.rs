@@ -1,6 +1,7 @@
 #![feature(crate_in_paths, extern_prelude)] // features from edition-2018
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![allow(unused_imports)] // during development
+#![feature(slice_sort_by_cached_key)]
 
 extern crate r2d2;
 #[macro_use]
@@ -86,6 +87,17 @@ impl Bot {
         // - if command is a prefix of another inserted command, it must be inserted after
         //   that command.
         // - otherwise the command is inserted to the very beginning of vector.
+    }
+
+    pub fn list_commands(&self) -> Vec<(String, String)> {
+        self.commands
+            .read()
+            .unwrap()
+            .iter()
+            .fold(vec![], |mut acc, cmd| {
+                acc.push((cmd.prefix().to_string(), cmd.description().to_string()));
+                acc
+            })
     }
 
     pub fn process_messages<'a>(&'a self) -> impl Stream<Item = (), Error = failure::Error> + 'a {

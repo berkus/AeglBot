@@ -24,12 +24,15 @@ impl BotCommand for HelpCommand {
         _command: Option<String>,
         _name: Option<String>,
     ) {
-        //         commandRegistry.getRegisteredCommands().forEach { botCommand: BotCommand ->
-        //             helpMessageBuilder.append(botCommand.toString()).append("\n\n")
-        //         }
+        let mut sorted_cmds = bot.list_commands();
+        sorted_cmds.sort_by_cached_key(|v| v.0.to_owned());
+
         bot.send_html_reply(
             &message,
-            "<b>Help</b> 🚑\nThese are the registered commands for this Bot:\n\n".into(),
+            sorted_cmds.into_iter().fold(
+                "<b>Help</b> 🚑\nThese are the registered commands for this Bot:\n\n".into(),
+                |acc, pair| format!("{}{} — {}\n\n", acc, pair.0, pair.1),
+            ),
         );
     }
 }
