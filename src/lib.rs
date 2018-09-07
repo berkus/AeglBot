@@ -27,7 +27,10 @@ use diesel_logger::LoggingConnection;
 use dotenv::dotenv;
 use futures::{Future, Stream};
 use r2d2::Pool;
-use std::env;
+use std::{
+    env,
+    sync::{Arc, RwLock},
+};
 use telebot::{functions::*, RcBot};
 
 pub mod commands;
@@ -55,10 +58,11 @@ pub trait BotCommand {
     );
 }
 
+#[derive(Clone)]
 pub struct Bot {
     bot: RcBot,
     bot_name: String,
-    commands: Vec<Box<BotCommand>>,
+    commands: Arc<RwLock<Vec<Box<BotCommand>>>>,
     connection_pool: DbConnPool,
 }
 
@@ -69,7 +73,7 @@ impl Bot {
         Bot {
             bot: RcBot::new(handle, token).update_interval(200),
             bot_name: name.to_string(),
-            commands: vec![],
+            commands: Arc::new(RwLock::new(Vec::new())),
             connection_pool: Self::establish_connection(),
         }
     }
@@ -106,7 +110,7 @@ impl Bot {
     // Internal helpers
 
     pub fn process_message(&self, message: &telebot::objects::Message) {
-        for cmd in self.commands {
+        for cmd in self.commands.read().unwrap().iter() {
             if let (Some(cmdname), text) =
                 Self::match_command(message, cmd.prefix(), &self.bot_name)
             {
