@@ -130,10 +130,6 @@ fn main() {
         let reminder_bot = bot.clone();
         let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
             .for_each(move |_| {
-                // @todo Add a thread that would get once a minute a list of planned activities and
-                // notify when the time is closing in.
-                // e.g.
-                // Event starting in 15 minutes: Iron Banner with @dozniak, @aero_kamero (4 more can join)
                 info!("reminder check");
                 reminder::check(&reminder_bot, lfg_chat);
                 Ok(())
