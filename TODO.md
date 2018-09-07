@@ -1,7 +1,7 @@
 More features:
 
  ☐ HANDLE ERRORS
- ☐ Use Bot struct to group all commands together and do automatic command matching.
+ ✔ Use Bot struct to group all commands together and do automatic command matching. @done (18-09-07 14:23)
  ☐ /edit command to modify activities
    ☐ `/edit530 time 11:00`
    ☐ `/edit530 desc <new description>`
