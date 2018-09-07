@@ -147,7 +147,9 @@ impl Bot {
             .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
     }
 
-    pub fn connection(&self) -> DbConnection {
+    pub fn connection(
+        &self,
+    ) -> r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>> {
         self.connection_pool.get().unwrap()
     }
 
