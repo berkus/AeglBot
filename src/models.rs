@@ -4,6 +4,7 @@ use crate::schema::*;
 use crate::DbConnection;
 use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 use diesel_derives_traits::{Model, NewModel};
+use dotenv::dotenv;
 use serde_json::Value;
 use std::fmt;
 
@@ -355,23 +356,25 @@ impl PlannedActivityMember {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Bot;
     use diesel::prelude::*;
-
-    // @todo move these to models.rs
+    use std::env;
+    use tokio_core::reactor::Core;
 
     #[test]
     fn test_guardians() {
-        use aegl_bot::models::Guardian;
-        use aegl_bot::schema::guardians::dsl::*;
+        use crate::schema::guardians::dsl::*;
 
         dotenv().ok();
-
-        let connection = aegl_bot::establish_connection().get().unwrap();
+        let core = Core::new().unwrap();
+        let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+        let bot = Bot::new(&bot_name, core.handle(), &token);
 
         let results = guardians
             // .filter(published.eq(true))
             .limit(5)
-            .load::<Guardian>(&connection)
+            .load::<Guardian>(&bot.connection())
             .expect("Error loading guardians");
 
         println!("Displaying {} guardians", results.len());
@@ -382,15 +385,16 @@ mod tests {
 
     #[test]
     fn test_activities() {
-        use aegl_bot::models::Activity;
-        use aegl_bot::schema::activities::dsl::*;
+        use crate::schema::activities::dsl::*;
 
         dotenv().ok();
-
-        let connection = aegl_bot::establish_connection().get().unwrap();
+        let core = Core::new().unwrap();
+        let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+        let bot = Bot::new(&bot_name, core.handle(), &token);
 
         let results = activities
-            .load::<Activity>(&connection)
+            .load::<Activity>(&bot.connection())
             .expect("Error loading activities");
 
         println!("Displaying {} activities", results.len());
@@ -401,16 +405,17 @@ mod tests {
 
     #[test]
     fn test_alerts() {
-        use aegl_bot::models::Alert;
-        use aegl_bot::schema::alerts::dsl::*;
+        use crate::schema::alerts::dsl::*;
 
         dotenv().ok();
-
-        let connection = aegl_bot::establish_connection().get().unwrap();
+        let core = Core::new().unwrap();
+        let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+        let bot = Bot::new(&bot_name, core.handle(), &token);
 
         let results = alerts
             .limit(5)
-            .load::<Alert>(&connection)
+            .load::<Alert>(&bot.connection())
             .expect("Error loading alerts");
 
         println!("Displaying {} alerts", results.len());
@@ -421,24 +426,25 @@ mod tests {
 
     #[test]
     fn test_planned_activities() {
-        use aegl_bot::models::{Guardian, PlannedActivity};
-        use aegl_bot::schema::guardians::dsl::*;
+        use crate::schema::guardians::dsl::*;
 
         dotenv().ok();
-
-        let connection = aegl_bot::establish_connection().get().unwrap();
+        let core = Core::new().unwrap();
+        let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
+        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+        let bot = Bot::new(&bot_name, core.handle(), &token);
 
         let guar = guardians
             .find(1)
-            .first::<Guardian>(&connection)
+            .first::<Guardian>(&bot.connection())
             .expect("Guardian with id 1 not found");
         let results = PlannedActivity::belonging_to(&guar)
-            .load::<PlannedActivity>(&connection)
+            .load::<PlannedActivity>(&bot.connection())
             .expect("Error loading activities");
 
         println!("Displaying {} planned activities", results.len());
         for act in results {
-            println!("{}", act.display(&connection, Some(&guar)));
+            println!("{}", act.display(&bot.connection(), Some(&guar)));
         }
     }
 }
