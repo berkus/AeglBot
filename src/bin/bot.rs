@@ -19,14 +19,13 @@ extern crate tokio_core;
 extern crate log;
 extern crate fern;
 
-use aegl_bot::commands::*;
-use aegl_bot::services::*;
+use aegl_bot::{commands::*, services::*, Bot};
 use dotenv::dotenv;
 use failure::Error;
 use futures::{Future, IntoFuture, Stream};
 use std::env;
 use std::time::{Duration, Instant};
-use telebot::{error::TelegramError, RcBot};
+use telebot::error::TelegramError;
 use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
@@ -105,7 +104,7 @@ fn main() {
     let mut core = Core::new().unwrap();
     loop {
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-        let bot = Bot::new(bot_name, core.handle(), &token);
+        let bot = Bot::new(&bot_name, core.handle(), &token);
 
         // bot.register_command(ActivitiesCommand);
         // bot.register_command(CancelCommand);
