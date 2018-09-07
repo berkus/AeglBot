@@ -3,7 +3,7 @@
 // To make it usable it misses natty parsing lib implementation in rust
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-#![feature(futures_api, async_await, await_macro, extern_prelude)]
+#![feature(futures_api, async_await, await_macro, extern_prelude, nll)]
 
 extern crate aegl_bot;
 extern crate diesel;
@@ -24,7 +24,7 @@ use dotenv::dotenv;
 use futures::{Future, IntoFuture, Stream};
 use std::env;
 use std::time::{Duration, Instant};
-use telebot::RcBot;
+use telebot::{error::TelegramError, RcBot};
 use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
@@ -214,7 +214,15 @@ fn main() {
         bot.inner.handle.spawn(alert_task);
         bot.inner.handle.spawn(reminder_task);
 
-        core.run(stream.for_each(|_| Ok(())).into_future()).unwrap(); // @todo handle connection errors and restart bot after pause
+        core.run(stream.for_each(|_| Ok(())).into_future())
+            .map_err(|error| match error.downcast_ref::<TelegramError>() {
+                Some(message) => {
+                    error!("Telegram server error: {}, restarting connection.", message);
+                    std::thread::sleep(Duration::from_secs(30));
+                    Ok(())
+                }
+                None => Err(error),
+            }).unwrap();
     }
 }
 
