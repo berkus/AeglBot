@@ -7,7 +7,7 @@ pub struct ActivitiesCommand;
 
 impl BotCommand for ActivitiesCommand {
     fn prefix(&self) -> &'static str {
-        "activities"
+        "/activities"
     }
 
     fn description(&self) -> &'static str {

@@ -28,7 +28,7 @@ Times are in Moscow (MSK) timezone."
 
 impl BotCommand for LfgCommand {
     fn prefix(&self) -> &'static str {
-        "lfg"
+        "/lfg"
     }
 
     fn description(&self) -> &'static str {

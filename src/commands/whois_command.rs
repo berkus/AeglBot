@@ -7,7 +7,7 @@ pub struct WhoisCommand;
 
 impl BotCommand for WhoisCommand {
     fn prefix(&self) -> &'static str {
-        "whois"
+        "/whois"
     }
 
     fn description(&self) -> &'static str {

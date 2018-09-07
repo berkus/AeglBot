@@ -21,7 +21,7 @@ Fireteam IDs are available from output of /list command."
 
 impl BotCommand for DetailsCommand {
     fn prefix(&self) -> &'static str {
-        "details"
+        "/details"
     }
 
     fn description(&self) -> &'static str {

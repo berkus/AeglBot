@@ -24,7 +24,7 @@ Fireteam IDs are available from output of /list command."
 
 impl BotCommand for CancelCommand {
     fn prefix(&self) -> &'static str {
-        "cancel"
+        "/cancel"
     }
 
     fn description(&self) -> &'static str {

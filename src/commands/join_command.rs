@@ -24,7 +24,7 @@ Fireteam IDs are available from output of /list command."
 
 impl BotCommand for JoinCommand {
     fn prefix(&self) -> &'static str {
-        "join"
+        "/join"
     }
 
     fn description(&self) -> &'static str {

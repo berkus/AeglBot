@@ -10,7 +10,7 @@ pub struct PsnCommand;
 
 impl BotCommand for PsnCommand {
     fn prefix(&self) -> &'static str {
-        "psn"
+        "/psn"
     }
 
     fn description(&self) -> &'static str {

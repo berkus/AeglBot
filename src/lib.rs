@@ -41,6 +41,7 @@ pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
 
 pub trait BotCommand {
     /// Return command prefix to match.
+    /// To support sub-commands the prefix for root commands should start with '/'.
     fn prefix(&self) -> &'static str;
     /// Return command description.
     fn description(&self) -> &'static str;
@@ -214,7 +215,7 @@ impl Bot {
         let data = msg.text.as_ref().unwrap();
         debug!("matching text {:#?}", data);
 
-        let command = "/".to_owned() + command;
+        let command = command.to_owned();
         let long_command = format!("{}@{}", command, bot_name);
         debug!("matching {:#?} against {:#?}", data, long_command);
         if data.starts_with(&long_command) {

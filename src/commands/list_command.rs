@@ -12,7 +12,7 @@ pub struct ListCommand;
 
 impl BotCommand for ListCommand {
     fn prefix(&self) -> &'static str {
-        "list"
+        "/list"
     }
 
     fn description(&self) -> &'static str {

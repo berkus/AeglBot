@@ -4,7 +4,7 @@ pub struct HelpCommand;
 
 impl BotCommand for HelpCommand {
     fn prefix(&self) -> &'static str {
-        "help"
+        "/help"
     }
 
     fn description(&self) -> &'static str {
