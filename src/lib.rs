@@ -81,12 +81,20 @@ impl Bot {
 
     // pub fn register_catchall(cmd: Box<BotCommand>) {}
 
+    // Insert into commands while maintaining certain property:
+    // - if command is a prefix of another inserted command, it must be inserted after
+    //   that command.
+    // - otherwise the command is inserted to the very beginning of vector.
+    // This allows correct parsing order fof commands that are prefixes of another command.
     pub fn register_command(&mut self, cmd: Box<BotCommand>) {
-        self.commands.write().unwrap().insert(0, cmd);
-        // insert into commands while maintaining certain property:
-        // - if command is a prefix of another inserted command, it must be inserted after
-        //   that command.
-        // - otherwise the command is inserted to the very beginning of vector.
+        let mut insertion_index = 0;
+        for (idx, command) in self.commands.read().unwrap().iter().enumerate() {
+            if command.prefix().starts_with(cmd.prefix()) {
+                insertion_index = idx + 1;
+            }
+        }
+
+        self.commands.write().unwrap().insert(insertion_index, cmd);
     }
 
     pub fn list_commands(&self) -> Vec<(String, String)> {
@@ -235,5 +243,69 @@ impl Bot {
             );
         }
         (None, None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Command is prefix of another command.
+    struct PrefixCommand;
+    struct PrefixTwoCommand;
+
+    impl PrefixCommand {
+        pub fn new() -> Box<Self> {
+            Box::new(PrefixCommand)
+        }
+    }
+
+    impl BotCommand for PrefixCommand {
+        fn prefix(&self) -> &'static str {
+            "/prefix"
+        }
+
+        fn description(&self) -> &'static str {
+            "Test"
+        }
+
+        fn execute(
+            &self,
+            _bot: &Bot,
+            _message: &telebot::objects::Message,
+            _command: Option<String>,
+            _name: Option<String>,
+        ) {
+        }
+    }
+
+    impl PrefixTwoCommand {
+        pub fn new() -> Box<Self> {
+            Box::new(PrefixTwoCommand)
+        }
+    }
+
+    impl BotCommand for PrefixTwoCommand {
+        fn prefix(&self) -> &'static str {
+            "/prefixtwo"
+        }
+
+        fn description(&self) -> &'static str {
+            "Test two"
+        }
+
+        fn execute(
+            &self,
+            _bot: &Bot,
+            _message: &telebot::objects::Message,
+            _command: Option<String>,
+            _name: Option<String>,
+        ) {
+        }
+    }
+
+    #[test]
+    fn test_command_insertion() {
+        unimplemented!();
     }
 }
