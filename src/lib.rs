@@ -104,28 +104,36 @@ impl Bot {
 
     // Internal helpers
 
-    pub fn process_message(&self, message: &telebot::objects::Message) {
-        let connection = connection_pool.get().unwrap();
+    pub fn process_message(&self, message: telebot::objects::Message) {
+        let connection = self.connection_pool.get().unwrap();
 
-        if let (Some(_), text) = Self::match_command(&message, "whois", &bot_name) {
-            WhoisCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "psn", &bot_name) {
-            PsnCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "join", &bot_name) {
-            JoinCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "cancel", &bot_name) {
-            CancelCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "list", &bot_name) {
-            ListCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "lfg", &bot_name) {
-            LfgCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "details", &bot_name) {
-            DetailsCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "activities", &bot_name) {
-            ActivitiesCommand::execute(&bot, message, None, text, &connection);
-        } else if let (Some(_), text) = Self::match_command(&message, "help", &bot_name) {
-            HelpCommand::execute(&bot, message, None, text, &connection);
+        for cmd in self.commands {
+            if let (Some(cmdname), text) =
+                Self::match_command(&message, cmd.prefix(), &self.bot_name)
+            {
+                cmd.execute(&self, message, Some(cmdname), text);
+            }
         }
+
+        // if let (Some(_), text) = Self::match_command(&message, "whois", &bot_name) {
+        //     WhoisCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "psn", &bot_name) {
+        //     PsnCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "join", &bot_name) {
+        //     JoinCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "cancel", &bot_name) {
+        //     CancelCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "list", &bot_name) {
+        //     ListCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "lfg", &bot_name) {
+        //     LfgCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "details", &bot_name) {
+        //     DetailsCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "activities", &bot_name) {
+        //     ActivitiesCommand::execute(&bot, message, None, text, &connection);
+        // } else if let (Some(_), text) = Self::match_command(&message, "help", &bot_name) {
+        //     HelpCommand::execute(&bot, message, None, text, &connection);
+        // }
     }
 
     pub fn establish_connection() -> DbConnPool {
