@@ -121,18 +121,13 @@ fn main() {
         let alerts_bot = bot.clone();
         let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
             .for_each(move |_| {
-                info!("alerts check");
-                alerts_watcher::check(&alerts_bot, wf_alerts_chat);
-                Ok(())
+                alerts_watcher::check(&alerts_bot, wf_alerts_chat).or_else(|_| Ok(()))
             }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
 
         let reminder_bot = bot.clone();
         let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
-            .for_each(move |_| {
-                info!("reminder check");
-                reminder::check(&reminder_bot, lfg_chat);
-                Ok(())
-            }).map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+            .for_each(move |_| reminder::check(&reminder_bot, lfg_chat).or_else(|_| Ok(())))
+            .map_err(|e| panic!("Reminder thread errored; err={:?}", e));
 
         bot.spawn(alert_task);
         bot.spawn(reminder_task);

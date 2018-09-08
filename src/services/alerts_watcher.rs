@@ -12,6 +12,7 @@ use telebot::{functions::*, RcBot};
 const RSS_DATE_FORMAT: &str = "%a, %d %b %Y %H:%M:%S %z"; // Thu, 10 May 2018 12:08:20 +0000
 
 pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+    info!("alerts check");
     let connection = bot.connection();
     let channel = Channel::from_url("http://content.ps4.warframe.com/dynamic/rss.php")?;
     let mut alert_list = vec![];
