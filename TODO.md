@@ -9,6 +9,9 @@ More features:
  ☐ (not needed then?) admin web interface to
    ☐ edit start time of planned activity
    ☐ change planned activity type
+ ☐ match guardian- and telegram-names case-insensitive
+ ☐ implement support for sub-commands
+   ☐ commands may register sub-commands using the same matcher interface
  ☐ admin interface (admin-only access) to
    ☐ find activities ids
        ☐ `/activities ids` similar to `/activites` but for actual activities, not shortcuts.
