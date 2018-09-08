@@ -205,10 +205,6 @@ impl Bot {
     /// @returns A pair of matched command and remainder of the message text.
     /// (None, None) if command did not match,
     /// (command, and Some remaining text after command otherwise).
-    ///
-    /// @todo Some clients send /cancel593@AeglBot on click, so probably need to match longest
-    /// command prefix if the bot name also matches in command
-    /// (basically, if ends_with "@BotName", strip it off and match command prefixes)
     fn match_command(
         msg: &telebot::objects::Message,
         command: &str,
@@ -223,6 +219,26 @@ impl Bot {
 
         let command = command.to_owned();
         let long_command = format!("{}@{}", command, bot_name);
+
+        // Some clients send /cancel593@AeglBot on click, so probably need to match longest
+        // command prefix if the bot name also matches in command
+        // (basically, if ends_with "@BotName", strip it off and match command prefixes)
+        if data.ends_with(&format!("@{}", bot_name)) {
+            let end = data.len() - bot_name.len() - 1;
+            let data = &data[0..end];
+            debug!("matching {:#?} against {:#?}", data, command);
+            if data.starts_with(&command) {
+                debug!(".. matched");
+                return (
+                    Some(command.clone()),
+                    data.get(command.len()..)
+                        .map(|x| x.trim_left().to_string())
+                        .filter(|y| !y.is_empty()),
+                );
+            }
+            return (None, None);
+        }
+
         debug!("matching {:#?} against {:#?}", data, long_command);
         if data.starts_with(&long_command) {
             debug!(".. matched");
