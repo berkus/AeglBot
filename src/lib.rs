@@ -218,6 +218,7 @@ impl Bot {
         debug!("matching text {:#?}", data);
 
         let command = command.to_owned();
+        let non_command = format!("{}@", command);
         let long_command = format!("{}@{}", command, bot_name);
 
         // Some clients send /cancel593@AeglBot on click, so probably need to match longest
@@ -249,6 +250,12 @@ impl Bot {
                     .filter(|y| !y.is_empty()),
             );
         }
+
+        if data.starts_with(&non_command) {
+            debug!(".. some other bot matched");
+            return (None, None);
+        }
+
         debug!("matching {:#?} against {:#?}", data, command);
         if data.starts_with(&command) {
             debug!(".. matched");

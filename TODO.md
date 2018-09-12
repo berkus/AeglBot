@@ -5,7 +5,7 @@ More features:
      ☐ tentative patch applied, we'll see
  ✔ Use Bot struct to group all commands together and do automatic command matching. @done (18-09-07 14:23)
  ☐ match guardian- and telegram-names case-insensitive
- ☐ ignore commands directed for other bots like `/help@SomeOtherBot`
+ ✔ ignore commands directed for other bots like `/help@SomeOtherBot` @done (18-09-12 21:47)
  ☐ /info command to report bot status
  ☐ /edit command to modify activities
    ☐ `/edit530 time 11:00`
