@@ -10,6 +10,7 @@ extern crate diesel;
 extern crate dotenv;
 extern crate failure;
 extern crate futures;
+extern crate futures_retry;
 extern crate r2d2;
 extern crate rss;
 extern crate telebot;
@@ -23,6 +24,7 @@ use aegl_bot::{commands::*, services::*, Bot};
 use dotenv::dotenv;
 use failure::Error;
 use futures::{Future, IntoFuture, Stream};
+use futures_retry::{RetryPolicy, StreamRetryExt};
 use std::env;
 use std::time::{Duration, Instant};
 use telebot::error::TelegramError;
@@ -132,14 +134,22 @@ fn main() {
         bot.spawn(alert_task);
         bot.spawn(reminder_task);
 
-        core.run(stream.for_each(|_| Ok(())).into_future())
-            .map_err(|error| match error.downcast_ref::<TelegramError>() {
-                Some(message) => {
-                    error!("Telegram server error: {}, restarting connection.", message);
-                    std::thread::sleep(Duration::from_secs(30));
-                    Ok(())
-                }
-                None => Err(error),
-            }).unwrap();
+        core.run(
+            stream
+                .retry(handle_error)
+                .for_each(|_| Ok(()))
+                .map_err(|e| error!("Caught an error {}", e))
+                .into_future(),
+        ).unwrap();
+    }
+}
+
+fn handle_error(error: Error) -> RetryPolicy<Error> {
+    match error.downcast_ref::<TelegramError>() {
+        Some(message) => {
+            error!("Telegram server error: {}, retrying connection.", message);
+            RetryPolicy::WaitRetry(Duration::from_secs(30))
+        }
+        None => RetryPolicy::ForwardError(error),
     }
 }
