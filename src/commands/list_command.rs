@@ -1,10 +1,9 @@
 use crate::{commands::validate_username, models::PlannedActivity};
-use crate::{Bot, BotCommand, DbConnection};
+use crate::{datetime::nowtz, Bot, BotCommand, DbConnection};
 use diesel::{
     self,
     dsl::{now, IntervalDsl},
     prelude::*,
-    sql_types::Timestamptz,
 };
 use futures::Future;
 
@@ -33,7 +32,7 @@ impl BotCommand for ListCommand {
         let connection = bot.connection();
 
         let upcoming_events = plannedactivities
-            .filter(start.ge(now.into_sql::<Timestamptz>() - 60_i32.minutes()))
+            .filter(start.ge(nowtz() - 60_i32.minutes()))
             .order(start.asc())
             .load::<PlannedActivity>(&connection)
             .expect("TEMP loading @FIXME");

@@ -1,9 +1,9 @@
 use crate::{datetime::reference_date, Bot, DbConnection};
+use datetime::nowtz;
 use diesel::{
     self,
     dsl::{now, IntervalDsl},
     prelude::*,
-    sql_types::Timestamptz,
 };
 use diesel_derives_traits::Model;
 use failure::Error;
@@ -20,7 +20,7 @@ pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error>
     let connection = bot.connection();
 
     let upcoming_events = plannedactivities
-        .filter(start.ge(now.into_sql::<Timestamptz>() - 60_i32.minutes()))
+        .filter(start.ge(nowtz() - 60_i32.minutes()))
         .order(start.asc())
         .load::<PlannedActivity>(&connection)
         .expect("TEMP loading @FIXME");
