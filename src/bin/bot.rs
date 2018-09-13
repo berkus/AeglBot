@@ -27,7 +27,6 @@ use futures::{Future, IntoFuture, Stream};
 use futures_retry::{RetryPolicy, StreamRetryExt};
 use std::env;
 use std::time::{Duration, Instant};
-use telebot::error::TelegramError;
 use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
@@ -145,11 +144,14 @@ fn main() {
 }
 
 fn handle_error(error: Error) -> RetryPolicy<Error> {
-    match error.downcast_ref::<TelegramError>() {
-        Some(message) => {
-            error!("Telegram server error: {}, retrying connection.", message);
-            RetryPolicy::WaitRetry(Duration::from_secs(30))
-        }
+    match error.downcast_ref::<telebot::error::Error>() {
+        Some(te) => match te.kind() {
+            telebot::error::ErrorKind::Telegram => {
+                error!("Telegram server error: {}, retrying connection.", te);
+                RetryPolicy::WaitRetry(Duration::from_secs(30))
+            }
+            _ => RetryPolicy::ForwardError(error),
+        },
         None => RetryPolicy::ForwardError(error),
     }
 }
