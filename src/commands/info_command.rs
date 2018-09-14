@@ -1,6 +1,6 @@
 use crate::{Bot, BotCommand, DbConnection};
-#[cfg(linux)]
-use procfs::Process;
+#[cfg(target_os = "linux")]
+use procfs::{ProcResult, Process};
 
 pub struct InfoCommand;
 
@@ -10,20 +10,21 @@ impl InfoCommand {
     }
 }
 
-#[cfg(linux)]
+#[cfg(target_os = "linux")]
 fn get_process_info() -> String {
-    match Process::myself() {
-        Ok(process) => format!(
+    if let ProcResult::Ok(process) = Process::myself() {
+        format!(
             "{thn} threads, {vm} bytes virtual memory, {rm} bytes resident memory",
-            process.stat.num_threads,
-            process.stat.vsize,
-            process.stat.rss_bytes(),
-        ),
-        Err(_) => "Couldn't access process information".to_string(),
+            thn = process.stat.num_threads,
+            vm = process.stat.vsize,
+            rm = process.stat.rss_bytes(),
+        )
+    } else {
+        "Couldn't access process information".to_string()
     }
 }
 
-#[cfg(not(linux))]
+#[cfg(not(target_os = "linux"))]
 fn get_process_info() -> String {
     "Process info only available on Linux hosts.".to_string()
 }

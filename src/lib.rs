@@ -21,6 +21,8 @@ extern crate failure;
 extern crate futures;
 #[macro_use]
 extern crate log;
+#[cfg(target_os = "linux")]
+extern crate procfs;
 extern crate tokio_core;
 
 use diesel::pg::PgConnection;
