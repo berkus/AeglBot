@@ -6,6 +6,8 @@ mod details_command;
 pub use self::details_command::*;
 mod help_command;
 pub use self::help_command::*;
+mod info_command;
+pub use self::info_command::*;
 mod join_command;
 pub use self::join_command::*;
 mod lfg_command;

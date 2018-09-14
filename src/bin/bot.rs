@@ -111,6 +111,7 @@ fn main() {
         bot.register_command(CancelCommand::new());
         bot.register_command(DetailsCommand::new());
         bot.register_command(HelpCommand::new());
+        bot.register_command(InfoCommand::new());
         bot.register_command(JoinCommand::new());
         bot.register_command(LfgCommand::new());
         bot.register_command(ListCommand::new());
