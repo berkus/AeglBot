@@ -190,20 +190,20 @@ impl Bot {
             .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
     }
 
-    pub fn send_plain_reply(&self, source: &telebot::objects::Message, t: String) {
+    pub fn send_plain_reply(&self, source: &telebot::objects::Message, text: String) {
         self.spawn_message(
             self.bot
-                .message(source.chat.id, t)
+                .message(source.chat.id, text)
                 .reply_to_message_id(source.message_id)
                 .disable_notificaton(true)
                 .disable_web_page_preview(true),
         );
     }
 
-    pub fn send_html_reply(&self, source: &telebot::objects::Message, t: String) {
+    pub fn send_html_reply(&self, source: &telebot::objects::Message, text: String) {
         self.spawn_message(
             self.bot
-                .message(source.chat.id, t)
+                .message(source.chat.id, text)
                 .reply_to_message_id(source.message_id)
                 .parse_mode(ParseMode::HTML)
                 .disable_notificaton(true)
@@ -211,10 +211,10 @@ impl Bot {
         );
     }
 
-    pub fn send_html_message(&self, chat: telebot::objects::Integer, t: String) {
+    pub fn send_html_message(&self, chat: telebot::objects::Integer, text: String) {
         self.spawn_message(
             self.bot
-                .message(chat, t)
+                .message(chat, text)
                 .parse_mode(ParseMode::HTML)
                 .disable_notificaton(true)
                 .disable_web_page_preview(true),
@@ -300,6 +300,7 @@ mod tests {
 
     // Command is prefix of another command.
     struct PrefixCommand;
+
     struct PrefixTwoCommand;
 
     impl PrefixCommand {
