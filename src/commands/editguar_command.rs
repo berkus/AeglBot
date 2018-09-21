@@ -7,13 +7,30 @@
 //☐ GUARDIAN_ID could be int, telegram name or psn name
 //☐ just show guardian fields
 //☐ `/editguar GUARDIAN_ID`
-use crate::{Bot, BotCommand, DbConnection};
+/// Allow editing info about yourself
+use crate::{Bot, BotCommand, DbConnection, commands::admin_check};
 
 pub struct EditGuardianCommand;
 
 impl EditGuardianCommand {
     pub fn new() -> Box<Self> {
         Box::new(EditGuardianCommand)
+    }
+
+    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+        bot.send_plain_reply(
+            &message,
+            "Edit guardian information:
+/editguar <id|@telegram|PSN>
+    List known guardian information
+/editguar <id|@telegram|PSN> psn <NewPSN>
+    Change guardian's PSN
+/editguar <id|@telegram|PSN> clan <Clan ticker, e.g. AEGL>
+    Change guardian's clan
+/editguar <id|@telegram|PSN> email <NewEmail>
+    Change guardian's email"
+                .into(),
+        );
     }
 }
 
@@ -30,9 +47,34 @@ impl BotCommand for EditGuardianCommand {
         &self,
         bot: &Bot,
         message: &telebot::objects::Message,
-        _command: Option<String>,
+        args: Option<String>,
         _name: Option<String>,
     ) {
-        bot.send_plain_reply(&message, "Not implemented".to_string());
+        let connection = bot.connection();
+        let admin = admin_check(bot, message, &connection);
+
+        if admin.is_none() {
+            return bot.send_plain_reply(&message, "You are not admin".to_string());
+        }
+
+        let admin = admin.unwrap();
+
+        if args.is_none() {
+            return EditGuardianCommand::usage(bot, &message);
+        }
+
+        // Split args in two:
+        // activity spec,
+        // and timespec
+        let args = args.unwrap();
+        let args: Vec<&str> = args.splitn(2, ' ').collect();
+
+        if args.len() < 2 {
+            return EditGuardianCommand::usage(bot, &message);
+        }
+
+        info!("{:?}", args);
+
+        bot.send_plain_reply(&message, "Not implemented".into());
     }
 }

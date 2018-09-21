@@ -1,7 +1,6 @@
 //☐ manage admins (superadmin can add/remove admins, admins cannot add more admins?)
 //☐ `/manage` catch-all command for these things
-//* `list-admins`, `add-admin`, `remove-admin` subcommands
-use crate::{Bot, BotCommand, DbConnection};
+use crate::{Bot, BotCommand, DbConnection, commands::admin_check};
 
 pub struct ManageCommand;
 struct ListAdminsSubcommand;
@@ -11,6 +10,20 @@ struct RemoveAdminSubcommand;
 impl ManageCommand {
     pub fn new() -> Box<Self> {
         Box::new(ManageCommand)
+    }
+
+    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+        bot.send_plain_reply(
+            &message,
+            "Manage admins:
+/manage list-admins
+    List existing admins
+/manage add-admin <id|@telegram|PSN>
+    Add existing guardian as an admin
+/manage remove-admin <id|@telegram|PSN>
+    Remove admin rights from guardian"
+                .into(),
+        );
     }
 }
 
@@ -27,9 +40,34 @@ impl BotCommand for ManageCommand {
         &self,
         bot: &Bot,
         message: &telebot::objects::Message,
-        _command: Option<String>,
+        args: Option<String>,
         _name: Option<String>,
     ) {
+        let connection = bot.connection();
+        let admin = admin_check(bot, message, &connection);
+
+        if admin.is_none() {
+            return bot.send_plain_reply(&message, "You are not admin".to_string());
+        }
+
+        let admin = admin.unwrap();
+
+        if args.is_none() {
+            return ManageCommand::usage(bot, &message);
+        }
+
+        // Split args in two:
+        // activity spec,
+        // and timespec
+        let args = args.unwrap();
+        let args: Vec<&str> = args.splitn(2, ' ').collect();
+
+        if args.len() < 2 {
+            return ManageCommand::usage(bot, &message);
+        }
+
+        info!("{:?}", args);
+
         // Need to invent some sort of match string format for matching subcommands
         // Some are `/command subcommand [args]`, some are `/command arg subcommand args` etc.
         // Can encode this string in prefix() for subcommands and make them match, maybe even directly?
@@ -39,7 +77,7 @@ impl BotCommand for ManageCommand {
         //        } else if match_subcommand(message, AddAdminSubcommand) {
         //            return AddAdminSubcommand::execute();
         //        }
-        bot.send_plain_reply(&message, "Not implemented".to_string());
+        bot.send_plain_reply(&message, "Not implemented".into());
     }
 }
 
