@@ -1,4 +1,4 @@
-#![feature(crate_in_paths, extern_prelude)] // features from edition-2018
+#![feature(crate_in_paths, extern_prelude, nll)] // features from edition-2018
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![allow(unused_imports)] // during development
 #![feature(slice_sort_by_cached_key)]
@@ -19,6 +19,7 @@ extern crate diesel_derives_extra;
 extern crate diesel_derives_traits;
 extern crate failure;
 extern crate futures;
+extern crate futures_retry;
 #[macro_use]
 extern crate log;
 #[cfg(target_os = "linux")]
@@ -29,8 +30,11 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel_logger::LoggingConnection;
 use dotenv::dotenv;
+use failure::Error;
 use futures::{Future, Stream};
+use futures_retry::{RetryPolicy, StreamRetryExt};
 use r2d2::Pool;
+use std::time::Duration;
 use std::{
     env,
     sync::{Arc, RwLock},
@@ -114,6 +118,7 @@ impl Bot {
     pub fn process_messages<'a>(&'a self) -> impl Stream<Item = (), Error = failure::Error> + 'a {
         self.bot
             .get_stream()
+            .retry(Bot::handle_error)
             .filter_map(|(bot, update)| update.message.map(|msg| (bot, msg)))
             .and_then(move |(_, message)| {
                 debug!("{:#?}", message);
@@ -132,6 +137,22 @@ impl Bot {
     }
 
     // Internal helpers
+
+    fn handle_error(error: Error) -> RetryPolicy<Error> {
+        // count errors
+        error!("handle_error");
+        match error.downcast_ref::<telebot::error::Error>() {
+            Some(te) => {
+                error!("Telegram error: {}, retrying connection.", te);
+                RetryPolicy::WaitRetry(Duration::from_secs(30))
+            }
+            None => {
+                error!("handle_error didnt match, real error {:?}", error);
+                //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
+                RetryPolicy::ForwardError(error)
+            }
+        }
+    }
 
     pub fn process_message(&self, message: &telebot::objects::Message) {
         for cmd in self.commands.read().unwrap().iter() {
@@ -370,4 +391,20 @@ mod tests {
             ]
         );
     }
+
+    // @todo need to add testing infra - HOW?
+
+    //    #[test]
+    //    fn test_telegram_retry() {
+    //        let stream = stream::iter_result(vec![
+    //            Err(failure::Error(telebot::error::ErrorKind::Telegram)),
+    //            Ok(19),
+    //        ]);
+    //        let retry = stream.retry(handle_error).collect()
+    //            .then(|x| {
+    //                assert_eq!(Ok(vec![19]), x);
+    //                Ok(())
+    //            });
+    //        tokio::run(retry);
+    //    }
 }
