@@ -46,6 +46,7 @@ table! {
         deleted_at -> Nullable<Timestamptz>,
         tokens -> Nullable<Jsonb>,
         pending_activation_code -> Nullable<Text>,
+        is_admin -> Bool,
     }
 }
 

@@ -123,6 +123,7 @@ pub struct Guardian {
     pub deleted_at: Option<DateTime<Utc>>,
     pub tokens: Option<Value>,
     pub pending_activation_code: Option<String>,
+    pub is_admin: bool,
 }
 
 #[derive(Insertable, NewModel)]

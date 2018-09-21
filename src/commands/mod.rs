@@ -37,6 +37,7 @@ pub fn decapitalize(s: &str) -> String {
         .unwrap()
 }
 
+/// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub fn validate_username(
     bot: &Bot,
     message: &telebot::objects::Message,
@@ -72,4 +73,13 @@ pub fn validate_username(
             None
         }
     }
+}
+
+/// Return a guardian record if message author is an admin user, `None` otherwise.
+pub fn admin_check(
+    bot: &Bot,
+    message: &telebot::objects::Message,
+    connection: &DbConnection,
+) -> Option<Guardian> {
+    validate_username(bot, message, connection).filter(|g| g.is_admin)
 }
