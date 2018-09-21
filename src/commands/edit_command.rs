@@ -26,7 +26,7 @@ impl BotCommand for EditCommand {
         bot: &Bot,
         message: &telebot::objects::Message,
         _command: Option<String>,
-        _name: Option<String>,
+        _args: Option<String>,
     ) {
         bot.send_plain_reply(&message, "Not implemented".to_string());
     }
