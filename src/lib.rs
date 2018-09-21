@@ -159,7 +159,7 @@ impl Bot {
             if let (Some(cmdname), text) =
                 Self::match_command(message, cmd.prefix(), &self.bot_name)
             {
-                cmd.execute(&self, message, Some(cmdname), text);
+                return cmd.execute(&self, message, Some(cmdname), text);
             }
         }
     }
