@@ -8,7 +8,7 @@
 //☐ just show guardian fields
 //☐ `/editguar GUARDIAN_ID`
 /// Allow editing info about yourself
-use crate::{Bot, BotCommand, DbConnection, commands::admin_check};
+use crate::{commands::admin_check, Bot, BotCommand, DbConnection};
 
 pub struct EditGuardianCommand;
 
@@ -47,8 +47,8 @@ impl BotCommand for EditGuardianCommand {
         &self,
         bot: &Bot,
         message: &telebot::objects::Message,
+        _command: Option<String>,
         args: Option<String>,
-        _name: Option<String>,
     ) {
         let connection = bot.connection();
         let admin = admin_check(bot, message, &connection);
@@ -63,9 +63,10 @@ impl BotCommand for EditGuardianCommand {
             return EditGuardianCommand::usage(bot, &message);
         }
 
-        // Split args in two:
-        // activity spec,
-        // and timespec
+        // Split args in two or three:
+        // guardian id,
+        // subcommand,
+        // and optionally, parameters
         let args = args.unwrap();
         let args: Vec<&str> = args.splitn(2, ' ').collect();
 
