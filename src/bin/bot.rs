@@ -107,11 +107,14 @@ fn main() {
         bot.register_command(ActivitiesCommand::new());
         bot.register_command(CancelCommand::new());
         bot.register_command(DetailsCommand::new());
+        bot.register_command(EditCommand::new());
+        bot.register_command(EditGuardianCommand::new());
         bot.register_command(HelpCommand::new());
         bot.register_command(InfoCommand::new());
         bot.register_command(JoinCommand::new());
         bot.register_command(LfgCommand::new());
         bot.register_command(ListCommand::new());
+        bot.register_command(ManageCommand::new());
         bot.register_command(PsnCommand::new());
         bot.register_command(WhoisCommand::new());
 
