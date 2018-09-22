@@ -1,13 +1,4 @@
-//☐ change guardian PSN name
-//☐ `/editguar @alexundr psn Kayouga`
-//☐ edit guardian clan
-//☐ `/editguar Kayouga clan AEGL`
-//☐ other fields in guardians table
-//☐ `/editguar GUARDIAN_ID <field_name> <freeform value>`
-//☐ GUARDIAN_ID could be int, telegram name or psn name
-//☐ just show guardian fields
-//☐ `/editguar GUARDIAN_ID`
-/// Allow editing info about yourself
+/// @todo Allow editing info about yourself
 use crate::{commands::admin_check, commands::guardian_lookup, Bot, BotCommand, DbConnection};
 
 pub struct EditGuardianCommand;
@@ -105,9 +96,34 @@ impl BotCommand for EditGuardianCommand {
             return bot.send_plain_reply(&message, info);
         }
 
-        let _command = args[1];
-        let _value = args[2];
+        let command = args[1];
+        let value = args[2];
 
-        bot.send_plain_reply(&message, "Not implemented".into());
+        let mut guardian = guardian;
+
+        use diesel_derives_traits::Model;
+
+        match command {
+            "psn" => {
+                guardian.psn_name = value.into();
+                guardian.save(&connection).expect("Failed to update PSN");
+                bot.send_plain_reply(&message, "Updated guardian PSN".into());
+            },
+            "clan" => {
+                let value = if value == "delete" { None } else { Some(value.into()) };
+                guardian.psn_clan = value;
+                guardian.save(&connection).expect("Failed to update clan");
+                bot.send_plain_reply(&message, "Updated guardian clan".into());
+            },
+            "email" => {
+                let value = if value == "delete" { None } else { Some(value.into()) };
+                guardian.email = value;
+                guardian.save(&connection).expect("Failed to update email");
+                bot.send_plain_reply(&message, "Updated guardian email".into());
+            },
+            _ => {
+                bot.send_plain_reply(&message, "Unknown information field".into());
+            }
+        }
     }
 }

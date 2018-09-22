@@ -21,15 +21,17 @@ More features:
            ☐ `/activities add min_fireteam_size=1,max_fireteam_size=6,name="Last Wish, Enhance",mode="prestige"` etc. <- note "," in name - should parse
        ☐ `/activities edit ACTIVITY_ID key=value,key=value`
        ☐ `/activities addsc SHORTCUT ACTIVITY_ID`
-   ☐ change guardian PSN name
-       ☐ `/editguar @alexundr psn Kayouga`
-   ☐ edit guardian clan
-       ☐ `/editguar Kayouga clan AEGL`
-   ☐ other fields in guardians table
-       ☐ `/editguar GUARDIAN_ID <field_name> <freeform value>`
+   ✔ change guardian PSN name @done (18-09-23 00:46)
+       ✔ `/editguar @alexundr psn Kayouga` @done (18-09-23 00:46)
+   ✔ edit guardian clan @done (18-09-23 00:46)
+       ✔ `/editguar Kayouga clan AEGL` @done (18-09-23 00:46)
+   ✔ other fields in guardians table @done (18-09-23 00:46)
+       ✔ `/editguar GUARDIAN_ID <field_name> <freeform value>` @done (18-09-23 00:46)
        ☐ GUARDIAN_ID could be int, telegram name or psn name
-   ☐ just show guardian fields
-       ☐ `/editguar GUARDIAN_ID`
+   ✔ just show guardian fields @done (18-09-23 00:46)
+       ✔ `/editguar GUARDIAN_ID` @done (18-09-23 00:46)
+   ☐ Allow to edit own fields without admin rights...
+       ☐ /editguar my ...
    ✔ manage admins (superadmin can add/remove admins, admins cannot add more admins?) @done (18-09-22 19:40)
        ✔ `/manage` catch-all command for these things @done (18-09-22 19:40)
            * `list-admins`, `add-admin`, `remove-admin` subcommands
