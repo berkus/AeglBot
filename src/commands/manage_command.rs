@@ -7,15 +7,7 @@ struct ListAdminsSubcommand;
 struct AddAdminSubcommand;
 struct RemoveAdminSubcommand;
 
-macro_rules! ctor {
-    ($name:ident) => (impl $name {
-        pub fn new() -> Box<Self> {
-            Box::new($name)
-        }
-    })
-}
-
-ctor!(ManageCommand);
+command_ctor!(ManageCommand);
 
 impl ManageCommand {
     fn usage(bot: &Bot, message: &telebot::objects::Message) {
@@ -104,7 +96,7 @@ impl BotCommand for ManageCommand {
     }
 }
 
-ctor!(ListAdminsSubcommand);
+command_ctor!(ListAdminsSubcommand);
 
 impl BotCommand for ListAdminsSubcommand {
     fn prefix(&self) -> &'static str {
@@ -147,7 +139,7 @@ impl BotCommand for ListAdminsSubcommand {
     }
 }
 
-ctor!(AddAdminSubcommand);
+command_ctor!(AddAdminSubcommand);
 
 impl BotCommand for AddAdminSubcommand {
     fn prefix(&self) -> &'static str {
@@ -218,7 +210,7 @@ impl BotCommand for AddAdminSubcommand {
     }
 }
 
-ctor!(RemoveAdminSubcommand);
+command_ctor!(RemoveAdminSubcommand);
 
 impl BotCommand for RemoveAdminSubcommand {
     fn prefix(&self) -> &'static str {

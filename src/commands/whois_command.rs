@@ -5,11 +5,7 @@ use futures::Future;
 
 pub struct WhoisCommand;
 
-impl WhoisCommand {
-    pub fn new() -> Box<Self> {
-        Box::new(WhoisCommand)
-    }
-}
+command_ctor!(WhoisCommand);
 
 impl BotCommand for WhoisCommand {
     fn prefix(&self) -> &'static str {

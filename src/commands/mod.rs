@@ -1,3 +1,12 @@
+#[macro_export]
+macro_rules! command_ctor {
+    ($name:ident) => (impl $name {
+        pub fn new() -> Box<Self> {
+            Box::new($name)
+        }
+    })
+}
+
 mod activities_command;
 pub use self::activities_command::*;
 mod cancel_command;

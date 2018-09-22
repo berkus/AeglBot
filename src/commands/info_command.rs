@@ -4,11 +4,7 @@ use procfs::{ProcResult, Process};
 
 pub struct InfoCommand;
 
-impl InfoCommand {
-    pub fn new() -> Box<Self> {
-        Box::new(InfoCommand)
-    }
-}
+command_ctor!(InfoCommand);
 
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {

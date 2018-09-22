@@ -11,11 +11,9 @@ use models::{Activity, PlannedActivity, PlannedActivityMember};
 
 pub struct CancelCommand;
 
-impl CancelCommand {
-    pub fn new() -> Box<Self> {
-        Box::new(CancelCommand)
-    }
+command_ctor!(CancelCommand);
 
+impl CancelCommand {
     fn usage(bot: &Bot, message: &telebot::objects::Message) {
         bot.send_plain_reply(
             &message,

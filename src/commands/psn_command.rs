@@ -8,11 +8,7 @@ use futures::Future;
 
 pub struct PsnCommand;
 
-impl PsnCommand {
-    pub fn new() -> Box<Self> {
-        Box::new(PsnCommand)
-    }
-}
+command_ctor!(PsnCommand);
 
 impl BotCommand for PsnCommand {
     fn prefix(&self) -> &'static str {

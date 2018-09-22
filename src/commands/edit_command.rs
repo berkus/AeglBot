@@ -6,11 +6,7 @@ use crate::{Bot, BotCommand, DbConnection};
 
 pub struct EditCommand;
 
-impl EditCommand {
-    pub fn new() -> Box<Self> {
-        Box::new(EditCommand)
-    }
-}
+command_ctor!(EditCommand);
 
 impl BotCommand for EditCommand {
     fn prefix(&self) -> &'static str {
