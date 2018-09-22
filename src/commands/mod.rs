@@ -83,3 +83,18 @@ pub fn admin_check(
 ) -> Option<Guardian> {
     validate_username(bot, message, connection).filter(|g| g.is_admin)
 }
+
+pub fn guardian_lookup(name: &str, connection: &DbConnection) -> Result<Option<Guardian>, diesel::result::Error> {
+    if name.starts_with('@') {
+        guardians
+            .filter(telegram_name.eq(&name[1..]))
+            .first::<Guardian>(connection)
+            .optional()
+    } else {
+        guardians
+            .filter(psn_name.eq(&name))
+            .first::<Guardian>(connection)
+            .optional()
+    }
+    // @todo: lookup by integer id, positive
+}

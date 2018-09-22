@@ -1,4 +1,4 @@
-use crate::{commands::validate_username, models::Guardian, schema::guardians::dsl::*};
+use crate::{commands::validate_username, commands::guardian_lookup, models::Guardian};
 use crate::{Bot, BotCommand, DbConnection};
 use diesel::prelude::*;
 use futures::Future;
@@ -41,17 +41,7 @@ impl BotCommand for WhoisCommand {
             return;
         }
 
-        let guardian = if name.starts_with('@') {
-            guardians
-                .filter(telegram_name.eq(&name[1..]))
-                .first::<Guardian>(&connection)
-                .optional()
-        } else {
-            guardians
-                .filter(psn_name.eq(&name))
-                .first::<Guardian>(&connection)
-                .optional()
-        };
+        let guardian = guardian_lookup(&name, &connection);
 
         match guardian {
             Ok(Some(guardian)) => {
