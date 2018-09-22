@@ -2,4 +2,6 @@
 use failure::Error;
 
 #[derive(Debug, Fail)]
-enum BotError {}
+enum BotError {
+    DbError(diesel::result::Error),
+}

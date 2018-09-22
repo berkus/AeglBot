@@ -29,6 +29,7 @@ use crate::{models::Guardian, schema::guardians::dsl::*};
 use crate::{Bot, DbConnection};
 use diesel::prelude::*;
 use futures::Future;
+//use failure::Error;
 
 pub fn decapitalize(s: &str) -> String {
     s.chars()
