@@ -57,7 +57,7 @@ impl BotCommand for EditGuardianCommand {
             return bot.send_plain_reply(&message, "You are not admin".to_string());
         }
 
-        let admin = admin.unwrap();
+        let _admin = admin.unwrap();
 
         if args.is_none() {
             return EditGuardianCommand::usage(bot, &message);
