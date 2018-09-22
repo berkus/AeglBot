@@ -8,7 +8,7 @@
 //☐ just show guardian fields
 //☐ `/editguar GUARDIAN_ID`
 /// Allow editing info about yourself
-use crate::{commands::admin_check, Bot, BotCommand, DbConnection};
+use crate::{commands::admin_check, commands::guardian_lookup, Bot, BotCommand, DbConnection};
 
 pub struct EditGuardianCommand;
 
@@ -19,13 +19,13 @@ impl EditGuardianCommand {
         bot.send_plain_reply(
             &message,
             "Edit guardian information:
-/editguar <id|@telegram|PSN>
+/editguar <id|@telegram|PSN|'my'>
     List known guardian information
-/editguar <id|@telegram|PSN> psn <NewPSN>
+/editguar <id|@telegram|PSN|'my'> psn <NewPSN>
     Change guardian's PSN
-/editguar <id|@telegram|PSN> clan <Clan ticker, e.g. AEGL>
+/editguar <id|@telegram|PSN|'my'> clan <Clan ticker, e.g. AEGL>
     Change guardian's clan
-/editguar <id|@telegram|PSN> email <NewEmail>
+/editguar <id|@telegram|PSN|'my'> email <NewEmail>
     Change guardian's email"
                 .into(),
         );
@@ -55,7 +55,7 @@ impl BotCommand for EditGuardianCommand {
             return bot.send_plain_reply(&message, "You are not admin".to_string());
         }
 
-        let _admin = admin.unwrap();
+        let admin = admin.unwrap();
 
         if args.is_none() {
             return EditGuardianCommand::usage(bot, &message);
@@ -74,15 +74,39 @@ impl BotCommand for EditGuardianCommand {
 
         let name = args[0];
 
-        let guardian = 
+        let guardian = if name == "my" {//@todo allow non-admins to edit their own info!
+            admin
+        } else {
+            let guardian = guardian_lookup(&name, &connection);
+            let guardian = match guardian {
+                Ok(Some(guardian)) => {
+                    Some(guardian)
+                }
+                Ok(None) => {
+                    bot.send_plain_reply(&message, format!("Guardian {} was not found.", &name));
+                    None
+                }
+                Err(_) => {
+                    bot.send_plain_reply(&message, "Error querying guardian by name.".into());
+                    None
+                }
+            };
+            if guardian.is_none() { return; }
+            guardian.unwrap()
+        };
 
         if args.len() == 1 {
-
-            return bot.send_plain_reply(&message, "Not implemented".into());
+            let info = format!("{clan}{name} {email} {admin}",
+                clan = if guardian.psn_clan.is_none() { "".into() } else { format!("[{}] ", guardian.psn_clan.clone().unwrap()) },
+                name = guardian.format_name(),
+                email = if guardian.email.is_none() { "<no email>".into() } else { format!("{}", guardian.email.clone().unwrap()) },
+                admin = if guardian.is_superadmin { "<superadmin>" } else { if guardian.is_admin { "<admin>" } else { "" } },
+            );
+            return bot.send_plain_reply(&message, info);
         }
 
-        let command = args[1];
-        let value = args[2];
+        let _command = args[1];
+        let _value = args[2];
 
         bot.send_plain_reply(&message, "Not implemented".into());
     }
