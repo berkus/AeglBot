@@ -66,13 +66,23 @@ impl BotCommand for EditGuardianCommand {
         // subcommand,
         // and optionally, parameters
         let args = args.unwrap();
-        let args: Vec<&str> = args.splitn(2, ' ').collect();
+        let args: Vec<&str> = args.splitn(3, ' ').collect();
 
-        if args.len() < 2 {
+        if args.len() < 1 || args.len() == 2 {
             return EditGuardianCommand::usage(bot, &message);
         }
 
-        info!("{:?}", args);
+        let name = args[0];
+
+        let guardian = 
+
+        if args.len() == 1 {
+
+            return bot.send_plain_reply(&message, "Not implemented".into());
+        }
+
+        let command = args[1];
+        let value = args[2];
 
         bot.send_plain_reply(&message, "Not implemented".into());
     }
