@@ -1,5 +1,3 @@
-//☐ manage admins (superadmin can add/remove admins, admins cannot add more admins?)
-//☐ `/manage` catch-all command for these things
 use crate::{commands::admin_check, commands::guardian_lookup, Bot, BotCommand, DbConnection};
 
 pub struct ManageCommand;
