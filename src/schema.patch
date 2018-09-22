@@ -1,0 +1,20 @@
+diff --git a/src/schema.rs b/src/schema.rs
+index b23e3a3..4123d7a 100644
+--- a/src/schema.rs
++++ b/src/schema.rs
+@@ -21,13 +21,13 @@ table! {
+ 
+ table! {
+     alerts (id) {
+         id -> Int4,
+         guid -> Text,
+         title -> Text,
+         #[sql_name = "type"]
+-        type_ -> Text,
++        kind -> Text,
+         startdate -> Timestamptz,
+         expirydate -> Nullable<Timestamptz>,
+         faction -> Nullable<Text>,
+         flavor -> Nullable<Text>,
+     }
+ }
