@@ -124,6 +124,7 @@ pub struct Guardian {
     pub tokens: Option<Value>,
     pub pending_activation_code: Option<String>,
     pub is_admin: bool,
+    pub is_superadmin: bool,
 }
 
 #[derive(Insertable, NewModel)]

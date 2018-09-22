@@ -47,6 +47,7 @@ table! {
         tokens -> Nullable<Jsonb>,
         pending_activation_code -> Nullable<Text>,
         is_admin -> Bool,
+        is_superadmin -> Bool,
     }
 }
 
