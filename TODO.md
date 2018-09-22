@@ -30,8 +30,8 @@ More features:
        ☐ GUARDIAN_ID could be int, telegram name or psn name
    ☐ just show guardian fields
        ☐ `/editguar GUARDIAN_ID`
-   ☐ manage admins (superadmin can add/remove admins, admins cannot add more admins?)
-       ☐ `/manage` catch-all command for these things
+   ✔ manage admins (superadmin can add/remove admins, admins cannot add more admins?) @done (18-09-22 19:40)
+       ✔ `/manage` catch-all command for these things @done (18-09-22 19:40)
            * `list-admins`, `add-admin`, `remove-admin` subcommands
  ☐ Track weekly raids cycle automatically,
    ☐ disallow creating weekly raids when they're inactive

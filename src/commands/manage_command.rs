@@ -1,6 +1,6 @@
 //☐ manage admins (superadmin can add/remove admins, admins cannot add more admins?)
 //☐ `/manage` catch-all command for these things
-use crate::{commands::admin_check, Bot, BotCommand, DbConnection};
+use crate::{commands::admin_check, commands::guardian_lookup, Bot, BotCommand, DbConnection};
 
 pub struct ManageCommand;
 struct ListAdminsSubcommand;
@@ -53,10 +53,10 @@ impl BotCommand for ManageCommand {
         let admin = admin_check(bot, message, &connection);
 
         if admin.is_none() {
-            return bot.send_plain_reply(&message, "You are not admin".to_string());
+            return bot.send_plain_reply(&message, "You are not admin".into());
         }
 
-        let admin = admin.unwrap();
+        let _admin = admin.unwrap();
 
         if args.is_none() {
             return ManageCommand::usage(bot, &message);
@@ -120,9 +120,30 @@ impl BotCommand for ListAdminsSubcommand {
         bot: &Bot,
         message: &telebot::objects::Message,
         _command: Option<String>,
-        args: Option<String>,
+        _args: Option<String>,
     ) {
-        bot.send_plain_reply(&message, "List-admins command".into());
+        use crate::{models::Guardian, schema::guardians::dsl::*};
+        use diesel::prelude::*;
+
+        let connection = bot.connection();
+
+        let admins = guardians
+            .filter(is_admin.eq(true))
+            .order(telegram_name.asc())
+            .load::<Guardian>(&connection)
+            .expect("Cannot execute SQL query");
+
+        if admins.is_empty() {
+            bot.send_plain_reply(&message, "No admins found".into());
+        } else {
+            let text = admins
+                .iter()
+                .fold("Existing admins:\n\n".to_owned(), |acc, admin| {
+                    acc + &format!("{}\n", admin)
+                });
+
+            bot.send_plain_reply(&message, text);
+        }
     }
 }
 
@@ -144,7 +165,56 @@ impl BotCommand for AddAdminSubcommand {
         _command: Option<String>,
         args: Option<String>,
     ) {
-        bot.send_plain_reply(&message, "Add-admin command".into());
+        let connection = bot.connection();
+        let admin = admin_check(bot, message, &connection);
+
+        if admin.is_none() {
+            return bot.send_plain_reply(&message, "You are not admin".into());
+        }
+
+        let admin = admin.unwrap();
+
+        if !admin.is_superadmin {
+            return bot.send_plain_reply(&message, "You are not superadmin".into());
+        }
+
+        if args.is_none() {
+            return bot.send_plain_reply(&message, "Specify a guardian to promote to admins".into());
+        }
+
+        let name = args.unwrap();
+
+        let guardian = guardian_lookup(&name, &connection);
+
+        match guardian {
+            Ok(Some(mut guardian)) => {
+                let tg_name = guardian.telegram_name.clone();
+
+                if guardian.is_admin {
+                    return bot.send_plain_reply(&message, format!("@{} is already an admin", &tg_name));
+                }
+
+                use diesel_derives_traits::Model;
+
+                guardian.is_admin = true;
+                guardian.save(&connection) // @todo handle DbError
+                    .expect("Cannot execute SQL query");
+
+                bot.send_plain_reply(
+                    &message,
+                    format!(
+                        "@{} is now an admin!",
+                        &tg_name
+                    ),
+                );
+            }
+            Ok(None) => {
+                bot.send_plain_reply(&message, format!("Guardian {} was not found.", &name));
+            }
+            Err(_) => {
+                bot.send_plain_reply(&message, "Error querying guardian name.".into());
+            }
+        }
     }
 }
 
@@ -166,6 +236,59 @@ impl BotCommand for RemoveAdminSubcommand {
         _command: Option<String>,
         args: Option<String>,
     ) {
-        bot.send_plain_reply(&message, "Remove-admin command".into());
+        let connection = bot.connection();
+        let admin = admin_check(bot, message, &connection);
+
+        if admin.is_none() {
+            return bot.send_plain_reply(&message, "You are not admin".into());
+        }
+
+        let admin = admin.unwrap();
+
+        if !admin.is_superadmin {
+            return bot.send_plain_reply(&message, "You are not superadmin".into());
+        }
+
+        if args.is_none() {
+            return bot.send_plain_reply(&message, "Specify a guardian to demote from admins".into());
+        }
+
+        let name = args.unwrap();
+
+        let guardian = guardian_lookup(&name, &connection);
+
+        match guardian {
+            Ok(Some(mut guardian)) => {
+                let tg_name = guardian.telegram_name.clone();
+
+                if !guardian.is_admin {
+                    return bot.send_plain_reply(&message, format!("@{} is already not an admin", &tg_name));
+                }
+
+                if guardian.is_superadmin {
+                    return bot.send_plain_reply(&message, format!("@{} is a superadmin, you can not demote.", &tg_name));
+                }
+
+                use diesel_derives_traits::Model;
+
+                guardian.is_admin = false;
+                guardian.save(&connection) // @todo handle DbError
+                    .expect("Cannot execute SQL query");
+
+                bot.send_plain_reply(
+                    &message,
+                    format!(
+                        "@{} is not an admin anymore!",
+                        &tg_name
+                    ),
+                );
+            }
+            Ok(None) => {
+                bot.send_plain_reply(&message, format!("Guardian {} was not found.", &name));
+            }
+            Err(_) => {
+                bot.send_plain_reply(&message, "Error querying guardian name.".into());
+            }
+        }
     }
 }
