@@ -2,6 +2,7 @@
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![allow(unused_imports)] // during development
 #![feature(slice_sort_by_cached_key)]
+#![feature(type_ascription)]
 
 extern crate r2d2;
 #[macro_use]
