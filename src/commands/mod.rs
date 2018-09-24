@@ -1,10 +1,12 @@
 #[macro_export]
 macro_rules! command_ctor {
-    ($name:ident) => (impl $name {
-        pub fn new() -> Box<Self> {
-            Box::new($name)
+    ($name:ident) => {
+        impl $name {
+            pub fn new() -> Box<Self> {
+                Box::new($name)
+            }
         }
-    })
+    };
 }
 
 mod activities_command;
@@ -94,7 +96,10 @@ pub fn admin_check(
     validate_username(bot, message, connection).filter(|g| g.is_admin)
 }
 
-pub fn guardian_lookup(name: &str, connection: &DbConnection) -> Result<Option<Guardian>, diesel::result::Error> {
+pub fn guardian_lookup(
+    name: &str,
+    connection: &DbConnection,
+) -> Result<Option<Guardian>, diesel::result::Error> {
     if name.starts_with('@') {
         guardians
             .filter(telegram_name.eq(&name[1..]))

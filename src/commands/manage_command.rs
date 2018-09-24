@@ -63,7 +63,11 @@ impl BotCommand for ManageCommand {
         }
 
         let subcommand = args[0];
-        let args = if args.len() > 1 { Some(args[1].to_string()) } else { None };
+        let args = if args.len() > 1 {
+            Some(args[1].to_string())
+        } else {
+            None
+        };
 
         info!("{:?}", args);
 
@@ -74,9 +78,12 @@ impl BotCommand for ManageCommand {
             "add-admin" => {
                 AddAdminSubcommand::new().execute(bot, message, Some("add-admin".into()), args)
             }
-            "remove-admin" => {
-                RemoveAdminSubcommand::new().execute(bot, message, Some("remove-admin".into()), args)
-            }
+            "remove-admin" => RemoveAdminSubcommand::new().execute(
+                bot,
+                message,
+                Some("remove-admin".into()),
+                args,
+            ),
             &_ => {
                 bot.send_plain_reply(&message, "Unknown management command".into());
             }
@@ -181,22 +188,18 @@ impl BotCommand for AddAdminSubcommand {
                 let tg_name = guardian.telegram_name.clone();
 
                 if guardian.is_admin {
-                    return bot.send_plain_reply(&message, format!("@{} is already an admin", &tg_name));
+                    return bot
+                        .send_plain_reply(&message, format!("@{} is already an admin", &tg_name));
                 }
 
                 use diesel_derives_traits::Model;
 
                 guardian.is_admin = true;
-                guardian.save(&connection) // @todo handle DbError
+                guardian
+                    .save(&connection) // @todo handle DbError
                     .expect("Cannot execute SQL query");
 
-                bot.send_plain_reply(
-                    &message,
-                    format!(
-                        "@{} is now an admin!",
-                        &tg_name
-                    ),
-                );
+                bot.send_plain_reply(&message, format!("@{} is now an admin!", &tg_name));
             }
             Ok(None) => {
                 bot.send_plain_reply(&message, format!("Guardian {} was not found.", &name));
@@ -240,7 +243,8 @@ impl BotCommand for RemoveAdminSubcommand {
         }
 
         if args.is_none() {
-            return bot.send_plain_reply(&message, "Specify a guardian to demote from admins".into());
+            return bot
+                .send_plain_reply(&message, "Specify a guardian to demote from admins".into());
         }
 
         let name = args.unwrap();
@@ -252,26 +256,27 @@ impl BotCommand for RemoveAdminSubcommand {
                 let tg_name = guardian.telegram_name.clone();
 
                 if !guardian.is_admin {
-                    return bot.send_plain_reply(&message, format!("@{} is already not an admin", &tg_name));
+                    return bot.send_plain_reply(
+                        &message,
+                        format!("@{} is already not an admin", &tg_name),
+                    );
                 }
 
                 if guardian.is_superadmin {
-                    return bot.send_plain_reply(&message, format!("@{} is a superadmin, you can not demote.", &tg_name));
+                    return bot.send_plain_reply(
+                        &message,
+                        format!("@{} is a superadmin, you can not demote.", &tg_name),
+                    );
                 }
 
                 use diesel_derives_traits::Model;
 
                 guardian.is_admin = false;
-                guardian.save(&connection) // @todo handle DbError
+                guardian
+                    .save(&connection) // @todo handle DbError
                     .expect("Cannot execute SQL query");
 
-                bot.send_plain_reply(
-                    &message,
-                    format!(
-                        "@{} is not an admin anymore!",
-                        &tg_name
-                    ),
-                );
+                bot.send_plain_reply(&message, format!("@{} is not an admin anymore!", &tg_name));
             }
             Ok(None) => {
                 bot.send_plain_reply(&message, format!("Guardian {} was not found.", &name));

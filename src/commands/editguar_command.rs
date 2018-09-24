@@ -65,14 +65,13 @@ impl BotCommand for EditGuardianCommand {
 
         let name = args[0];
 
-        let guardian = if name == "my" {//@todo allow non-admins to edit their own info!
+        let guardian = if name == "my" {
+            //@todo allow non-admins to edit their own info!
             admin
         } else {
             let guardian = guardian_lookup(&name, &connection);
             let guardian = match guardian {
-                Ok(Some(guardian)) => {
-                    Some(guardian)
-                }
+                Ok(Some(guardian)) => Some(guardian),
                 Ok(None) => {
                     bot.send_plain_reply(&message, format!("Guardian {} was not found.", &name));
                     None
@@ -82,16 +81,35 @@ impl BotCommand for EditGuardianCommand {
                     None
                 }
             };
-            if guardian.is_none() { return; }
+            if guardian.is_none() {
+                return;
+            }
             guardian.unwrap()
         };
 
         if args.len() == 1 {
-            let info = format!("{clan}{name} {email} {admin}",
-                clan = if guardian.psn_clan.is_none() { "".into() } else { format!("[{}] ", guardian.psn_clan.clone().unwrap()) },
+            let info = format!(
+                "{clan}{name} {email} {admin}",
+                clan = if guardian.psn_clan.is_none() {
+                    "".into()
+                } else {
+                    format!("[{}] ", guardian.psn_clan.clone().unwrap())
+                },
                 name = guardian.format_name(),
-                email = if guardian.email.is_none() { "<no email>".into() } else { format!("{}", guardian.email.clone().unwrap()) },
-                admin = if guardian.is_superadmin { "<superadmin>" } else { if guardian.is_admin { "<admin>" } else { "" } },
+                email = if guardian.email.is_none() {
+                    "<no email>".into()
+                } else {
+                    format!("{}", guardian.email.clone().unwrap())
+                },
+                admin = if guardian.is_superadmin {
+                    "<superadmin>"
+                } else {
+                    if guardian.is_admin {
+                        "<admin>"
+                    } else {
+                        ""
+                    }
+                },
             );
             return bot.send_plain_reply(&message, info);
         }
@@ -108,19 +126,27 @@ impl BotCommand for EditGuardianCommand {
                 guardian.psn_name = value.into();
                 guardian.save(&connection).expect("Failed to update PSN");
                 bot.send_plain_reply(&message, "Updated guardian PSN".into());
-            },
+            }
             "clan" => {
-                let value = if value == "delete" { None } else { Some(value.into()) };
+                let value = if value == "delete" {
+                    None
+                } else {
+                    Some(value.into())
+                };
                 guardian.psn_clan = value;
                 guardian.save(&connection).expect("Failed to update clan");
                 bot.send_plain_reply(&message, "Updated guardian clan".into());
-            },
+            }
             "email" => {
-                let value = if value == "delete" { None } else { Some(value.into()) };
+                let value = if value == "delete" {
+                    None
+                } else {
+                    Some(value.into())
+                };
                 guardian.email = value;
                 guardian.save(&connection).expect("Failed to update email");
                 bot.send_plain_reply(&message, "Updated guardian email".into());
-            },
+            }
             _ => {
                 bot.send_plain_reply(&message, "Unknown information field".into());
             }

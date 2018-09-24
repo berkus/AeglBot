@@ -1,4 +1,4 @@
-use crate::{commands::validate_username, commands::guardian_lookup, models::Guardian};
+use crate::{commands::guardian_lookup, commands::validate_username, models::Guardian};
 use crate::{Bot, BotCommand, DbConnection};
 use diesel::prelude::*;
 use futures::Future;
