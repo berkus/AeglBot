@@ -11,6 +11,7 @@ extern crate chrono_english;
 extern crate chrono_tz;
 extern crate diesel_logger;
 extern crate dotenv;
+extern crate itertools;
 extern crate rss;
 extern crate serde_json;
 extern crate telebot;
