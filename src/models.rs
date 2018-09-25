@@ -54,6 +54,18 @@ pub struct Activity {
     pub min_level: Option<i32>,
 }
 
+#[derive(Clone, Insertable, NewModel)]
+#[table_name = "activities"]
+#[model(Activity)]
+pub struct NewActivity {
+    pub name: String,
+    pub mode: Option<String>,
+    pub min_fireteam_size: i32,
+    pub max_fireteam_size: i32,
+    pub min_light: Option<i32>,
+    pub min_level: Option<i32>,
+}
+
 impl Activity {
     pub fn format_name(&self) -> String {
         format!(

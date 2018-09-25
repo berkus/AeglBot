@@ -1,9 +1,10 @@
-use crate::models::{Activity, ActivityShortcut};
+use crate::models::{Activity, ActivityShortcut, NewActivity};
 use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, prelude::*};
 use futures::Future;
 use itertools::Itertools;
 use std::collections::HashMap;
+use diesel_derives_traits::NewModel;
 
 pub struct ActivitiesCommand;
 
@@ -11,7 +12,38 @@ command_ctor!(ActivitiesCommand);
 
 impl ActivitiesCommand {
     fn usage(bot: &Bot, message: &telebot::objects::Message) {
-        bot.send_plain_reply(&message, "".into());
+        bot.send_plain_reply(
+            &message,
+            "Activities command help:
+
+/activities
+    Lists all available activities shortcuts
+
+Admin-only mode:
+
+/activities ids
+    Lists IDs of all activities
+/activities add KV
+    Create new activity from KV pairs (see below)
+/activities edit ID KV
+    Modify activity with given ID by updating all given KVs
+/activities addsc ID shortcut
+    Add activity shortcut for activity ID
+
+KV pairs are space-separated pairs of key=value elements
+String arguments may be in quotes, but this is optional.
+
+Supported KV pairs for add/edit commands:
+
+name=activity name (e.g. Crucible)    <mandatory>
+mode=activity mode (e.g. Iron Banner) <optional>
+min_fireteam_size=n                   <mandatory>
+max_fireteam_size=n                   <mandatory>
+min_light=n                           <optional>
+min_level=n                           <optional>
+shortcut=sc                           <optional>"
+                .into(),
+        );
     }
 }
 
@@ -32,12 +64,6 @@ impl BotCommand for ActivitiesCommand {
         args: Option<String>,
     ) {
         let connection = bot.connection();
-
-        //        ☐ add new activities w/ shortcuts
-        //        ☐ `/activities add min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhance" mode="prestige"` etc. <- note "," in name - should parse
-        //     allow shortcut=lastwn in these pairs as well -- will also allow editing shortcut (s?)
-        //        ☐ `/activities edit ACTIVITY_ID key=value,key=value`
-        //        ☐ `/activities addsc SHORTCUT ACTIVITY_ID`
 
         if args.is_none() {
             use schema::activities::dsl::{activities, id};
@@ -109,16 +135,69 @@ impl BotCommand for ActivitiesCommand {
                 bot.send_plain_reply(&message, text);
             }
             "add" => {
-                let _argmap = parse_kv_args(args[1]);
-                // parse key-value pairs, validate, check presence of mandatory
-                // check no duplicates
-                bot.send_plain_reply(&message, "ADD".into());
+                let argmap = parse_kv_args(args[1]);
+                if argmap.is_none() {
+                    return bot.send_plain_reply(
+                        &message,
+                        "Invalid activity specification, see help.".into(),
+                    );
+                }
+                let mut argmap = argmap.unwrap();
+                let name = argmap.remove("name");
+                if name.is_none() {
+                    return bot
+                        .send_plain_reply(&message, "Must specify activity name, see help.".into());
+                }
+                let min_fireteam_size = argmap.remove("min_fireteam_size");
+                if min_fireteam_size.is_none() {
+                    return bot.send_plain_reply(
+                        &message,
+                        "Must specify min_fireteam_size, see help.".into(),
+                    );
+                }
+                let max_fireteam_size = argmap.remove("max_fireteam_size");
+                if max_fireteam_size.is_none() {
+                    return bot.send_plain_reply(
+                        &message,
+                        "Must specify max_fireteam_size, see help.".into(),
+                    );
+                }
+                // check no duplicates -- ?
+                let mut act = NewActivity {
+                    name: name.unwrap().into(),
+                    mode: None,
+                    min_fireteam_size: min_fireteam_size.unwrap(),
+                    max_fireteam_size: max_fireteam_size.unwrap(),
+                    min_level: None,
+                    min_light: None,
+                };
+
+                for (key, val) in argmap {
+                    match key {
+                        "min_light" => act.min_light = Some(val),
+                        "min_level" => act.min_level = Some(val),
+                        "mode" => act.mode = Some(val.into()),
+                        "shortcut" => { /* ignore here */ }
+                        _ => {
+                            return bot
+                                .send_plain_reply(&message, format!("Unknown field name {}", key));
+                        }
+                    }
+                }
+
+                act.save(&connection);
+
+                bot.send_plain_reply(&message, format!("Activity {} added.", act));
             }
             "addsc" => {
                 bot.send_plain_reply(&message, "ADD SC".into());
             }
             "edit" => {
                 bot.send_plain_reply(&message, "EDIT".into());
+            }
+            "delete" => {
+                // delete activity by id, and all its shortcuts
+                // if there are plannedactivities with this id, cannot be deleted - check FOREIGN KEY constraints
             }
             _ => {
                 bot.send_plain_reply(&message, "Unknown activities operation".into());
@@ -127,8 +206,8 @@ impl BotCommand for ActivitiesCommand {
     }
 }
 
-fn parse_kv_args(args: &str) -> Option<HashMap<&str,&str>> {
-    fn final_collect(args: Vec<&str>) -> HashMap<&str,&str> {
+fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
+    fn final_collect(args: Vec<&str>) -> HashMap<&str, &str> {
         return args
             .into_iter()
             .tuples()
@@ -147,15 +226,15 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str,&str>> {
         Some(final_collect(fragments))
     } else {
         // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
-        let subfrags = itertools::Itertools::flatten(
-            fragments[1..fragments.len() - 1].iter().map(|x: &&str| {
+        let subfrags = itertools::Itertools::flatten(fragments[1..fragments.len() - 1].iter().map(
+            |x: &&str| {
                 x.rsplitn(2, ' ')
                     .collect::<Vec<&str>>()
                     .into_iter()
                     .rev()
                     .collect::<Vec<&str>>()
-            }),
-        ).collect::<Vec<&str>>();
+            },
+        )).collect::<Vec<&str>>();
 
         trace!("{:?}", subfrags);
 
@@ -187,16 +266,14 @@ mod tests {
         let result = result.unwrap();
         assert_eq!(result.len(), 4);
 
-        let args =
-            r#"name="Last Wish, Enhanced""#;
+        let args = r#"name="Last Wish, Enhanced""#;
         let result = parse_kv_args(args);
         assert!(result.is_some());
         let mut result = result.unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result.remove("name"), Some("Last Wish, Enhanced"));
 
-        let args =
-            r#"whatever else"#;
+        let args = r#"whatever else"#;
         let result = parse_kv_args(args);
         assert!(result.is_none());
     }
