@@ -109,24 +109,7 @@ impl BotCommand for ActivitiesCommand {
                 bot.send_plain_reply(&message, text);
             }
             "add" => {
-                let _argmap = parse_args(args[1]);
-                // min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhance" mode="prestige"
-                // split by '='
-                // ['min_fireteam_size', '1 max_fireteam_size', '6 name', '"Last Wish, Enhance" mode', '"prestige"']
-                // .iter()
-                // first = param name
-                // next = if not last, then strip off next param name
-                // if count > 2: take(1..n-1).rsplitn(2, ' ')
-
-                // ['min_fireteam_size', '1 max_fireteam_size', '6 name', '"Last Wish, Enhance" mode', '"prestige"']
-                //                let fragments = args.split('=');
-                //
-                //                if fragments.len() == 2 { // only single parameter
-                //                } else {
-                //                    // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
-                //                    let subfrags = fragments.take(1..fragments.len() - 1).iter().rsplitn(2, ' ').collect();
-                //                }
-
+                let _argmap = parse_kv_args(args[1]);
                 // parse key-value pairs, validate, check presence of mandatory
                 // check no duplicates
                 bot.send_plain_reply(&message, "ADD".into());
@@ -144,7 +127,7 @@ impl BotCommand for ActivitiesCommand {
     }
 }
 
-fn parse_args(args: &str) -> HashMap<&str,&str> {
+fn parse_kv_args(args: &str) -> Option<HashMap<&str,&str>> {
     fn final_collect(args: Vec<&str>) -> HashMap<&str,&str> {
         return args
             .into_iter()
@@ -155,11 +138,13 @@ fn parse_args(args: &str) -> HashMap<&str,&str> {
 
     let fragments: Vec<&str> = args.split('=').collect();
 
-    println!("{:?}", fragments);
+    trace!("{:?}", fragments);
 
-    if fragments.len() == 2 {
+    if fragments.len() < 2 {
+        None
+    } else if fragments.len() == 2 {
         // only single parameter
-        return final_collect(fragments);
+        Some(final_collect(fragments))
     } else {
         // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
         let subfrags = itertools::Itertools::flatten(
@@ -172,19 +157,19 @@ fn parse_args(args: &str) -> HashMap<&str,&str> {
             }),
         ).collect::<Vec<&str>>();
 
-        println!("{:?}", subfrags);
+        trace!("{:?}", subfrags);
 
         let mut final_ = vec![fragments[0]];
         final_.extend(subfrags);
         final_.extend(vec![fragments[fragments.len() - 1]]);
 
-        println!("Final {:?}", final_);
+        trace!("Final {:?}", final_);
 
         let the_map = final_collect(final_);
 
-        println!("As map {:?}", the_map);
+        trace!(".. as map {:?}", the_map);
 
-        the_map
+        Some(the_map)
     }
 }
 
@@ -197,13 +182,22 @@ mod tests {
         // min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhanced" mode="prestige"
         let args =
             r#"min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhanced" mode="prestige""#;
-        let result = parse_args(args);
+        let result = parse_kv_args(args);
+        assert!(result.is_some());
+        let result = result.unwrap();
         assert_eq!(result.len(), 4);
 
         let args =
             r#"name="Last Wish, Enhanced""#;
-        let mut result = parse_args(args);
+        let result = parse_kv_args(args);
+        assert!(result.is_some());
+        let mut result = result.unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result.remove("name"), Some("Last Wish, Enhanced"));
+
+        let args =
+            r#"whatever else"#;
+        let result = parse_kv_args(args);
+        assert!(result.is_none());
     }
 }
