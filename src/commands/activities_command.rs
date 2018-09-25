@@ -1,10 +1,10 @@
 use crate::models::{Activity, ActivityShortcut, NewActivity};
 use crate::{Bot, BotCommand, DbConnection};
 use diesel::{self, prelude::*};
+use diesel_derives_traits::NewModel;
 use futures::Future;
 use itertools::Itertools;
 use std::collections::HashMap;
-use diesel_derives_traits::NewModel;
 
 pub struct ActivitiesCommand;
 
@@ -148,6 +148,7 @@ impl BotCommand for ActivitiesCommand {
                     return bot
                         .send_plain_reply(&message, "Must specify activity name, see help.".into());
                 }
+
                 let min_fireteam_size = argmap.remove("min_fireteam_size");
                 if min_fireteam_size.is_none() {
                     return bot.send_plain_reply(
@@ -155,6 +156,13 @@ impl BotCommand for ActivitiesCommand {
                         "Must specify min_fireteam_size, see help.".into(),
                     );
                 }
+                let min_fireteam_size = min_fireteam_size.unwrap().parse::<i32>();
+                if min_fireteam_size.is_err() {
+                    return bot
+                        .send_plain_reply(&message, "min_fireteam_size must be a number".into());
+                }
+                let min_fireteam_size = min_fireteam_size.unwrap();
+
                 let max_fireteam_size = argmap.remove("max_fireteam_size");
                 if max_fireteam_size.is_none() {
                     return bot.send_plain_reply(
@@ -162,20 +170,45 @@ impl BotCommand for ActivitiesCommand {
                         "Must specify max_fireteam_size, see help.".into(),
                     );
                 }
+                let max_fireteam_size = max_fireteam_size.unwrap().parse::<i32>();
+                if max_fireteam_size.is_err() {
+                    return bot
+                        .send_plain_reply(&message, "max_fireteam_size must be a number".into());
+                }
+                let max_fireteam_size = max_fireteam_size.unwrap();
+
                 // check no duplicates -- ?
                 let mut act = NewActivity {
                     name: name.unwrap().into(),
                     mode: None,
-                    min_fireteam_size: min_fireteam_size.unwrap(),
-                    max_fireteam_size: max_fireteam_size.unwrap(),
+                    min_fireteam_size,
+                    max_fireteam_size,
                     min_level: None,
                     min_light: None,
                 };
 
                 for (key, val) in argmap {
                     match key {
-                        "min_light" => act.min_light = Some(val),
-                        "min_level" => act.min_level = Some(val),
+                        "min_light" => {
+                            let val = val.parse::<i32>();
+                            if val.is_err() {
+                                return bot.send_plain_reply(
+                                    &message,
+                                    "min_light must be a number".into(),
+                                );
+                            }
+                            act.min_light = Some(val.unwrap())
+                        }
+                        "min_level" => {
+                            let val = val.parse::<i32>();
+                            if val.is_err() {
+                                return bot.send_plain_reply(
+                                    &message,
+                                    "min_level must be a number".into(),
+                                );
+                            }
+                            act.min_level = Some(val.unwrap())
+                        }
                         "mode" => act.mode = Some(val.into()),
                         "shortcut" => { /* ignore here */ }
                         _ => {
@@ -185,9 +218,11 @@ impl BotCommand for ActivitiesCommand {
                     }
                 }
 
-                act.save(&connection);
-
-                bot.send_plain_reply(&message, format!("Activity {} added.", act));
+                if let Ok(act) = act.save(&connection) {
+                    bot.send_plain_reply(&message, format!("Activity {} added.", act.format_name()));
+                } else {
+                    bot.send_plain_reply(&message, "Error creating activity.".into());
+                }
             }
             "addsc" => {
                 bot.send_plain_reply(&message, "ADD SC".into());
