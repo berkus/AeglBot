@@ -33,10 +33,7 @@ impl BotCommand for ActivitiesCommand {
     ) {
         let connection = bot.connection();
 
-        //        ☐ find activities ids
-        //        ☐ `/activities ids` similar to `/activites` but for actual activities, not shortcuts.
         //        ☐ add new activities w/ shortcuts
-        //        ☐ `/activities add key=value,key=value` e.g.
         //        ☐ `/activities add min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhance" mode="prestige"` etc. <- note "," in name - should parse
         //     allow shortcut=lastwn in these pairs as well -- will also allow editing shortcut (s?)
         //        ☐ `/activities edit ACTIVITY_ID key=value,key=value`
@@ -112,6 +109,7 @@ impl BotCommand for ActivitiesCommand {
                 bot.send_plain_reply(&message, text);
             }
             "add" => {
+                let _argmap = parse_args(args[1]);
                 // min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhance" mode="prestige"
                 // split by '='
                 // ['min_fireteam_size', '1 max_fireteam_size', '6 name', '"Last Wish, Enhance" mode', '"prestige"']
@@ -146,6 +144,50 @@ impl BotCommand for ActivitiesCommand {
     }
 }
 
+fn parse_args(args: &str) -> HashMap<&str,&str> {
+    fn final_collect(args: Vec<&str>) -> HashMap<&str,&str> {
+        return args
+            .into_iter()
+            .tuples()
+            .map(|(k, v)| (k, v.trim_matches('"')))
+            .collect::<HashMap<_, _>>();
+    }
+
+    let fragments: Vec<&str> = args.split('=').collect();
+
+    println!("{:?}", fragments);
+
+    if fragments.len() == 2 {
+        // only single parameter
+        return final_collect(fragments);
+    } else {
+        // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
+        let subfrags = itertools::Itertools::flatten(
+            fragments[1..fragments.len() - 1].iter().map(|x: &&str| {
+                x.rsplitn(2, ' ')
+                    .collect::<Vec<&str>>()
+                    .into_iter()
+                    .rev()
+                    .collect::<Vec<&str>>()
+            }),
+        ).collect::<Vec<&str>>();
+
+        println!("{:?}", subfrags);
+
+        let mut final_ = vec![fragments[0]];
+        final_.extend(subfrags);
+        final_.extend(vec![fragments[fragments.len() - 1]]);
+
+        println!("Final {:?}", final_);
+
+        let the_map = final_collect(final_);
+
+        println!("As map {:?}", the_map);
+
+        the_map
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -155,39 +197,13 @@ mod tests {
         // min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhanced" mode="prestige"
         let args =
             r#"min_fireteam_size=1 max_fireteam_size=6 name="Last Wish, Enhanced" mode="prestige""#;
-        let fragments: Vec<&str> = args.split('=').collect();
+        let result = parse_args(args);
+        assert_eq!(result.len(), 4);
 
-        println!("{:?}", fragments);
-
-        if fragments.len() == 2 {
-            // only single parameter
-        } else {
-            // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
-            let subfrags = itertools::Itertools::flatten(
-                fragments[1..fragments.len() - 1].iter().map(|x: &&str| {
-                    x.rsplitn(2, ' ')
-                        .collect::<Vec<&str>>()
-                        .into_iter()
-                        .rev()
-                        .collect::<Vec<&str>>()
-                }),
-            ).collect::<Vec<&str>>();
-
-            println!("{:?}", subfrags);
-
-            let mut final_ = vec![fragments[0]];
-            final_.extend(subfrags);
-            final_.extend(vec![fragments[fragments.len() - 1]]);
-
-            println!("Final {:?}", final_);
-
-            let the_map = final_
-                .into_iter()
-                .tuples()
-                .map(|(k, v)| (k, v.trim_matches('"')))
-                .collect::<HashMap<_, _>>();
-
-            println!("As map {:?}", the_map);
-        }
+        let args =
+            r#"name="Last Wish, Enhanced""#;
+        let mut result = parse_args(args);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result.remove("name"), Some("Last Wish, Enhanced"));
     }
 }
