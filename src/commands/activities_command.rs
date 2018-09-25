@@ -218,10 +218,9 @@ impl BotCommand for ActivitiesCommand {
                     }
                 }
 
-                if let Ok(act) = act.save(&connection) {
-                    bot.send_plain_reply(&message, format!("Activity {} added.", act.format_name()));
-                } else {
-                    bot.send_plain_reply(&message, "Error creating activity.".into());
+                match act.save(&connection) {
+                    Ok(act) => bot.send_plain_reply(&message, format!("Activity {} added.", act.format_name())),
+                    Err(e) => bot.send_plain_reply(&message, format!("Error creating activity. {:?}", e)),
                 }
             }
             "addsc" => {

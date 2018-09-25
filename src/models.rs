@@ -79,20 +79,6 @@ impl Activity {
     }
 }
 
-impl fmt::Display for NewActivity {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{} {}",
-            self.name,
-            match self.mode {
-                None => "",
-                Some(ref x) => &x,
-            }
-        )
-    }
-}
-
 //
 // Alert
 //
