@@ -2,41 +2,13 @@ More features:
 
  ☐ Handle diesel in async using blocking() handoff
  ☐ HANDLE ERRORS
-   ✔ Still panics on Bad Gateway telebot error - find where... @done (18-09-12 19:09)
-     ☐ tentative patch applied, we'll see
- ✔ Use Bot struct to group all commands together and do automatic command matching. @done (18-09-07 14:23)
  ☐ match guardian- and telegram-names case-insensitive
- ✔ ignore commands directed for other bots like `/help@SomeOtherBot` @done (18-09-12 21:47)
- ✔ /info command to report bot status @done (18-09-15 01:46)
- ✔ /edit command to modify activities @done (18-09-26 17:07)
-   ✔ `/edit530 time 11:00` @done (18-09-26 17:07)
-   ✔ `/edit530 desc <new description>` @done (18-09-26 17:07)
-   ✔ `/edit530 activity <new activity shortcut>` @done (18-09-26 17:22)
  ☐ implement support for sub-commands
    ☐ commands may register sub-commands using the same matcher interface
  ☐ admin interface (admin-only access) to
-   ✔ find activities ids @done (18-09-24 10:52)
-       ✔ `/activities ids` similar to `/activites` but for actual activities, not shortcuts. @done (18-09-24 10:52)
-   ✔ add new activities w/ shortcuts @done (18-09-26 16:38)
-       ✔ `/activities add key=value,key=value` e.g. @done (18-09-26 16:38)
-           ✔ `/activities add min_fireteam_size=1,max_fireteam_size=6,name="Last Wish, Enhance",mode="prestige"` etc. <- note "," in name - should parse @done (18-09-26 16:38)
-       ✔ `/activities edit ACTIVITY_ID key=value,key=value` @done (18-09-26 19:42)
-       ✔ `/activities addsc SHORTCUT ACTIVITY_ID` @done (18-09-26 19:42)
-       ✔ check foreign key constraints for `/activity delete` @done (18-09-26 20:37)
-   ✔ change guardian PSN name @done (18-09-23 00:46)
-       ✔ `/editguar @alexundr psn Kayouga` @done (18-09-23 00:46)
-   ✔ edit guardian clan @done (18-09-23 00:46)
-       ✔ `/editguar Kayouga clan AEGL` @done (18-09-23 00:46)
-   ✔ other fields in guardians table @done (18-09-23 00:46)
-       ✔ `/editguar GUARDIAN_ID <field_name> <freeform value>` @done (18-09-23 00:46)
-       ☐ GUARDIAN_ID could be int, telegram name or psn name
-   ✔ just show guardian fields @done (18-09-23 00:46)
-       ✔ `/editguar GUARDIAN_ID` @done (18-09-23 00:46)
+   ☐ GUARDIAN_ID could be int, telegram name or psn name
    ☐ Allow to edit own fields without admin rights...
        ☐ /editguar my ...
-   ✔ manage admins (superadmin can add/remove admins, admins cannot add more admins?) @done (18-09-22 19:40)
-       ✔ `/manage` catch-all command for these things @done (18-09-22 19:40)
-           * `list-admins`, `add-admin`, `remove-admin` subcommands
  ☐ Track weekly raids cycle automatically,
    ☐ disallow creating weekly raids when they're inactive
    ☐ suggest next closest week when it's active
