@@ -1,5 +1,4 @@
-/// @todo Allow editing info about yourself
-use crate::{commands::admin_check, commands::guardian_lookup, Bot, BotCommand, DbConnection};
+use crate::{commands::admin_check, commands::{guardian_lookup, validate_username}, Bot, BotCommand, DbConnection};
 
 pub struct EditGuardianCommand;
 
@@ -40,13 +39,6 @@ impl BotCommand for EditGuardianCommand {
         args: Option<String>,
     ) {
         let connection = bot.connection();
-        let admin = admin_check(bot, message, &connection);
-
-        if admin.is_none() {
-            return bot.send_plain_reply(&message, "You are not admin".to_string());
-        }
-
-        let admin = admin.unwrap();
 
         if args.is_none() {
             return EditGuardianCommand::usage(bot, &message);
@@ -66,9 +58,16 @@ impl BotCommand for EditGuardianCommand {
         let name = args[0];
 
         let guardian = if name == "my" {
-            //@todo allow non-admins to edit their own info!
-            admin
+            let guardian = validate_username(bot, message, &connection);
+            if guardian.is_none() { return; }
+            guardian.unwrap()
         } else {
+            let admin = admin_check(bot, message, &connection);
+
+            if admin.is_none() {
+                return bot.send_plain_reply(&message, "You are not admin".to_string());
+            }
+
             let guardian = guardian_lookup(&name, &connection);
             let guardian = match guardian {
                 Ok(Some(guardian)) => Some(guardian),
