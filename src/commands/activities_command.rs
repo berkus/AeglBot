@@ -376,9 +376,9 @@ impl BotCommand for ActivitiesCommand {
                 let name = act.format_name();
 
                 match act.destroy(&connection) {
-                    Ok(_) => bot.send_plain_reply(&message, format!("Activity {} updated.", name)),
+                    Ok(_) => bot.send_plain_reply(&message, format!("Activity {} deleted.", name)),
                     Err(e) => {
-                        bot.send_plain_reply(&message, format!("Error updating activity. {:?}", e))
+                        bot.send_plain_reply(&message, format!("Error deleting activity. {:?}", e))
                     }
                 }
             }

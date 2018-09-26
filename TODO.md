@@ -22,7 +22,7 @@ More features:
            ✔ `/activities add min_fireteam_size=1,max_fireteam_size=6,name="Last Wish, Enhance",mode="prestige"` etc. <- note "," in name - should parse @done (18-09-26 16:38)
        ✔ `/activities edit ACTIVITY_ID key=value,key=value` @done (18-09-26 19:42)
        ✔ `/activities addsc SHORTCUT ACTIVITY_ID` @done (18-09-26 19:42)
-       ☐ check foreign key constraints for `/activity delete`
+       ✔ check foreign key constraints for `/activity delete` @done (18-09-26 20:37)
    ✔ change guardian PSN name @done (18-09-23 00:46)
        ✔ `/editguar @alexundr psn Kayouga` @done (18-09-23 00:46)
    ✔ edit guardian clan @done (18-09-23 00:46)
