@@ -1,14 +1,12 @@
 More features:
 
  ☐ Handle diesel in async using blocking() handoff
+   - https://docs.rs/tokio-threadpool/0.1/tokio_threadpool/fn.blocking.html
  ☐ HANDLE ERRORS
- ☐ match guardian- and telegram-names case-insensitive
+ ☐ match guardian- and telegram-names case-insensitive (use filter(`.ilike`(match)))
+   ☐ GUARDIAN_ID could be int, telegram name or psn name
  ☐ implement support for sub-commands
    ☐ commands may register sub-commands using the same matcher interface
- ☐ admin interface (admin-only access) to
-   ☐ GUARDIAN_ID could be int, telegram name or psn name
-   ✔ Allow to edit own fields without admin rights... @done (18-09-26 20:46)
-       ✔ /editguar my ... @done (18-09-26 20:46)
  ☐ Track weekly raids cycle automatically,
    ☐ disallow creating weekly raids when they're inactive
    ☐ suggest next closest week when it's active
