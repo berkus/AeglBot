@@ -1,5 +1,6 @@
 More features:
 
+ ☐ Handle diesel in async using blocking() handoff
  ☐ HANDLE ERRORS
    ✔ Still panics on Bad Gateway telebot error - find where... @done (18-09-12 19:09)
      ☐ tentative patch applied, we'll see
