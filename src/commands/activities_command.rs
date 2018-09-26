@@ -27,7 +27,7 @@ Admin-only mode:
     Create new activity from KV pairs (see below)
 /activities edit ID KV
     Modify activity with given ID by updating all given KVs
-/activities addsc ID shortcut
+/activities addsc ID shortcut Game Name
     Add activity shortcut for activity ID
 
 KV pairs are space-separated pairs of key=value elements
@@ -40,8 +40,7 @@ mode=activity mode (e.g. Iron Banner) <optional>
 min_fireteam_size=n                   <mandatory>
 max_fireteam_size=n                   <mandatory>
 min_light=n                           <optional>
-min_level=n                           <optional>
-shortcut=sc                           <optional>"
+min_level=n                           <optional>"
                 .into(),
         );
     }
@@ -219,15 +218,34 @@ impl BotCommand for ActivitiesCommand {
                 }
 
                 match act.save(&connection) {
-                    Ok(act) => bot.send_plain_reply(&message, format!("Activity {} added.", act.format_name())),
-                    Err(e) => bot.send_plain_reply(&message, format!("Error creating activity. {:?}", e)),
+                    Ok(act) => bot.send_plain_reply(
+                        &message,
+                        format!("Activity {} added.", act.format_name()),
+                    ),
+                    Err(e) => {
+                        bot.send_plain_reply(&message, format!("Error creating activity. {:?}", e))
+                    }
                 }
             }
             "addsc" => {
+                let args: Vec<&str> = args[1].splitn(3, ' ').collect();
+                if args.len() != 3 {
+                    return bot.send_plain_reply(
+                        &message,
+                        "To add a shortcut specify activity ID, shortcut name and then game name"
+                            .into(),
+                    );
+                }
                 bot.send_plain_reply(&message, "ADD SC".into());
             }
             "edit" => {
-                bot.send_plain_reply(&message, "EDIT".into());
+                let args: Vec<&str> = args[1].splitn(2, ' ').collect();
+                if args.len() != 2 {
+                    return bot.send_plain_reply(
+                        &message,
+                        "To edit specify activity id and then KV pairs".into(),
+                    );
+                }
             }
             "delete" => {
                 // delete activity by id, and all its shortcuts

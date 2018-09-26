@@ -14,11 +14,11 @@ More features:
  ☐ implement support for sub-commands
    ☐ commands may register sub-commands using the same matcher interface
  ☐ admin interface (admin-only access) to
-   ☐ find activities ids
-       ☐ `/activities ids` similar to `/activites` but for actual activities, not shortcuts.
-   ☐ add new activities w/ shortcuts
-       ☐ `/activities add key=value,key=value` e.g.
-           ☐ `/activities add min_fireteam_size=1,max_fireteam_size=6,name="Last Wish, Enhance",mode="prestige"` etc. <- note "," in name - should parse
+   ✔ find activities ids @done (18-09-24 10:52)
+       ✔ `/activities ids` similar to `/activites` but for actual activities, not shortcuts. @done (18-09-24 10:52)
+   ✔ add new activities w/ shortcuts @done (18-09-26 16:38)
+       ✔ `/activities add key=value,key=value` e.g. @done (18-09-26 16:38)
+           ✔ `/activities add min_fireteam_size=1,max_fireteam_size=6,name="Last Wish, Enhance",mode="prestige"` etc. <- note "," in name - should parse @done (18-09-26 16:38)
        ☐ `/activities edit ACTIVITY_ID key=value,key=value`
        ☐ `/activities addsc SHORTCUT ACTIVITY_ID`
    ✔ change guardian PSN name @done (18-09-23 00:46)
