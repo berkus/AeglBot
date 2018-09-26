@@ -22,6 +22,15 @@ pub struct ActivityShortcut {
     pub link: i32,
 }
 
+#[derive(Clone, Insertable, NewModel)]
+#[table_name = "activityshortcuts"]
+#[model(ActivityShortcut)]
+pub struct NewActivityShortcut {
+    pub name: String,
+    pub game: String,
+    pub link: i32,
+}
+
 impl ActivityShortcut {
     pub fn find_one_by_name(
         connection: &DbConnection,

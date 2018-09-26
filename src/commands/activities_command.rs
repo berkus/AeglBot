@@ -1,7 +1,7 @@
-use crate::models::{Activity, ActivityShortcut, NewActivity};
-use crate::{Bot, BotCommand, DbConnection};
+use crate::models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut};
+use crate::{commands::admin_check, Bot, BotCommand, DbConnection};
 use diesel::{self, prelude::*};
-use diesel_derives_traits::NewModel;
+use diesel_derives_traits::{Model, NewModel};
 use futures::Future;
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -17,18 +17,20 @@ impl ActivitiesCommand {
             "Activities command help:
 
 /activities
-    Lists all available activities shortcuts
+    Lists all available activities shortcuts.
 
 Admin-only mode:
 
 /activities ids
-    Lists IDs of all activities
+    Lists IDs of all activities.
 /activities add KV
-    Create new activity from KV pairs (see below)
+    Create new activity from KV pairs (see below).
 /activities edit ID KV
-    Modify activity with given ID by updating all given KVs
-/activities addsc ID shortcut Game Name
-    Add activity shortcut for activity ID
+    Modify activity with given ID by updating all given KVs.
+/activities addsc ID shortcut <Game Name>
+    Add activity shortcut for activity ID.
+/activities delete ID
+    Remove activity if it doesn't have any activities planned.
 
 KV pairs are space-separated pairs of key=value elements
 String arguments may be in quotes, but this is optional.
@@ -110,7 +112,10 @@ impl BotCommand for ActivitiesCommand {
             return ActivitiesCommand::usage(bot, &message);
         }
 
-        // @todo add admin check here
+        let admin = admin_check(bot, message, &connection);
+        if admin.is_none() {
+            return bot.send_plain_reply(&message, "You are not admin".to_string());
+        }
 
         match args[0] {
             "ids" => {
@@ -209,7 +214,6 @@ impl BotCommand for ActivitiesCommand {
                             act.min_level = Some(val.unwrap())
                         }
                         "mode" => act.mode = Some(val.into()),
-                        "shortcut" => { /* ignore here */ }
                         _ => {
                             return bot
                                 .send_plain_reply(&message, format!("Unknown field name {}", key));
@@ -236,7 +240,29 @@ impl BotCommand for ActivitiesCommand {
                             .into(),
                     );
                 }
-                bot.send_plain_reply(&message, "ADD SC".into());
+
+                let link = args[0].parse::<i32>();
+                if link.is_err() {
+                    return bot.send_plain_reply(&message, "ActivityID must be a number".into());
+                }
+                let link = link.unwrap();
+                let name = args[1].to_string();
+                let game = args[2].to_string();
+
+                let act = Activity::find_one(&connection, &link).expect("Failed to run SQL");
+
+                if act.is_none() {
+                    return bot
+                        .send_plain_reply(&message, format!("Activity {} was not found.", link));
+                }
+
+                let shortcut = NewActivityShortcut { name, game, link };
+
+                if shortcut.save(&connection).is_err() {
+                    bot.send_plain_reply(&message, "Error creating shortcut".into());
+                }
+
+                bot.send_plain_reply(&message, "Shortcut added".into());
             }
             "edit" => {
                 let args: Vec<&str> = args[1].splitn(2, ' ').collect();
@@ -246,10 +272,115 @@ impl BotCommand for ActivitiesCommand {
                         "To edit specify activity id and then KV pairs".into(),
                     );
                 }
+
+                let id = args[0].parse::<i32>();
+                if id.is_err() {
+                    return bot.send_plain_reply(&message, "ActivityID must be a number".into());
+                }
+                let id = id.unwrap();
+
+                let act = Activity::find_one(&connection, &id).expect("Failed to run SQL");
+
+                if act.is_none() {
+                    return bot
+                        .send_plain_reply(&message, format!("Activity {} was not found.", id));
+                }
+                let mut act = act.unwrap();
+
+                let argmap = parse_kv_args(args[1]);
+                if argmap.is_none() {
+                    return bot.send_plain_reply(
+                        &message,
+                        "Invalid activity specification, see help.".into(),
+                    );
+                }
+                let argmap = argmap.unwrap();
+
+                for (key, val) in argmap {
+                    match key {
+                        "name" => act.name = val.into(),
+                        "min_fireteam_size" => {
+                            let val = val.parse::<i32>();
+                            if val.is_err() {
+                                return bot.send_plain_reply(
+                                    &message,
+                                    "min_fireteam_size must be a number".into(),
+                                );
+                            }
+                            act.min_fireteam_size = val.unwrap()
+                        }
+                        "max_fireteam_size" => {
+                            let val = val.parse::<i32>();
+                            if val.is_err() {
+                                return bot.send_plain_reply(
+                                    &message,
+                                    "max_fireteam_size must be a number".into(),
+                                );
+                            }
+                            act.max_fireteam_size = val.unwrap()
+                        }
+                        "min_light" => {
+                            let val = val.parse::<i32>();
+                            if val.is_err() {
+                                return bot.send_plain_reply(
+                                    &message,
+                                    "min_light must be a number".into(),
+                                );
+                            }
+                            act.min_light = Some(val.unwrap())
+                        }
+                        "min_level" => {
+                            let val = val.parse::<i32>();
+                            if val.is_err() {
+                                return bot.send_plain_reply(
+                                    &message,
+                                    "min_level must be a number".into(),
+                                );
+                            }
+                            act.min_level = Some(val.unwrap())
+                        }
+                        "mode" => act.mode = Some(val.into()),
+                        _ => {
+                            return bot
+                                .send_plain_reply(&message, format!("Unknown field name {}", key));
+                        }
+                    }
+                }
+
+                match act.save(&connection) {
+                    Ok(act) => bot.send_plain_reply(
+                        &message,
+                        format!("Activity {} updated.", act.format_name()),
+                    ),
+                    Err(e) => {
+                        bot.send_plain_reply(&message, format!("Error updating activity. {:?}", e))
+                    }
+                }
             }
             "delete" => {
-                // delete activity by id, and all its shortcuts
-                // if there are plannedactivities with this id, cannot be deleted - check FOREIGN KEY constraints
+                let id = args[1].parse::<i32>();
+                if id.is_err() {
+                    return bot.send_plain_reply(&message, "ActivityID must be a number".into());
+                }
+                let id = id.unwrap();
+
+                let act = Activity::find_one(&connection, &id).expect("Failed to run SQL");
+
+                if act.is_none() {
+                    return bot
+                        .send_plain_reply(&message, format!("Activity {} was not found.", id));
+                }
+
+                let act = act.unwrap();
+
+                let name = act.format_name();
+
+                match act.destroy(&connection) {
+                    Ok(_) => bot.send_plain_reply(&message, format!("Activity {} updated.", name)),
+                    Err(e) => {
+                        bot.send_plain_reply(&message, format!("Error updating activity. {:?}", e))
+                    }
+                }
             }
             _ => {
                 bot.send_plain_reply(&message, "Unknown activities operation".into());
