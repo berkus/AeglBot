@@ -7,10 +7,10 @@ More features:
  ☐ match guardian- and telegram-names case-insensitive
  ✔ ignore commands directed for other bots like `/help@SomeOtherBot` @done (18-09-12 21:47)
  ✔ /info command to report bot status @done (18-09-15 01:46)
- ☐ /edit command to modify activities
-   ☐ `/edit530 time 11:00`
-   ☐ `/edit530 desc <new description>`
-   ☐ `/edit530 activity <new activity shortcut>`
+ ✔ /edit command to modify activities @done (18-09-26 17:07)
+   ✔ `/edit530 time 11:00` @done (18-09-26 17:07)
+   ✔ `/edit530 desc <new description>` @done (18-09-26 17:07)
+   ✔ `/edit530 activity <new activity shortcut>` @done (18-09-26 17:22)
  ☐ implement support for sub-commands
    ☐ commands may register sub-commands using the same matcher interface
  ☐ admin interface (admin-only access) to

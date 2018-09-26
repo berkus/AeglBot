@@ -13,8 +13,6 @@ mod activities_command;
 pub use self::activities_command::*;
 mod cancel_command;
 pub use self::cancel_command::*;
-mod details_command;
-pub use self::details_command::*;
 mod edit_command;
 pub use self::edit_command::*;
 mod editguar_command;
