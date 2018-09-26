@@ -29,7 +29,7 @@ impl BotCommand for EditGuardianCommand {
     }
 
     fn description(&self) -> &'static str {
-        "Edit information about registered guardians (admin-only)"
+        "Edit information about registered guardians"
     }
 
     fn execute(
