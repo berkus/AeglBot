@@ -1,12 +1,12 @@
 use chrono::prelude::*;
+use chrono::Duration;
 use chrono_english::{parse_date_string, Dialect};
 use chrono_tz::Europe::Moscow;
-use chrono::Duration;
-use datetime::reference_date;
 use commands::validate_username;
 use crate::{Bot, BotCommand, DbConnection};
+use datetime::reference_date;
 use diesel_derives_traits::Model;
-use models::{PlannedActivity, ActivityShortcut};
+use models::{ActivityShortcut, PlannedActivity};
 
 pub struct EditCommand;
 
@@ -106,7 +106,10 @@ impl BotCommand for EditCommand {
                     info!("...parsed `{:?}`", start_time);
 
                     if planned.start < reference_date() - Duration::hours(1) {
-                        return bot.send_plain_reply(&message, "You can not set activity time in the past.".into());
+                        return bot.send_plain_reply(
+                            &message,
+                            "You can not set activity time in the past.".into(),
+                        );
                     }
 
                     planned.start = start_time;
