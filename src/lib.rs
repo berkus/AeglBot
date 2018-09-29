@@ -223,6 +223,20 @@ impl Bot {
         );
     }
 
+    pub fn send_html_message_with_notification(
+        &self,
+        chat: telebot::objects::Integer,
+        text: String,
+    ) {
+        self.spawn_message(
+            self.bot
+                .message(chat, text)
+                .parse_mode(ParseMode::HTML)
+                .disable_notificaton(false)
+                .disable_web_page_preview(true),
+        );
+    }
+
     /// Match command in both variations (with bot name and without bot name).
     /// @param data Input text received from Telegram.
     /// @param command Command name without leading slash.
