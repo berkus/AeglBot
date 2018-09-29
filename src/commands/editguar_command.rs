@@ -1,4 +1,8 @@
-use crate::{commands::admin_check, commands::{guardian_lookup, validate_username}, Bot, BotCommand, DbConnection};
+use crate::{
+    commands::admin_check,
+    commands::{guardian_lookup, validate_username},
+    Bot, BotCommand, DbConnection,
+};
 
 pub struct EditGuardianCommand;
 
@@ -59,7 +63,9 @@ impl BotCommand for EditGuardianCommand {
 
         let guardian = if name == "my" {
             let guardian = validate_username(bot, message, &connection);
-            if guardian.is_none() { return; }
+            if guardian.is_none() {
+                return;
+            }
             guardian.unwrap()
         } else {
             let admin = admin_check(bot, message, &connection);
