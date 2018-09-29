@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use chrono::Duration;
 use crate::{Bot, DbConnection};
 use diesel::prelude::*;
 use diesel_derives_traits::NewModel;
@@ -62,7 +63,16 @@ pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error>
     // Publish all new alerts
     for item in alert_list.iter().filter(|x| x.kind == "Alert") {
         trace!("{}", item);
-        bot.send_html_message(chat_id, format!("{}", item));
+        if item.expiry_date.is_none()
+            || item.expiry_date.unwrap() - item.start_date <= Duration::minutes(90)
+        {
+            bot.send_html_message(chat_id, format!("{}", item));
+        } else {
+            bot.send_html_message_with_notification(
+                chat_id,
+                format!(":warning: Important Alert :warning:\n\n{}", item),
+            );
+        }
     }
 
     Ok(())
