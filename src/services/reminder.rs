@@ -48,7 +48,7 @@ pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error>
             acc + &format!("{}\n\n", event.display(&connection, None))
         });
 
-    bot.send_html_message(chat_id, text);
+    bot.send_html_message_with_notification(chat_id, text);
 
     Ok(())
 }
