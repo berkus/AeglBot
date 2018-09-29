@@ -55,7 +55,7 @@ impl BotCommand for EditGuardianCommand {
         let args = args.unwrap();
         let args: Vec<&str> = args.splitn(3, ' ').collect();
 
-        if args.len() < 1 || args.len() == 2 {
+        if args.is_empty() || args.len() == 2 {
             return EditGuardianCommand::usage(bot, &message);
         }
 
@@ -104,16 +104,14 @@ impl BotCommand for EditGuardianCommand {
                 email = if guardian.email.is_none() {
                     "<no email>".into()
                 } else {
-                    format!("{}", guardian.email.clone().unwrap())
+                    guardian.email.clone().unwrap().to_string()
                 },
                 admin = if guardian.is_superadmin {
                     "<superadmin>"
+                } else if guardian.is_admin {
+                    "<admin>"
                 } else {
-                    if guardian.is_admin {
-                        "<admin>"
-                    } else {
-                        ""
-                    }
+                    ""
                 },
             );
             return bot.send_plain_reply(&message, info);

@@ -58,7 +58,7 @@ impl BotCommand for ManageCommand {
         let args = args.unwrap();
         let args: Vec<&str> = args.splitn(2, ' ').collect();
 
-        if args.len() < 1 {
+        if args.is_empty() {
             return ManageCommand::usage(bot, &message);
         }
 

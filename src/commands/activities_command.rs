@@ -108,7 +108,7 @@ impl BotCommand for ActivitiesCommand {
         let args = args.unwrap();
         let args: Vec<&str> = args.splitn(2, ' ').collect();
 
-        if args.len() < 1 {
+        if args.is_empty() {
             return ActivitiesCommand::usage(bot, &message);
         }
 
@@ -391,11 +391,10 @@ impl BotCommand for ActivitiesCommand {
 
 fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
     fn final_collect(args: Vec<&str>) -> HashMap<&str, &str> {
-        return args
-            .into_iter()
+        args.into_iter()
             .tuples()
             .map(|(k, v)| (k, v.trim_matches('"')))
-            .collect::<HashMap<_, _>>();
+            .collect::<HashMap<_, _>>()
     }
 
     let fragments: Vec<&str> = args.split('=').collect();
