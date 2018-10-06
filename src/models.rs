@@ -124,7 +124,13 @@ pub struct NewAlert<'a> {
 
 impl fmt::Display for Alert {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {} {}", self.type_icon(), self.reward_icon(), self.title)
+        write!(
+            f,
+            "{} {} {}",
+            self.type_icon(),
+            self.reward_icon(),
+            self.title
+        )
     }
 }
 
@@ -144,11 +150,17 @@ impl Alert {
     }
 
     pub fn reward_icon(&self) -> String {
-        if self.is_forma() { return "⚖".into(); }
-        else if self.is_nitain() { return "✨".into(); }
-        else if self.is_blueprint() { return "🗿".into(); }
-        else if self.is_resource() { return "🔋".into(); }
-        else if self.is_mod() { return "⚙".into(); }
+        if self.is_forma() {
+            return "⚖".into();
+        } else if self.is_nitain() {
+            return "✨".into();
+        } else if self.is_blueprint() {
+            return "🗿".into();
+        } else if self.is_resource() {
+            return "🔋".into();
+        } else if self.is_mod() {
+            return "⚙".into();
+        }
         "".into()
     }
 

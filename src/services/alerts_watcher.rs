@@ -63,8 +63,7 @@ pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error>
     // Publish all new alerts
     for item in alert_list.iter() {
         info!("{}", item);
-        if item.is_important()
-        {
+        if item.is_important() {
             bot.send_html_message_with_notification(
                 chat_id,
                 format!("⚠️ Important ⚠️\n\n{}", item),
