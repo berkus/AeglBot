@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use chrono::Duration;
 use crate::datetime::{format_start_time, reference_date};
 use crate::schema::*;
 use crate::DbConnection;
@@ -123,7 +124,56 @@ pub struct NewAlert<'a> {
 
 impl fmt::Display for Alert {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "✊ Alert: {}", self.title)
+        write!(f, "{} {} {}", self.type_icon(), self.reward_icon(), self.title)
+    }
+}
+
+impl Alert {
+    pub fn is_important(&self) -> bool {
+        self.is_forma() || self.is_nitain() || self.is_orokin_reactor() ||
+            (self.expiry_date.is_some() && self.expiry_date.unwrap() - self.start_date >= Duration::minutes(30))
+    }
+
+    pub fn type_icon(&self) -> String {
+        match self.kind.as_str() {
+            "Alert" => "✊".into(),
+            "Invasion" => "🐛".into(),
+            "Outbreak" => "⛓".into(),
+            _ => format!("⁉️ {}", self.kind),
+        }
+    }
+
+    pub fn reward_icon(&self) -> String {
+        if self.is_forma() { return "⚖".into(); }
+        else if self.is_nitain() { return "✨".into(); }
+        else if self.is_blueprint() { return "🗿".into(); }
+        else if self.is_resource() { return "🔋".into(); }
+        else if self.is_mod() { return "⚙".into(); }
+        "".into()
+    }
+
+    pub fn is_blueprint(&self) -> bool {
+        self.title.contains("(Blueprint)")
+    }
+
+    pub fn is_resource(&self) -> bool {
+        self.title.contains("(Resource)")
+    }
+
+    pub fn is_mod(&self) -> bool {
+        self.title.contains("(Mod)")
+    }
+
+    pub fn is_forma(&self) -> bool {
+        self.title.contains("Forma")
+    }
+
+    pub fn is_nitain(&self) -> bool {
+        self.title.contains("Nitain Extract")
+    }
+
+    pub fn is_orokin_reactor(&self) -> bool {
+        self.title.contains("Orokin Reactor")
     }
 }
 

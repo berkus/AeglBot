@@ -61,17 +61,16 @@ pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error>
     alert_list.sort_by_key(|x| x.expiry_date);
 
     // Publish all new alerts
-    for item in alert_list.iter().filter(|x| x.kind == "Alert") {
-        trace!("{}", item);
-        if item.expiry_date.is_none()
-            || item.expiry_date.unwrap() - item.start_date <= Duration::minutes(90)
+    for item in alert_list.iter() {
+        info!("{}", item);
+        if item.is_important()
         {
-            bot.send_html_message(chat_id, format!("{}", item));
-        } else {
             bot.send_html_message_with_notification(
                 chat_id,
-                format!(":warning: Important Alert :warning:\n\n{}", item),
+                format!("⚠️ Important ⚠️\n\n{}", item),
             );
+        } else {
+            bot.send_html_message(chat_id, format!("{}", item));
         }
     }
 
