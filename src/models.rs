@@ -110,16 +110,16 @@ pub struct Alert {
 #[derive(Clone, Insertable, NewModel)]
 #[table_name = "alerts"]
 #[model(Alert)]
-pub struct NewAlert<'a> {
-    pub guid: &'a str,
-    pub title: &'a str,
-    pub kind: Option<&'a str>,
+pub struct NewAlert {
+    pub guid: String,
+    pub title: String,
+    pub kind: Option<String>,
     #[column_name = "startdate"]
     pub start_date: Option<DateTime<Utc>>,
     #[column_name = "expirydate"]
     pub expiry_date: Option<DateTime<Utc>>,
-    pub faction: Option<&'a str>,
-    pub flavor: Option<&'a str>,
+    pub faction: Option<String>,
+    pub flavor: Option<String>,
 }
 
 impl fmt::Display for Alert {
@@ -136,8 +136,11 @@ impl fmt::Display for Alert {
 
 impl Alert {
     pub fn is_important(&self) -> bool {
-        self.is_forma() || self.is_nitain() || self.is_orokin_reactor() ||
-            (self.expiry_date.is_some() && self.expiry_date.unwrap() - self.start_date >= Duration::minutes(30))
+        self.is_forma()
+            || self.is_nitain()
+            || self.is_orokin_reactor()
+            || (self.expiry_date.is_some()
+                && self.expiry_date.unwrap() - self.start_date >= Duration::minutes(90))
     }
 
     pub fn type_icon(&self) -> String {
