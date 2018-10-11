@@ -1,5 +1,6 @@
 More features:
 
+ ☐ Mark past WF events with "(ended) " prefix.
  ☐ Handle diesel in async using blocking() handoff
    - https://docs.rs/tokio-threadpool/0.1/tokio_threadpool/fn.blocking.html
  ☐ HANDLE ERRORS
