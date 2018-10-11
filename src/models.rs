@@ -157,6 +157,10 @@ impl Alert {
             "⚖"
         } else if self.is_nitain() {
             "✨"
+        } else if self.is_orokin_reactor() {
+            "🏮"
+        } else if self.is_endo() {
+            "🔮"
         } else if self.is_blueprint() {
             "🗿"
         } else if self.is_resource() {
@@ -165,6 +169,8 @@ impl Alert {
             "⚙"
         } else if self.is_aura() {
             "❄️"
+        } else if self.is_credits() {
+            "💰"
         } else {
             ""
         }.into()
@@ -186,6 +192,16 @@ impl Alert {
         self.title.contains("(Aura)")
     }
 
+    pub fn is_credits(&self) -> bool {
+        use regex::Regex;
+
+        lazy_static! {
+            static ref CREDITS: Regex = Regex::new(r#"^\d+cr "#).unwrap();
+        }
+
+        CREDITS.is_match(&self.title)
+    }
+
     pub fn is_forma(&self) -> bool {
         self.title.contains("Forma")
     }
@@ -197,6 +213,8 @@ impl Alert {
     pub fn is_orokin_reactor(&self) -> bool {
         self.title.contains("Orokin Reactor")
     }
+
+    pub fn is_endo(&self) -> bool { self.title.contains("ENDO") }
 }
 
 //

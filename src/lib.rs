@@ -13,6 +13,8 @@ extern crate chrono_tz;
 extern crate diesel_logger;
 extern crate dotenv;
 extern crate itertools;
+#[macro_use]
+extern crate lazy_static;
 extern crate rss;
 extern crate serde_json;
 extern crate telebot;
@@ -26,6 +28,7 @@ extern crate futures_retry;
 extern crate log;
 #[cfg(target_os = "linux")]
 extern crate procfs;
+extern crate regex;
 extern crate tokio_core;
 
 use diesel::pg::PgConnection;
