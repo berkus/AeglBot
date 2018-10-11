@@ -154,17 +154,20 @@ impl Alert {
 
     pub fn reward_icon(&self) -> String {
         if self.is_forma() {
-            return "⚖".into();
+            "⚖"
         } else if self.is_nitain() {
-            return "✨".into();
+            "✨"
         } else if self.is_blueprint() {
-            return "🗿".into();
+            "🗿"
         } else if self.is_resource() {
-            return "🔋".into();
+            "🔋"
         } else if self.is_mod() {
-            return "⚙".into();
-        }
-        "".into()
+            "⚙"
+        } else if self.is_aura() {
+            "❄️"
+        } else {
+            ""
+        }.into()
     }
 
     pub fn is_blueprint(&self) -> bool {
@@ -177,6 +180,10 @@ impl Alert {
 
     pub fn is_mod(&self) -> bool {
         self.title.contains("(Mod)")
+    }
+
+    pub fn is_aura(&self) -> bool {
+        self.title.contains("(Aura)")
     }
 
     pub fn is_forma(&self) -> bool {
