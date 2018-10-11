@@ -214,7 +214,9 @@ impl Alert {
         self.title.contains("Orokin Reactor")
     }
 
-    pub fn is_endo(&self) -> bool { self.title.contains("ENDO") }
+    pub fn is_endo(&self) -> bool {
+        self.title.contains("ENDO")
+    }
 }
 
 //
