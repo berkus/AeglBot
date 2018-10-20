@@ -1,5 +1,5 @@
 use chrono::{prelude::*, Duration, Local};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveTime, TimeZone, Utc};
 use chrono_tz::{Europe::Moscow, Tz};
 use diesel::{helper_types::AsExprOf, sql_types::Timestamptz};
 use std::{fmt::Write, time::Instant};
@@ -14,6 +14,7 @@ pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {
 // MSK time used only to parse input time and to display times.
 
 pub type BotDateTime = chrono::DateTime<chrono::Utc>;
+pub type BotTime = chrono::NaiveTime; // UTC
 
 fn time_diff_string(duration: Duration) -> String {
     let times = vec![
@@ -58,6 +59,12 @@ fn time_diff_string(duration: Duration) -> String {
 /// Return today() but in MSK timezone
 pub fn reference_date() -> BotDateTime {
     Utc::now()
+}
+
+/// Destiny reset time in UTC.
+/// Resets are at 17:00 UTC.
+pub fn d2_reset_time() -> BotTime {
+    BotTime::from_hms(17, 0, 0)
 }
 
 pub fn display_time(t: BotDateTime) -> DateTime<Tz> {

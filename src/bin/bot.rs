@@ -19,11 +19,17 @@ extern crate tokio_core;
 extern crate log;
 extern crate fern;
 
-use aegl_bot::{commands::*, services::*, Bot};
+use aegl_bot::{
+    commands::*,
+    datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
+    services::*,
+    Bot,
+};
 use dotenv::dotenv;
+use failure::Error;
 use futures::{Future, IntoFuture, Stream};
 use std::env;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tokio::timer::Interval;
 use tokio_core::reactor::Core;
 
@@ -119,19 +125,66 @@ fn main() {
 
         let stream = bot.process_messages();
 
-        let alerts_bot = bot.clone();
-        let alert_task = Interval::new(Instant::now(), Duration::from_secs(60))
-            .for_each(move |_| {
-                alerts_watcher::check(&alerts_bot, wf_alerts_chat).or_else(|_| Ok(()))
-            }).map_err(|e| panic!("Alert thread errored; err={:?}", e));
+        let alert_task = setup_timer_task(
+            Interval::new(
+                Instant::now(),
+                chrono::Duration::minutes(1).to_std().unwrap(),
+            ),
+            bot.clone(),
+            move |bot| alerts_watcher::check(bot, wf_alerts_chat),
+        );
 
-        let reminder_bot = bot.clone();
-        let reminder_task = Interval::new(Instant::now(), Duration::from_secs(60))
-            .for_each(move |_| reminder::check(&reminder_bot, lfg_chat).or_else(|_| Ok(())))
-            .map_err(|e| panic!("Reminder thread errored; err={:?}", e));
+        let reminder_task = setup_timer_task(
+            Interval::new(
+                Instant::now(),
+                chrono::Duration::minutes(1).to_std().unwrap(),
+            ),
+            bot.clone(),
+            move |bot| reminder::check(bot, lfg_chat),
+        );
+
+        let daily_reset_task = setup_timer_task(
+            Interval::new(
+                start_at_time(reference_date(), d2_reset_time()),
+                chrono::Duration::days(1).to_std().unwrap(),
+            ),
+            bot.clone(),
+            move |bot| destiny2_schedule::daily_reset(bot, lfg_chat),
+        );
+
+        let weekly_reset_task = setup_timer_task(
+            Interval::new(
+                start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time()),
+                chrono::Duration::weeks(1).to_std().unwrap(),
+            ),
+            bot.clone(),
+            move |bot| destiny2_schedule::major_weekly_reset(bot, lfg_chat),
+        );
+
+        let friday_reset_task = setup_timer_task(
+            Interval::new(
+                start_at_weekday_time(reference_date(), chrono::Weekday::Fri, d2_reset_time()),
+                chrono::Duration::weeks(1).to_std().unwrap(),
+            ),
+            bot.clone(),
+            move |bot| destiny2_schedule::minor_weekly_reset(bot, lfg_chat),
+        );
+
+        let monday_reset_task = setup_timer_task(
+            Interval::new(
+                start_at_weekday_time(reference_date(), chrono::Weekday::Mon, d2_reset_time()),
+                chrono::Duration::weeks(1).to_std().unwrap(),
+            ),
+            bot.clone(),
+            move |bot| destiny2_schedule::end_of_weekend(bot, lfg_chat),
+        );
 
         bot.spawn(alert_task);
         bot.spawn(reminder_task);
+        bot.spawn(daily_reset_task);
+        bot.spawn(weekly_reset_task);
+        bot.spawn(friday_reset_task);
+        bot.spawn(monday_reset_task);
 
         core.run(
             stream
@@ -140,4 +193,18 @@ fn main() {
                 .into_future(),
         ).unwrap();
     }
+}
+
+/// Setup handling for timer Stream over interval `i` to run closure `f` using cloned bot `b`.
+fn setup_timer_task<F>(
+    interval: Interval,
+    bot: Bot,
+    mut fun: F,
+) -> impl Future<Item = (), Error = ()>
+where
+    F: FnMut(&Bot) -> Result<(), Error>,
+{
+    interval
+        .for_each(move |_| fun(&bot).or_else(|_| Ok(())))
+        .map_err(|e| panic!("Daily reset thread errored; err={:?}", e))
 }
