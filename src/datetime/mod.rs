@@ -1,11 +1,12 @@
 use chrono::{prelude::*, Duration, Local};
 use chrono::{DateTime, TimeZone, Utc};
 use chrono_tz::{Europe::Moscow, Tz};
-use diesel::{dsl::now, helper_types::AsExprOf, sql_types::Timestamptz, IntoSql};
-use std::fmt::Write;
+use diesel::{helper_types::AsExprOf, sql_types::Timestamptz};
+use std::{fmt::Write, time::Instant};
 
 // Diesel, see issues/1752
-pub fn nowtz() -> AsExprOf<now, Timestamptz> {
+pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {
+    use diesel::{dsl::now, helper_types::AsExprOf, sql_types::Timestamptz, IntoSql};
     now.into_sql::<Timestamptz>()
 }
 
@@ -63,7 +64,76 @@ pub fn display_time(t: BotDateTime) -> DateTime<Tz> {
     Moscow.from_utc_datetime(&t.naive_utc())
 }
 
-/// Time and reference are in MSK timezone!
+fn time_override(now: BotDateTime, start: BotTime) -> BotDateTime {
+    now.with_hour(start.hour())
+        .unwrap()
+        .with_minute(start.minute())
+        .unwrap()
+        .with_second(start.second())
+        .unwrap()
+}
+
+// Instant at which the tokio_timer stream should start producing events.
+// With help of @Douman on https://gitter.im/tokio-rs/tokio:
+// https://gitlab.com/Douman/snow-white/blob/master/src/system/discord.rs#L377-397
+// This fn calculates only offset to be testable, the public fn `start_at_time` uses it.
+fn start_at_time_offset(now: BotDateTime, start: BotTime) -> Duration {
+    use chrono::Timelike;
+
+    let now_time = now.time();
+
+    let first = match now_time > start {
+        // Today has already passed, schedule for tomorrow same time
+        true => time_override(now + Duration::days(1), start),
+        false => time_override(now, start),
+    };
+
+    first - now
+}
+
+pub fn start_at_time(now: BotDateTime, start: BotTime) -> Instant {
+    Instant::now() + start_at_time_offset(now, start).to_std().unwrap()
+}
+
+// For weekly events - start on given day of week, at a given time.
+// This fn calculates only offset to be testable, the public fn `start_at_weekday_time` uses it.
+fn start_at_weekday_time_offset(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> Duration {
+    use chrono::{Datelike, Timelike};
+
+    let first = match wd.number_from_monday() < now.weekday().number_from_monday() {
+        true => {
+            // That weekday passed, schedule for next week
+            let num_days =
+                (7 - now.weekday().number_from_monday() + wd.number_from_monday()) as i64;
+            let next = time_override(now, start);
+            let next = next + Duration::days(num_days);
+            next
+        }
+        false => {
+            let num_days = (wd.number_from_monday() - now.weekday().number_from_monday()) as i64;
+            // The day is right, but time has passed - schedule to next week
+            if num_days == 0 && now.time() > start {
+                let next = time_override(now, start);
+                let next = next + Duration::weeks(1);
+                next
+            } else {
+                let next = time_override(now, start);
+                let next = next + Duration::days(num_days);
+                next
+            }
+        }
+    };
+
+    first - now
+}
+
+pub fn start_at_weekday_time(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> Instant {
+    Instant::now() + start_at_weekday_time_offset(now, wd, start)
+        .to_std()
+        .unwrap()
+}
+
+/// Time and reference are in UTC? timezone!
 ///
 /// `"Today at 23:00 (starts in 3 hours)"`
 pub fn format_start_time(time: BotDateTime, reference: BotDateTime) -> String {
@@ -128,6 +198,71 @@ mod tests {
                 "{}",
                 msk_time.format("Today at %H:%M:%S (started just now)")
             )
+        );
+    }
+
+    #[test]
+    fn test_start_at_time() {
+        let ref_time = Utc.ymd(2018, 10, 24).and_hms(17, 30, 0);
+
+        assert_eq!(
+            start_at_time_offset(ref_time, BotTime::from_hms(17, 0, 0)),
+            Duration::hours(23) + Duration::minutes(30)
+        );
+        assert_eq!(
+            start_at_time_offset(ref_time, BotTime::from_hms(17, 30, 0)),
+            Duration::seconds(0)
+        );
+        assert_eq!(
+            start_at_time_offset(ref_time, BotTime::from_hms(18, 30, 0)),
+            Duration::hours(1)
+        );
+    }
+
+    #[test]
+    fn test_start_at_weekday() {
+        // It's wednesday
+        let ref_date = Utc.ymd(2018, 10, 24).and_hms(17, 30, 0); // Wednesday
+
+        // We schedule on wednesday later - wait just that
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Wed, BotTime::from_hms(18, 0, 0)),
+            Duration::minutes(30)
+        );
+        // We schedule on wednesday but before - wait almost 1 week
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Wed, BotTime::from_hms(17, 0, 0)),
+            Duration::days(6) + Duration::hours(23) + Duration::minutes(30)
+        );
+        // We schedule on friday, same time - wait till friday (2 days)
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Fri, BotTime::from_hms(17, 30, 0)),
+            Duration::days(2)
+        );
+        // We schedule on friday, earlier time - wait till friday (almost 2 days)
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Fri, BotTime::from_hms(17, 00, 0)),
+            Duration::days(1) + Duration::hours(23) + Duration::minutes(30)
+        );
+        // We schedule on friday, later time - wait till friday (over 2 days)
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Fri, BotTime::from_hms(18, 30, 0)),
+            Duration::days(2) + Duration::hours(1)
+        );
+        // We schedule on monday, same time - wait till monday (5 days)
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Mon, BotTime::from_hms(17, 30, 0)),
+            Duration::days(5)
+        );
+        // We schedule on monday, earlier time - wait till monday (almost 5 days)
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Mon, BotTime::from_hms(17, 00, 0)),
+            Duration::days(4) + Duration::hours(23) + Duration::minutes(30)
+        );
+        // We schedule on monday, later time - wait till monday (over 5 days)
+        assert_eq!(
+            start_at_weekday_time_offset(ref_date, Weekday::Mon, BotTime::from_hms(18, 30, 0)),
+            Duration::days(5) + Duration::hours(1)
         );
     }
 }
