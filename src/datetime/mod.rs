@@ -56,7 +56,7 @@ fn time_diff_string(duration: Duration) -> String {
     }
 }
 
-/// Return today() but in MSK timezone
+/// Return today() but in UTC timezone
 pub fn reference_date() -> BotDateTime {
     Utc::now()
 }
