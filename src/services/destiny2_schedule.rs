@@ -23,33 +23,38 @@ pub fn daily_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), 
 //   6a. on Strongest Curse week the Shattered Throne is available
 pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
     let curses: [&'static str; 3] = ["Weak Curse", "Growing Curse", "Strongest Curse"];
+    let urls: [&'static str; 3] = [
+        "https://www.youtube.com/watch?v=6tJZXAa57fY",
+        "https://www.youtube.com/watch?v=7WvxeOnhClY",
+        "https://www.youtube.com/watch?v=Bwgwa6HpXTI",
+    ];
     let dc_week = dc_week_number(reference_date()) as usize;
     let s = format!(
-        "Dreaming City: {}{}",
+        "💫 Dreaming City: {} ([Ascendant Chests]({}))\n{}",
         curses[dc_week],
-        // @todo YouTube link to this week's chests
+        urls[dc_week],
         if dc_week == 2 {
             "(Shattered Throne is available)".to_string()
         } else {
             format!(
-                "Shattered Throne will become available in {} week(s)",
+                "(Shattered Throne will become available in {} weeks)",
                 2 - dc_week
             )
         }
     );
     let bosses: [&'static str; 5] = [
-        "Nur Abath, Crest of Xol | Shotgun",
-        "Kathok, Roar of Xol | SMG",
-        "Domkath, the Mask | Sniper Rifle",
-        "Naksud, the Famine | Shotgun, SMG, Sniper Rifle",
-        "Bok Litur, the Hunger of Xol | Shotgun, SMG, Sniper Rifle",
+        "💀 Nur Abath, Crest of Xol\n⚔️ Shotgun",
+        "💀 Kathok, Roar of Xol\n⚔️ SMG",
+        "💀 Domkath, the Mask\n⚔️ Sniper Rifle",
+        "💀 Naksud, the Famine\n⚔️ Shotgun, SMG, Sniper Rifle",
+        "💀 Bok Litur, the Hunger of Xol\n⚔️ Shotgun, SMG, Sniper Rifle",
     ];
 
     let proto_week = protocol_week_number(reference_date()) as usize;
-    let p = format!("Escalation Protocol Boss: {}", bosses[proto_week]);
+    let p = format!("Escalation Protocol:\n{}", bosses[proto_week]);
 
-    let msg = format!("Weekly Reset:\n{}\n{}", s, p);
-    bot.send_html_message(chat_id, msg);
+    let msg = format!("Weekly Reset:\n\n{}\n\n{}", s, p);
+    bot.send_md_message(chat_id, msg);
     Ok(())
 }
 
