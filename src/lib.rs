@@ -225,6 +225,16 @@ impl Bot {
         );
     }
 
+    pub fn send_md_message(&self, chat: telebot::objects::Integer, text: String) {
+        self.spawn_message(
+            self.bot
+                .message(chat, text)
+                .parse_mode(ParseMode::Markdown)
+                .disable_notificaton(true)
+                .disable_web_page_preview(true),
+        );
+    }
+
     pub fn send_html_message(&self, chat: telebot::objects::Integer, text: String) {
         self.spawn_message(
             self.bot
