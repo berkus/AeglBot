@@ -131,7 +131,7 @@ impl BotCommand for LfgCommand {
                             format!(
                                 "{guarName} is looking for {groupName} group {onTime}
 {joinPrompt}
-Enter `/details {actId} free form description text` to specify more details about the event.",
+Enter `/edit{actId} details <free form description text>` to specify more details about the event.",
                                 guarName = guardian,
                                 groupName = activity.format_name(),
                                 onTime = format_start_time(start_time, reference_date()),
