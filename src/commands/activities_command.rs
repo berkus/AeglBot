@@ -232,6 +232,13 @@ impl BotCommand for ActivitiesCommand {
                 }
             }
             "addsc" => {
+                if args.len() < 2 {
+                    return bot.send_plain_reply(
+                        &message,
+                        "Syntax: /activities addsc ActivityID ShortcutName Game name".into(),
+                    );
+                }
+
                 let args: Vec<&str> = args[1].splitn(3, ' ').collect();
                 if args.len() != 3 {
                     return bot.send_plain_reply(
@@ -416,7 +423,8 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
                     .rev()
                     .collect::<Vec<&str>>()
             },
-        )).collect::<Vec<&str>>();
+        ))
+        .collect::<Vec<&str>>();
 
         trace!("{:?}", subfrags);
 
