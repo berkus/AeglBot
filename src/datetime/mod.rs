@@ -90,10 +90,10 @@ fn start_at_time_offset(now: BotDateTime, start: BotTime) -> Duration {
 
     let now_time = now.time();
 
-    let first = match now_time > start {
-        // Today has already passed, schedule for tomorrow same time
-        true => time_override(now + Duration::days(1), start),
-        false => time_override(now, start),
+    let first = if now_time > start {
+        time_override(now + Duration::days(1), start)
+    } else {
+        time_override(now, start)
     };
 
     first - now
@@ -108,27 +108,23 @@ pub fn start_at_time(now: BotDateTime, start: BotTime) -> Instant {
 fn start_at_weekday_time_offset(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> Duration {
     use chrono::{Datelike, Timelike};
 
-    let first = match wd.number_from_monday() < now.weekday().number_from_monday() {
-        true => {
-            // That weekday passed, schedule for next week
-            let num_days =
-                (7 - now.weekday().number_from_monday() + wd.number_from_monday()) as i64;
+    let first = if wd.number_from_monday() < now.weekday().number_from_monday() {
+        // That weekday passed, schedule for next week
+        let num_days = (7 - now.weekday().number_from_monday() + wd.number_from_monday()) as i64;
+        let next = time_override(now, start);
+        let next = next + Duration::days(num_days);
+        next
+    } else {
+        let num_days = (wd.number_from_monday() - now.weekday().number_from_monday()) as i64;
+        // The day is right, but time has passed - schedule to next week
+        if num_days == 0 && now.time() > start {
+            let next = time_override(now, start);
+            let next = next + Duration::weeks(1);
+            next
+        } else {
             let next = time_override(now, start);
             let next = next + Duration::days(num_days);
             next
-        }
-        false => {
-            let num_days = (wd.number_from_monday() - now.weekday().number_from_monday()) as i64;
-            // The day is right, but time has passed - schedule to next week
-            if num_days == 0 && now.time() > start {
-                let next = time_override(now, start);
-                let next = next + Duration::weeks(1);
-                next
-            } else {
-                let next = time_override(now, start);
-                let next = next + Duration::days(num_days);
-                next
-            }
         }
     };
 
