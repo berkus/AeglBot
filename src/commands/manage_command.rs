@@ -1,4 +1,7 @@
-use crate::{commands::admin_check, commands::guardian_lookup, Bot, BotCommand, DbConnection};
+use {
+    crate::{commands::admin_check, commands::guardian_lookup, BotCommand, BotMenu, DbConnection},
+    teloxide::prelude::*,
+};
 
 pub struct ManageCommand;
 struct ListAdminsSubcommand;
@@ -8,7 +11,7 @@ struct RemoveAdminSubcommand;
 command_ctor!(ManageCommand);
 
 impl ManageCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
         bot.send_plain_reply(
             &message,
             "Manage admins:
@@ -34,8 +37,8 @@ impl BotCommand for ManageCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {
@@ -114,8 +117,8 @@ impl BotCommand for ListAdminsSubcommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         _args: Option<String>,
     ) {
@@ -157,8 +160,8 @@ impl BotCommand for AddAdminSubcommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {
@@ -225,8 +228,8 @@ impl BotCommand for RemoveAdminSubcommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {

@@ -3,12 +3,13 @@ use {
         commands::{decapitalize, validate_username},
         datetime::{format_start_time, reference_date},
         models::{Activity, NewPlannedActivityMember, PlannedActivity, PlannedActivityMember},
-        Bot, BotCommand, DbConnection,
+        BotCommand, BotMenu, DbConnection,
     },
     chrono::{Duration, Local},
     diesel::{self, associations::HasTable, prelude::*},
     diesel_derives_traits::{Model, NewModel},
     futures::Future,
+    teloxide::prelude::*,
 };
 
 pub struct JoinCommand;
@@ -16,7 +17,7 @@ pub struct JoinCommand;
 command_ctor!(JoinCommand);
 
 impl JoinCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
         bot.send_plain_reply(
             &message,
             "To join a fireteam provide fireteam id
@@ -37,8 +38,8 @@ impl BotCommand for JoinCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         activity_id: Option<String>,
     ) {

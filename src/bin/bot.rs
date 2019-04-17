@@ -3,21 +3,19 @@
 // To make it usable it misses natty parsing lib implementation in rust
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-#![feature(futures_api, async_await, await_macro, nll)]
+#![feature(box_syntax, nll)]
 
 use {
     aegl_bot::{
         commands::*,
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
         services::*,
-        Bot,
+        BotMenu,
     },
     dotenv::dotenv,
-    failure::Error,
-    futures::{Future, IntoFuture, Stream},
-    std::{env, time::Instant},
-    tokio::timer::Interval,
-    tokio_core::reactor::Core,
+    futures::{Future, Stream},
+    std::{env, pin::Pin, time::Instant},
+    teloxide::{prelude::*, requests::ResponseResult},
 };
 
 fn setup_logging() -> Result<(), fern::InitError> {
@@ -79,7 +77,8 @@ fn setup_logging() -> Result<(), fern::InitError> {
     Ok(())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
@@ -90,99 +89,111 @@ fn main() {
         .parse::<i64>()
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
 
-    let mut core = Core::new().unwrap();
-    loop {
-        let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-        let mut bot = Bot::new(&bot_name, core.handle(), &token);
+    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+    // @todo create Bot as an actor
+    let mut bot = Box::leak(box BotMenu::new(&bot_name, &token));
 
-        bot.register_command(ActivitiesCommand::new());
-        bot.register_command(CancelCommand::new());
-        bot.register_command(D2weekCommand::new());
-        bot.register_command(D1weekCommand::new());
-        bot.register_command(EditCommand::new());
-        bot.register_command(EditGuardianCommand::new());
-        bot.register_command(HelpCommand::new());
-        bot.register_command(InfoCommand::new());
-        bot.register_command(JoinCommand::new());
-        bot.register_command(LfgCommand::new());
-        bot.register_command(ListCommand::new());
-        bot.register_command(ManageCommand::new());
-        bot.register_command(PsnCommand::new());
-        bot.register_command(WhoisCommand::new());
+    bot.register_command(ActivitiesCommand::new());
+    bot.register_command(CancelCommand::new());
+    bot.register_command(D2weekCommand::new());
+    bot.register_command(D1weekCommand::new());
+    bot.register_command(EditCommand::new());
+    bot.register_command(EditGuardianCommand::new());
+    bot.register_command(HelpCommand::new());
+    bot.register_command(InfoCommand::new());
+    bot.register_command(JoinCommand::new());
+    bot.register_command(LfgCommand::new());
+    bot.register_command(ListCommand::new());
+    bot.register_command(ManageCommand::new());
+    bot.register_command(PsnCommand::new());
+    bot.register_command(WhoisCommand::new());
 
-        let stream = bot.process_messages();
+    teloxide::repl(bot.bot.clone(), |message| async {
+        // @todo tell bot to process messages
+        bot.process_message(message);
+        ResponseResult::<()>::Ok(())
+    })
+    .await;
 
-        let reminder_task = setup_timer_task(
-            Interval::new(
-                Instant::now(),
-                chrono::Duration::minutes(1).to_std().unwrap(),
-            ),
-            bot.clone(),
-            move |bot| reminder::check(bot, lfg_chat),
-        );
+    // let sys = ActorSystem::new();
 
-        let daily_reset_task = setup_timer_task(
-            Interval::new(
-                start_at_time(reference_date(), d2_reset_time()),
-                chrono::Duration::days(1).to_std().unwrap(),
-            ),
-            bot.clone(),
-            move |bot| destiny_schedule::daily_reset(bot, lfg_chat),
-        );
+    // @todo use Riker actors for this:
 
-        let weekly_reset_task = setup_timer_task(
-            Interval::new(
-                start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time()),
-                chrono::Duration::weeks(1).to_std().unwrap(),
-            ),
-            bot.clone(),
-            move |bot| destiny_schedule::major_weekly_reset(bot, lfg_chat),
-        );
+    // let time = start_at
+    // let actor = ctx.actor_of::<MyActor>("my-actor").unwrap();
+    //
+    // ctx.schedule_at_time(start_at_time(reference_date(), d2_reset_time()),
+    //                      actor,
+    //                      None,
+    //                      "one giant leap for mankind".into());
 
-        let friday_reset_task = setup_timer_task(
-            Interval::new(
-                start_at_weekday_time(reference_date(), chrono::Weekday::Fri, d2_reset_time()),
-                chrono::Duration::weeks(1).to_std().unwrap(),
-            ),
-            bot.clone(),
-            move |bot| destiny_schedule::minor_weekly_reset(bot, lfg_chat),
-        );
+    // Reminder task
+    // sys.schedule(Duration::from_secs(0), chrono::Duration::minutes(1).to_std().unwrap());
+    // move |bot| reminder::check(bot, lfg_chat),
+    //
+    //
+    // let daily_reset_task = setup_timer_task(
+    //     Interval::new(
+    //         start_at_time(reference_date(), d2_reset_time()),
+    //         chrono::Duration::days(1).to_std().unwrap(),
+    //     ),
+    //     bot.clone(),
+    //     move |bot| destiny_schedule::daily_reset(bot, lfg_chat),
+    // );
+    //
+    // let weekly_reset_task = setup_timer_task(
+    //     Interval::new(
+    //         start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time()),
+    //         chrono::Duration::weeks(1).to_std().unwrap(),
+    //     ),
+    //     bot.clone(),
+    //     move |bot| destiny_schedule::major_weekly_reset(bot, lfg_chat),
+    // );
+    //
+    // let friday_reset_task = setup_timer_task(
+    //     Interval::new(
+    //         start_at_weekday_time(reference_date(), chrono::Weekday::Fri, d2_reset_time()),
+    //         chrono::Duration::weeks(1).to_std().unwrap(),
+    //     ),
+    //     bot.clone(),
+    //     move |bot| destiny_schedule::minor_weekly_reset(bot, lfg_chat),
+    // );
+    //
+    // let monday_reset_task = setup_timer_task(
+    //     Interval::new(
+    //         start_at_weekday_time(reference_date(), chrono::Weekday::Mon, d2_reset_time()),
+    //         chrono::Duration::weeks(1).to_std().unwrap(),
+    //     ),
+    //     bot.clone(),
+    //     move |bot| destiny_schedule::end_of_weekend(bot, lfg_chat),
+    // );
+    //
+    // bot.spawn(reminder_task);
+    // bot.spawn(daily_reset_task);
+    // bot.spawn(weekly_reset_task);
+    // bot.spawn(friday_reset_task);
+    // bot.spawn(monday_reset_task);
 
-        let monday_reset_task = setup_timer_task(
-            Interval::new(
-                start_at_weekday_time(reference_date(), chrono::Weekday::Mon, d2_reset_time()),
-                chrono::Duration::weeks(1).to_std().unwrap(),
-            ),
-            bot.clone(),
-            move |bot| destiny_schedule::end_of_weekend(bot, lfg_chat),
-        );
-
-        bot.spawn(reminder_task);
-        bot.spawn(daily_reset_task);
-        bot.spawn(weekly_reset_task);
-        bot.spawn(friday_reset_task);
-        bot.spawn(monday_reset_task);
-
-        core.run(
-            stream
-                .for_each(|_| Ok(()))
-                .map_err(|e| error!("Caught an error {}", e))
-                .into_future(),
-        )
-        .unwrap();
-    }
+    // core.run(
+    // stream
+    //     .for_each(|_| Ok(()))
+    //     .map_err(|e| log::error!("Caught an error {}", e));
+    // .into_future(),
+    // )
+    // .unwrap();
+    // }
 }
 
-/// Setup handling for timer Stream over interval `i` to run closure `f` using cloned bot `b`.
-fn setup_timer_task<F>(
-    interval: Interval,
-    bot: Bot,
-    mut fun: F,
-) -> impl Future<Item = (), Error = ()>
-where
-    F: FnMut(&Bot) -> Result<(), Error>,
-{
-    interval
-        .for_each(move |_| fun(&bot).or_else(|_| Ok(())))
-        .map_err(|e| panic!("Daily reset thread errored; err={:?}", e))
-}
+// Setup handling for timer Stream over interval `i` to run closure `f` using cloned bot `b`.
+// fn setup_timer_task<F>(
+//     interval: Interval,
+//     bot: BotMenu,
+//     mut fun: F,
+// ) -> impl Future<Item = (), Error = ()>
+// where
+//     F: FnMut(&BotMenu) -> Result<(), Error>,
+// {
+//     interval
+//         .for_each(move |_| fun(&bot).or_else(|_| Ok(())))
+//         .map_err(|e| panic!("Daily reset thread errored; err={:?}", e))
+// }

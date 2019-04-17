@@ -3,12 +3,13 @@ use {
         commands::validate_username,
         datetime::reference_date,
         models::{ActivityShortcut, PlannedActivity},
-        Bot, BotCommand, DbConnection,
+        BotCommand, BotMenu, DbConnection,
     },
     chrono::{prelude::*, Duration},
     chrono_english::{parse_date_string, Dialect},
     chrono_tz::Europe::Moscow,
     diesel_derives_traits::Model,
+    teloxide::prelude::*,
 };
 
 pub struct EditCommand;
@@ -16,7 +17,7 @@ pub struct EditCommand;
 command_ctor!(EditCommand);
 
 impl EditCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
         bot.send_plain_reply(
             &message,
             "Usage:
@@ -51,8 +52,8 @@ impl BotCommand for EditCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {

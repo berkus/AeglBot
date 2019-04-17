@@ -1,7 +1,10 @@
-use crate::{
-    commands::admin_check,
-    commands::{guardian_lookup, validate_username},
-    Bot, BotCommand, DbConnection,
+use {
+    crate::{
+        commands::admin_check,
+        commands::{guardian_lookup, validate_username},
+        BotCommand, BotMenu, DbConnection,
+    },
+    teloxide::prelude::*,
 };
 
 pub struct EditGuardianCommand;
@@ -9,7 +12,7 @@ pub struct EditGuardianCommand;
 command_ctor!(EditGuardianCommand);
 
 impl EditGuardianCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
         bot.send_plain_reply(
             &message,
             "Edit guardian information:
@@ -37,8 +40,8 @@ impl BotCommand for EditGuardianCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {

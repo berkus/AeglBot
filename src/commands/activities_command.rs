@@ -2,13 +2,14 @@ use {
     crate::{
         commands::admin_check,
         models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
-        Bot, BotCommand, DbConnection,
+        BotCommand, BotMenu, DbConnection, UpdateMessage,
     },
     diesel::{self, prelude::*},
     diesel_derives_traits::{Model, NewModel},
     futures::Future,
     itertools::Itertools,
     std::collections::HashMap,
+    teloxide::prelude::*,
 };
 
 pub struct ActivitiesCommand;
@@ -16,7 +17,7 @@ pub struct ActivitiesCommand;
 command_ctor!(ActivitiesCommand);
 
 impl ActivitiesCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &UpdateMessage) {
         bot.send_plain_reply(
             &message,
             "Activities command help:
@@ -64,8 +65,8 @@ impl BotCommand for ActivitiesCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {

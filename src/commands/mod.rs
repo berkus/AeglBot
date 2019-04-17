@@ -1,3 +1,13 @@
+use {
+    crate::{
+        {models::Guardian, schema::guardians::dsl::*},
+        {BotMenu, DbConnection},
+    },
+    diesel::prelude::*,
+    futures::Future,
+    teloxide::prelude::*,
+};
+
 #[macro_export]
 macro_rules! command_ctor {
     ($name:ident) => {
@@ -38,12 +48,6 @@ pub use self::psn_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 
-use crate::{models::Guardian, schema::guardians::dsl::*};
-use crate::{Bot, DbConnection};
-use diesel::prelude::*;
-use futures::Future;
-//use failure::Error;
-
 pub fn decapitalize(s: &str) -> String {
     s.chars()
         .nth(0)
@@ -53,11 +57,11 @@ pub fn decapitalize(s: &str) -> String {
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub fn validate_username(
-    bot: &Bot,
-    message: &telebot::objects::Message,
+    bot: &BotMenu,
+    message: &UpdateWithCx<AutoSend<Bot>, Message>,
     connection: &DbConnection,
 ) -> Option<Guardian> {
-    let username = match message.from.as_ref().unwrap().username {
+    let username = match message.update.from().as_ref().unwrap().username {
         None => {
             bot.send_plain_reply(
                 message,
@@ -91,8 +95,8 @@ pub fn validate_username(
 
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub fn admin_check(
-    bot: &Bot,
-    message: &telebot::objects::Message,
+    bot: &BotMenu,
+    message: &UpdateWithCx<AutoSend<Bot>, Message>,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     validate_username(bot, message, connection).filter(|g| g.is_admin)

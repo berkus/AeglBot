@@ -1,13 +1,12 @@
 use {
     crate::{
         datetime::{reference_date, BotDateTime},
-        Bot, DbConnection,
+        BotMenu, DbConnection,
     },
+    anyhow::Result,
     chrono::{DateTime, Duration, TimeZone, Utc},
     futures::Future,
-    telebot::{functions::*, Bot as RcBot},
 };
-// use anyhow::Result, failure::Error
 // use plurals::{Lang, Plural};
 
 // Destiny schedules on weekly featured Raid:
@@ -43,7 +42,7 @@ fn raid_week_number(now: BotDateTime) -> i64 {
 // };
 
 // 1. Daily resets at 20:00 msk each day
-pub fn daily_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+pub fn daily_reset(bot: &BotMenu, chat_id: teloxide::types::ChatId) -> Result<()> {
     bot.send_plain_message(chat_id, "⚡️ Daily reset".into());
     Ok(())
 }
@@ -116,7 +115,7 @@ pub fn ascendant_challenge_cycle() -> String {
 // 6. On main reset: change in Dreaming City curse
 //    dreaming city on 3-week schedule
 //   6a. on Strongest Curse week the Shattered Throne is available
-pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+pub fn major_weekly_reset(bot: &BotMenu, chat_id: teloxide::types::ChatId) -> Result<()> {
     let msg = format!(
         "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
         d1week = this_week_in_d1(),
@@ -140,13 +139,13 @@ pub fn this_week_in_d2() -> String {
 
 // 3. Weekly (minor) resets at 20:00 msg every Fri
 //   3a. Whisper of the Worm becomes available
-pub fn minor_weekly_reset(_bot: &Bot, _chat_id: telebot::objects::Integer) -> Result<(), Error> {
+pub fn minor_weekly_reset(_bot: &BotMenu, _chat_id: teloxide::types::ChatId) -> Result<()> {
     // bot.send_plain_message(chat_id, "Whisper of the Worm mission now available".into());
     Ok(())
 }
 
 // 4. Monday 20:00 msg end of Whisper of the Worm quest
-pub fn end_of_weekend(_bot: &Bot, _chat_id: telebot::objects::Integer) -> Result<(), Error> {
+pub fn end_of_weekend(_bot: &BotMenu, _chat_id: teloxide::types::ChatId) -> Result<()> {
     // bot.send_html_message(
     //     chat_id,
     //     "Whisper of the Worm mission is not available until next weekend".into(),
@@ -162,12 +161,12 @@ fn dc_week_number(now: BotDateTime) -> i64 {
     (now - *START_WEEK).num_weeks() % 3
 }
 
-fn protocol_week_number(now: BotDateTime) -> i64 {
-    lazy_static! {
-        static ref START_WEEK: DateTime<Utc> = Utc.ymd(2018, 5, 8).and_hms(17, 0, 0);
-    }
-    (now - *START_WEEK).num_weeks() % 5
-}
+// fn protocol_week_number(now: BotDateTime) -> i64 {
+//     lazy_static! {
+//         static ref START_WEEK: DateTime<Utc> = Utc.ymd(2018, 5, 8).and_hms(17, 0, 0);
+//     }
+//     (now - *START_WEEK).num_weeks() % 5
+// }
 
 fn ascendant_challenge_week_number(now: BotDateTime) -> i64 {
     lazy_static! {

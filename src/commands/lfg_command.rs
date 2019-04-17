@@ -3,7 +3,7 @@ use {
         commands::validate_username,
         datetime::{format_start_time, reference_date, BotDateTime},
         models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
-        Bot, BotCommand, DbConnection,
+        BotCommand, BotMenu, DbConnection,
     },
     chrono::prelude::*,
     chrono_english::{parse_date_string, Dialect},
@@ -11,6 +11,7 @@ use {
     diesel::{self, associations::HasTable, prelude::*},
     diesel_derives_traits::{Model, NewModel},
     futures::Future,
+    teloxide::prelude::*,
 };
 
 pub struct LfgCommand;
@@ -18,7 +19,7 @@ pub struct LfgCommand;
 command_ctor!(LfgCommand);
 
 impl LfgCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
         bot.send_html_reply(
             &message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
@@ -41,8 +42,8 @@ impl BotCommand for LfgCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         args: Option<String>,
     ) {

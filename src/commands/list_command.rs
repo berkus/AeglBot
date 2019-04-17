@@ -1,6 +1,6 @@
 use {
     crate::{
-        commands::validate_username, datetime::nowtz, models::PlannedActivity, Bot, BotCommand,
+        commands::validate_username, datetime::nowtz, models::PlannedActivity, BotCommand, BotMenu,
         DbConnection,
     },
     diesel::{
@@ -9,6 +9,7 @@ use {
         prelude::*,
     },
     futures::Future,
+    teloxide::prelude::*,
 };
 
 pub struct ListCommand;
@@ -26,8 +27,8 @@ impl BotCommand for ListCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         _args: Option<String>,
     ) {

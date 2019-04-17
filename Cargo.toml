@@ -1,8 +1,8 @@
 [package]
 authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
+edition = "2021"
 name = "aegl_bot"
 version = "0.2.0"
-edition = "2021"
 
 [dependencies]
 regex = "1.4"
@@ -12,23 +12,23 @@ chrono-tz = "0.5"
 chrono-english = "0.1"
 diesel_derives_extra = "0.2"
 diesel_derives_traits = "0.2"
+#diesel-derive-more = "1.1"
 diesel_logger = "0.1"
 diesel_migrations = "1.4" # -- retry with "extern crate" macros
 diesel = { version = "1.4", features = ["postgres", "chrono", "serde_json", "r2d2" ] }
 r2d2 = "0.8"
 dotenv = "0.15"
 anyhow = "1.0"
-futures = "0.3" #fixme 0.1
+futures = "0.3"
 serde_json = "1.0"
-telebot = "0.3"
+teloxide = { version = "0.5", features = ["macros", "auto-send"] }
 log = "0.4"
 fern = { version = "0.6", features = ["colored"] }
 futures-retry = "0.6"
 itertools = "0.10"
 # plurals = "0.3"
-tokio = { version =  "1.5", features = ["macros", "rt-multi-thread"] }
-#tokio = "0.1.20"
-#tokio-core = "0.1.17"
+tokio = { version = "1.12", features = ["macros", "rt-multi-thread"] }
+riker = "0.4"
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.9"

@@ -1,6 +1,9 @@
-use crate::{
-    services::{this_week_in_d2},
-    {Bot, BotCommand, DbConnection},
+use {
+    crate::{
+        services::this_week_in_d2,
+        {BotCommand, BotMenu, DbConnection, UpdateMessage},
+    },
+    teloxide::prelude::*,
 };
 
 pub struct D2weekCommand;
@@ -18,8 +21,8 @@ impl BotCommand for D2weekCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateMessage,
         _command: Option<String>,
         _name: Option<String>,
     ) {

@@ -1,6 +1,9 @@
-use crate::{Bot, BotCommand, DbConnection};
 #[cfg(target_os = "linux")]
 use procfs::{ProcResult, Process};
+use {
+    crate::{BotCommand, BotMenu, DbConnection},
+    teloxide::prelude::*,
+};
 
 pub struct InfoCommand;
 
@@ -36,8 +39,8 @@ impl BotCommand for InfoCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         _name: Option<String>,
     ) {

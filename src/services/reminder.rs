@@ -2,20 +2,20 @@ use {
     crate::{
         datetime::{nowtz, reference_date},
         models::PlannedActivity,
-        Bot, DbConnection,
+        BotMenu, DbConnection,
     },
+    anyhow::Result,
     diesel::{
         self,
         dsl::{now, IntervalDsl},
         prelude::*,
     },
     diesel_derives_traits::Model,
-    failure::Error,
     futures::Future,
-    telebot::{functions::*, Bot as RcBot},
+    teloxide::types::ChatId,
 };
 
-pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+pub fn check(bot: &BotMenu, chat_id: ChatId) -> Result<()> {
     use crate::schema::plannedactivities::dsl::*;
 
     log::info!("reminder check");

@@ -3,12 +3,13 @@ use {
         commands::{decapitalize, validate_username},
         datetime::{format_start_time, reference_date},
         models::{Activity, PlannedActivity, PlannedActivityMember},
-        Bot, BotCommand, DbConnection,
+        BotCommand, BotMenu, DbConnection,
     },
     chrono::Duration,
     diesel::{self, associations::HasTable, prelude::*},
     diesel_derives_traits::{Model, NewModel},
     futures::Future,
+    teloxide::prelude::*,
 };
 
 pub struct CancelCommand;
@@ -16,7 +17,7 @@ pub struct CancelCommand;
 command_ctor!(CancelCommand);
 
 impl CancelCommand {
-    fn usage(bot: &Bot, message: &telebot::objects::Message) {
+    fn usage(bot: &BotMenu, message: &&UpdateWithCx<AutoSend<Bot>, Message>) {
         bot.send_plain_reply(
             &message,
             "To leave a fireteam provide fireteam id
@@ -37,8 +38,8 @@ impl BotCommand for CancelCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         activity_id: Option<String>,
     ) {

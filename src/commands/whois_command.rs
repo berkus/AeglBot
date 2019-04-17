@@ -1,10 +1,11 @@
 use {
     crate::{
-        commands::guardian_lookup, commands::validate_username, models::Guardian, Bot, BotCommand,
-        DbConnection,
+        commands::guardian_lookup, commands::validate_username, models::Guardian, BotCommand,
+        BotMenu, DbConnection,
     },
     diesel::prelude::*,
     futures::Future,
+    teloxide::prelude::*,
 };
 
 pub struct WhoisCommand;
@@ -22,8 +23,8 @@ impl BotCommand for WhoisCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         name: Option<String>,
     ) {

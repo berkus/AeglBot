@@ -1,6 +1,5 @@
 #![feature(nll)] // features from edition-2018
 // #![feature(type_alias_enum_variants)]
-#![feature(slice_sort_by_cached_key)]
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![allow(unused_imports)] // during development
 #![feature(type_ascription)]
@@ -19,12 +18,19 @@ use {
     futures::{Future, Stream},
     futures_retry::{RetryPolicy, StreamRetryExt},
     r2d2::Pool,
+    riker::{
+        actors::{actor, Actor, ActorFactoryArgs, BasicActorRef, Context, Receive, Sender},
+        system::Run,
+    },
     std::{
         env,
         sync::{Arc, RwLock},
         time::Duration,
     },
-    telebot::{functions::*, Bot as RcBot},
+    teloxide::{
+        prelude::*,
+        types::{Chat, ChatId, ParseMode, User},
+    },
 };
 
 pub mod commands;
@@ -36,7 +42,9 @@ pub mod services;
 pub type DbConnection = LoggingConnection<PgConnection>;
 pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
 
-pub trait BotCommand {
+pub trait BotCommand: Send + Sync {
+    /// Print command usage instructions.
+    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);
     /// Return command prefix to match.
     /// To support sub-commands the prefix for root commands should start with '/'.
     fn prefix(&self) -> &'static str;
@@ -45,27 +53,32 @@ pub trait BotCommand {
     /// Execute matched command.
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         command: Option<String>,
         text: Option<String>,
     );
 }
 
 #[derive(Clone)]
-pub struct Bot {
-    bot: RcBot,
+#[actor(SendPlainMessage, SendMarkdownMessage, SendHtmlMessage)]
+pub struct BotMenu {
+    pub bot: AutoSend<Bot>,
     bot_name: String,
     commands: Arc<RwLock<Vec<Box<dyn BotCommand>>>>,
     connection_pool: DbConnPool,
 }
 
-impl Bot {
+unsafe impl Send for BotMenu {}
+
+pub type UpdateMessage = UpdateWithCx<AutoSend<Bot>, Message>;
+
+impl BotMenu {
     // Public API
 
     pub fn new(name: &str, token: &str) -> Self {
-        Bot {
-            bot: RcBot::new(token).update_interval(200),
+        BotMenu {
+            bot: AutoSend::new(Bot::new(token)),
             bot_name: name.to_string(),
             commands: Arc::new(RwLock::new(Vec::new())),
             connection_pool: Self::establish_connection(),
@@ -101,42 +114,30 @@ impl Bot {
             })
     }
 
-    pub fn process_messages<'a>(&'a self) -> impl Stream<Item = ()> + 'a {
-        use futures::{future::Future, stream::Stream};
-        self.bot
-            .get_stream(None)
-            //impl Stream<Item = (RequestHandle, objects::Update), Error = Error> {
-            // .retry(Bot::handle_error)
-            .for_each(|(_, message)| {
-                log::debug!("{:#?}", message);
-
-                self.process_message(&message);
-
-                Ok(()) // @todo return (RcBot, telebot::objects::Update) here?
-            })
-    }
-
     // Use tokio::spawn
 
     // Internal helpers
 
-    fn handle_error(error: Error) -> RetryPolicy<Error> {
+    fn handle_error(error: anyhow::Error) -> RetryPolicy<anyhow::Error> {
         // count errors
         log::error!("handle_error");
-        match error.downcast_ref::<telebot::error::Error>() {
+        match error.downcast_ref::<anyhow::Error>() {
             Some(te) => {
                 log::error!("Telegram error: {}, retrying connection.", te);
                 RetryPolicy::WaitRetry(Duration::from_secs(30))
             }
             None => {
-                log::error!("handle_error didnt match, real error {:?}", error);
+                log::error!("handle_error didn't match, real error {:?}", error);
                 //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
                 RetryPolicy::ForwardError(error)
             }
         }
     }
 
-    pub fn process_message(&self, message: &telebot::objects::Message) {
+    // @todo Make this a message processor in Actor
+    // @todo Send commands as messages too? Need dynamic command definition then...
+    pub fn process_message(&self, message: UpdateMessage) {
+        let message = &message;
         for cmd in self.commands.read().unwrap().iter() {
             if let (Some(cmdname), text) =
                 Self::match_command(message, cmd.prefix(), &self.bot_name)
@@ -165,90 +166,71 @@ impl Bot {
         self.connection_pool.get().unwrap()
     }
 
-    pub fn spawn_message(&self, m: telebot::functions::WrapperSendMessage) {
+    pub fn send_plain_reply(&self, source: &UpdateMessage, text: String) {
         tokio::spawn(
-            m.send()
-                .map(|_| ())
-                .map_err(|e| log::error!("Error: {:?}", e)),
-        );
-        // does it return message id here or what?
-    }
-
-    pub fn send_plain_reply(&self, source: &telebot::objects::Message, text: String) {
-        use telebot::functions::*;
-
-        self.spawn_message(
-            self.bot
-                .message(source.chat.id, text)
-                .reply_to_message_id(source.message_id)
+            source
+                .reply_to(text)
                 .disable_notification(true)
-                .disable_web_page_preview(true),
-        );
+                .disable_web_page_preview(true)
+                .send(),
+        ); //spawn may return awaitable future if we need the result of the execution
     }
 
-    pub fn send_html_reply(&self, source: &telebot::objects::Message, text: String) {
-        self.spawn_message(
-            self.bot
-                .message(source.chat.id, text)
-                .reply_to_message_id(source.message_id)
-                .parse_mode(ParseMode::HTML)
+    pub fn send_html_reply(&self, source: &UpdateMessage, text: String) {
+        tokio::spawn(
+            source
+                .reply_to(text)
+                .parse_mode(ParseMode::Html)
                 .disable_notification(true)
-                .disable_web_page_preview(true),
+                .disable_web_page_preview(true)
+                .send(),
         );
     }
 
-    pub fn send_md_reply(&self, source: &telebot::objects::Message, text: String) {
-        self.spawn_message(
-            self.bot
-                .message(source.chat.id, text)
-                .reply_to_message_id(source.message_id)
-                .parse_mode(ParseMode::Markdown)
+    pub fn send_md_reply(&self, source: &UpdateMessage, text: String) {
+        tokio::spawn(
+            source
+                .reply_to(text)
+                .parse_mode(ParseMode::MarkdownV2)
                 .disable_notification(true)
-                .disable_web_page_preview(true),
+                .disable_web_page_preview(true)
+                .send(),
         );
     }
 
-    pub fn send_plain_message(&self, chat: telebot::objects::Integer, text: String) {
-        self.spawn_message(
-            self.bot
-                .message(chat, text)
-                .disable_notification(true)
-                .disable_web_page_preview(true),
-        );
+    pub async fn send_plain_message(&self, chat: ChatId, text: String) -> impl Future {
+        self.bot
+            .send_message(chat, text)
+            .disable_notification(true)
+            .disable_web_page_preview(true)
     }
 
-    pub fn send_md_message(&self, chat: telebot::objects::Integer, text: String) {
-        self.spawn_message(
-            self.bot
-                .message(chat, text)
-                .parse_mode(ParseMode::Markdown)
-                .disable_notification(true)
-                .disable_web_page_preview(true),
-        );
+    pub async fn send_md_message(&self, chat: ChatId, text: String) -> impl Future {
+        self.bot
+            .send_message(chat, text)
+            .parse_mode(ParseMode::MarkdownV2)
+            .disable_notification(true)
+            .disable_web_page_preview(true)
     }
 
-    pub fn send_html_message(&self, chat: telebot::objects::Integer, text: String) {
-        self.spawn_message(
-            self.bot
-                .message(chat, text)
-                .parse_mode(ParseMode::HTML)
-                .disable_notification(true)
-                .disable_web_page_preview(true),
-        );
-    }
-
-    pub fn send_html_message_with_notification(
+    pub fn send_html_message(
         &self,
-        chat: telebot::objects::Integer,
+        chat: ChatId,
         text: String,
-    ) {
-        self.spawn_message(
-            self.bot
-                .message(chat, text)
-                .parse_mode(ParseMode::HTML)
-                .disable_notification(false)
-                .disable_web_page_preview(true),
-        );
+    ) -> <AutoSend<Bot> as Requester>::SendMessage {
+        self.bot
+            .send_message(chat, text)
+            .parse_mode(ParseMode::Html)
+            .disable_notification(true)
+            .disable_web_page_preview(true)
+    }
+
+    pub fn send_html_message_with_notification(&self, chat: ChatId, text: String) -> impl Future {
+        self.bot
+            .send_message(chat, text)
+            .parse_mode(ParseMode::Html)
+            .disable_notification(false)
+            .disable_web_page_preview(true)
     }
 
     /// Match command in both variations (with bot name and without bot name).
@@ -259,15 +241,15 @@ impl Bot {
     /// (None, None) if command did not match,
     /// (command, and Some remaining text after command otherwise).
     fn match_command(
-        msg: &telebot::objects::Message,
+        msg: &UpdateMessage,
         command: &str,
         bot_name: &str,
     ) -> (Option<String>, Option<String>) {
-        if msg.text.is_none() {
+        if msg.update.text().is_none() {
             return (None, None);
         }
 
-        let data = msg.text.as_ref().unwrap();
+        let data = msg.update.text().unwrap();
         log::debug!("matching text {:#?}", data);
 
         let command = command.to_owned();
@@ -323,6 +305,68 @@ impl Bot {
     }
 }
 
+impl Actor for BotMenu {
+    type Msg = BotMenuMsg;
+
+    fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
+        self.receive(ctx, msg, sender);
+    }
+}
+
+impl ActorFactoryArgs<(String, String)> for BotMenu {
+    fn create_args((bot_name, token): (String, String)) -> Self {
+        Self::new(&bot_name, &token)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct SendPlainMessage(String, ChatId);
+
+#[derive(Clone, Debug)]
+pub struct SendMarkdownMessage(String, ChatId);
+
+#[derive(Clone, Debug)]
+pub struct SendHtmlMessage(String, ChatId);
+
+impl Receive<SendPlainMessage> for BotMenu {
+    type Msg = BotMenuMsg;
+
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendPlainMessage, _sender: Sender) {
+        // The following call causes escaping self, so inline it manually.
+        // ctx.run(self.send_plain_message(msg.1, msg.0));
+        let fut = self
+            .bot
+            .send_message(msg.1, msg.0)
+            .disable_notification(true)
+            .disable_web_page_preview(true);
+        ctx.run(fut);
+    }
+}
+
+impl Receive<SendMarkdownMessage> for BotMenu {
+    type Msg = BotMenuMsg;
+
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMarkdownMessage, _sender: Sender) {
+        // The following call causes escaping self, so inline it manually.
+        // ctx.run(self.send_md_message(msg.1, msg.0));
+        let fut = self
+            .bot
+            .send_message(msg.1, msg.0)
+            .parse_mode(ParseMode::MarkdownV2)
+            .disable_notification(true)
+            .disable_web_page_preview(true);
+        ctx.run(fut);
+    }
+}
+
+impl Receive<SendHtmlMessage> for BotMenu {
+    type Msg = BotMenuMsg;
+
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendHtmlMessage, _sender: Sender) {
+        ctx.run(self.send_html_message(msg.1, msg.0));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use {super::*, tokio_core::reactor::Core};
@@ -350,7 +394,7 @@ mod tests {
         fn execute(
             &self,
             _bot: &Bot,
-            _message: &telebot::objects::Message,
+            _message: &UpdateMessage,
             _command: Option<String>,
             _name: Option<String>,
         ) {
@@ -385,10 +429,9 @@ mod tests {
     #[test]
     fn test_command_insertion_order1() {
         dotenv().ok();
-        let core = Core::new().unwrap();
         let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-        let mut bot = Bot::new(&bot_name, core.handle(), &token);
+        let mut bot = Bot::new(&bot_name, &token);
 
         bot.register_command(PrefixCommand::new());
         bot.register_command(PrefixTwoCommand::new());
@@ -405,10 +448,9 @@ mod tests {
     #[test]
     fn test_command_insertion_order2() {
         dotenv().ok();
-        let core = Core::new().unwrap();
         let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
         let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-        let mut bot = Bot::new(&bot_name, core.handle(), &token);
+        let mut bot = Bot::new(&bot_name, &token);
 
         bot.register_command(PrefixTwoCommand::new());
         bot.register_command(PrefixCommand::new());

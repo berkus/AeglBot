@@ -1,4 +1,7 @@
-use crate::{Bot, BotCommand, DbConnection};
+use {
+    crate::{BotCommand, BotMenu, DbConnection},
+    teloxide::prelude::*,
+};
 
 pub struct HelpCommand;
 
@@ -15,8 +18,8 @@ impl BotCommand for HelpCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         _name: Option<String>,
     ) {

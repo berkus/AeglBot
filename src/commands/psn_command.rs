@@ -2,10 +2,11 @@ use {
     crate::{
         models::{Guardian, NewGuardian},
         schema::guardians::dsl::*,
-        Bot, BotCommand, DbConnection,
+        BotCommand, BotMenu, DbConnection,
     },
     diesel::{self, prelude::*},
     futures::Future,
+    teloxide::prelude::*,
 };
 
 pub struct PsnCommand;
@@ -23,8 +24,8 @@ impl BotCommand for PsnCommand {
 
     fn execute(
         &self,
-        bot: &Bot,
-        message: &telebot::objects::Message,
+        bot: &BotMenu,
+        message: &UpdateWithCx<AutoSend<Bot>, Message>,
         _command: Option<String>,
         name: Option<String>,
     ) {
@@ -39,11 +40,11 @@ impl BotCommand for PsnCommand {
 
         let name = name.unwrap();
 
-        let from = match message.from {
+        let from = match message.update.from() {
             None => {
                 return bot.send_plain_reply(&message, "Message has no sender info.".into());
             }
-            Some(ref from) => from,
+            Some(from) => from,
         };
 
         let username = match from.username {
