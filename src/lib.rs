@@ -1,4 +1,5 @@
 #![feature(nll)] // features from edition-2018
+#![feature(type_alias_enum_variants)]
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![allow(unused_imports)] // during development
 #![feature(type_ascription)]

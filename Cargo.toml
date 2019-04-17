@@ -40,4 +40,4 @@ features = ["from_url"]
 version = "1.5.0"
 
 [target.'cfg(target_os="linux")'.dependencies]
-procfs = "0.3.2"
+procfs = "0.4.7"
