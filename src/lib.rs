@@ -194,6 +194,7 @@ impl Bot {
             .inner
             .handle
             .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
+        // does it return message id here or what?
     }
 
     pub fn send_plain_reply(&self, source: &telebot::objects::Message, text: String) {
