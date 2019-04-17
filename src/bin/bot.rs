@@ -100,10 +100,6 @@ fn main() {
         .expect("BOT_LFG_CHAT_ID must be set")
         .parse::<i64>()
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
-    let wf_alerts_chat = env::var("BOT_WF_CHAT_ID")
-        .expect("BOT_WF_CHAT_ID must be set")
-        .parse::<i64>()
-        .expect("BOT_WF_CHAT_ID must be a valid telegram chat id");
 
     let mut core = Core::new().unwrap();
     loop {
@@ -124,15 +120,6 @@ fn main() {
         bot.register_command(WhoisCommand::new());
 
         let stream = bot.process_messages();
-
-        let alert_task = setup_timer_task(
-            Interval::new(
-                Instant::now(),
-                chrono::Duration::minutes(1).to_std().unwrap(),
-            ),
-            bot.clone(),
-            move |bot| alerts_watcher::check(bot, wf_alerts_chat),
-        );
 
         let reminder_task = setup_timer_task(
             Interval::new(
@@ -179,7 +166,6 @@ fn main() {
             move |bot| destiny2_schedule::end_of_weekend(bot, lfg_chat),
         );
 
-        bot.spawn(alert_task);
         bot.spawn(reminder_task);
         bot.spawn(daily_reset_task);
         bot.spawn(weekly_reset_task);
