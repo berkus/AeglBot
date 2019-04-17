@@ -294,7 +294,7 @@ impl Bot {
                 return (
                     Some(command.clone()),
                     data.get(command.len()..)
-                        .map(|x| x.trim_left().to_string())
+                        .map(|x| x.trim_start().to_string())
                         .filter(|y| !y.is_empty()),
                 );
             }
@@ -307,7 +307,7 @@ impl Bot {
             return (
                 Some(long_command.clone()),
                 data.get(long_command.len()..)
-                    .map(|x| x.trim_left().to_string())
+                    .map(|x| x.trim_start().to_string())
                     .filter(|y| !y.is_empty()),
             );
         }
@@ -323,7 +323,7 @@ impl Bot {
             return (
                 Some(command.clone()),
                 data.get(command.len()..)
-                    .map(|x| x.trim_left().to_string())
+                    .map(|x| x.trim_start().to_string())
                     .filter(|y| !y.is_empty()),
             );
         }
