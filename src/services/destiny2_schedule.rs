@@ -60,17 +60,17 @@ pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Resu
 
 // 3. Weekly (minor) resets at 20:00 msg every Fri
 //   3a. Whisper of the Worm becomes available
-pub fn minor_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
-    bot.send_plain_message(chat_id, "Whisper of the Worm mission now available".into());
+pub fn minor_weekly_reset(_bot: &Bot, _chat_id: telebot::objects::Integer) -> Result<(), Error> {
+    // bot.send_plain_message(chat_id, "Whisper of the Worm mission now available".into());
     Ok(())
 }
 
 // 4. Monday 20:00 msg end of Whisper of the Worm quest
-pub fn end_of_weekend(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
-    bot.send_html_message(
-        chat_id,
-        "Whisper of the Worm mission is not available until next weekend".into(),
-    );
+pub fn end_of_weekend(_bot: &Bot, _chat_id: telebot::objects::Integer) -> Result<(), Error> {
+    // bot.send_html_message(
+    //     chat_id,
+    //     "Whisper of the Worm mission is not available until next weekend".into(),
+    // );
     Ok(())
 }
 
