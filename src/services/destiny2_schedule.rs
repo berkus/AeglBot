@@ -1,8 +1,8 @@
-use chrono::{DateTime, Duration, TimeZone, Utc};
 use crate::{
     datetime::{reference_date, BotDateTime},
     Bot, DbConnection,
 };
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use failure::Error;
 use futures::Future;
 use telebot::{functions::*, RcBot};

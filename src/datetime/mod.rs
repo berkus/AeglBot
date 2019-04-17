@@ -41,7 +41,8 @@ fn time_diff_string(duration: Duration) -> String {
                 temp,
                 times_str,
                 if temp != 1 { "s" } else { "" }
-            );
+            )
+            .unwrap();
         }
     }
 
@@ -135,9 +136,10 @@ fn start_at_weekday_time_offset(now: BotDateTime, wd: chrono::Weekday, start: Bo
 }
 
 pub fn start_at_weekday_time(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> Instant {
-    Instant::now() + start_at_weekday_time_offset(now, wd, start)
-        .to_std()
-        .unwrap()
+    Instant::now()
+        + start_at_weekday_time_offset(now, wd, start)
+            .to_std()
+            .unwrap()
 }
 
 /// Time and reference are in UTC? timezone!

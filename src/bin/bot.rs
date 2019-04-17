@@ -58,7 +58,8 @@ fn setup_logging() -> Result<(), fern::InitError> {
                 level = colors_level.color(record.level()),
                 message = message,
             ))
-        }).level(log::LevelFilter::Info)
+        })
+        .level(log::LevelFilter::Info)
         .chain(std::io::stdout());
 
     let file_config = fern::Dispatch::new()
@@ -70,7 +71,8 @@ fn setup_logging() -> Result<(), fern::InitError> {
                 record.level(),
                 message
             ))
-        }).level(log::LevelFilter::Trace)
+        })
+        .level(log::LevelFilter::Trace)
         .chain(
             std::fs::OpenOptions::new()
                 .write(true)
@@ -177,7 +179,8 @@ fn main() {
                 .for_each(|_| Ok(()))
                 .map_err(|e| error!("Caught an error {}", e))
                 .into_future(),
-        ).unwrap();
+        )
+        .unwrap();
     }
 }
 
