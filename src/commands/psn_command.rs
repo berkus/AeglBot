@@ -1,10 +1,12 @@
-use crate::{
-    models::{Guardian, NewGuardian},
-    schema::guardians::dsl::*,
+use {
+    crate::{
+        models::{Guardian, NewGuardian},
+        schema::guardians::dsl::*,
+        Bot, BotCommand, DbConnection,
+    },
+    diesel::{self, prelude::*},
+    futures::Future,
 };
-use crate::{Bot, BotCommand, DbConnection};
-use diesel::{self, prelude::*};
-use futures::Future;
 
 pub struct PsnCommand;
 
