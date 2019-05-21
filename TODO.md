@@ -4,7 +4,7 @@ More features:
  ☐ Handle diesel in async using blocking() handoff
    - https://docs.rs/tokio-threadpool/0.1/tokio_threadpool/fn.blocking.html
  ☐ HANDLE ERRORS
- ☐ match guardian- and telegram-names case-insensitive (use filter(`.ilike`(match)))
+ ✔ match guardian- and telegram-names case-insensitive (use filter(`.ilike`(match))) @done (19-05-21 22:09)
    ☐ GUARDIAN_ID could be int, telegram name or psn name
  ☐ implement support for sub-commands
    ☐ commands may register sub-commands using the same matcher interface

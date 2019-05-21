@@ -105,7 +105,7 @@ pub fn guardian_lookup(
             .optional()
     } else {
         guardians
-            .filter(psn_name.eq(&name))
+            .filter(psn_name.ilike(&name))
             .first::<Guardian>(connection)
             .optional()
     }
