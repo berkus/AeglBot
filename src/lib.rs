@@ -189,7 +189,7 @@ impl Bot {
         self.connection_pool.get().unwrap()
     }
 
-    pub fn spawn_message(&self, m: telebot::functions::WrapperMessage) {
+    pub fn spawn_message(&self, m: telebot::functions::WrapperSendMessage) {
         self.bot
             .inner
             .handle
@@ -201,7 +201,7 @@ impl Bot {
             self.bot
                 .message(source.chat.id, text)
                 .reply_to_message_id(source.message_id)
-                .disable_notificaton(true)
+                .disable_notification(true)
                 .disable_web_page_preview(true),
         );
     }
@@ -212,7 +212,7 @@ impl Bot {
                 .message(source.chat.id, text)
                 .reply_to_message_id(source.message_id)
                 .parse_mode(ParseMode::HTML)
-                .disable_notificaton(true)
+                .disable_notification(true)
                 .disable_web_page_preview(true),
         );
     }
@@ -221,7 +221,7 @@ impl Bot {
         self.spawn_message(
             self.bot
                 .message(chat, text)
-                .disable_notificaton(true)
+                .disable_notification(true)
                 .disable_web_page_preview(true),
         );
     }
@@ -231,7 +231,7 @@ impl Bot {
             self.bot
                 .message(chat, text)
                 .parse_mode(ParseMode::Markdown)
-                .disable_notificaton(true)
+                .disable_notification(true)
                 .disable_web_page_preview(true),
         );
     }
@@ -241,7 +241,7 @@ impl Bot {
             self.bot
                 .message(chat, text)
                 .parse_mode(ParseMode::HTML)
-                .disable_notificaton(true)
+                .disable_notification(true)
                 .disable_web_page_preview(true),
         );
     }
@@ -255,7 +255,7 @@ impl Bot {
             self.bot
                 .message(chat, text)
                 .parse_mode(ParseMode::HTML)
-                .disable_notificaton(false)
+                .disable_notification(false)
                 .disable_web_page_preview(true),
         );
     }
