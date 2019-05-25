@@ -8,7 +8,7 @@ command_ctor!(InfoCommand);
 
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {
-    if let ProcResult::Ok(process) = Process::myself() {
+    if let Ok(process) = Process::myself() {
         format!(
             "{thn} threads, {vm} bytes virtual memory, {rm} bytes resident memory",
             thn = process.stat.num_threads,
