@@ -139,6 +139,11 @@ impl BotCommand for ActivitiesCommand {
                 bot.send_plain_reply(&message, text);
             }
             "add" => {
+                if args.len() < 2 {
+                    bot.send_plain_reply(&message, "Syntax: /activities add KV".into());
+                    return ActivitiesCommand::usage(bot, &message);
+                }
+
                 let argmap = parse_kv_args(args[1]);
                 if argmap.is_none() {
                     return bot.send_plain_reply(
@@ -149,8 +154,10 @@ impl BotCommand for ActivitiesCommand {
                 let mut argmap = argmap.unwrap();
                 let name = argmap.remove("name");
                 if name.is_none() {
-                    return bot
-                        .send_plain_reply(&message, "Must specify activity name, see help.".into());
+                    return bot.send_plain_reply(
+                        &message,
+                        "Must specify activity name, see help.".into(),
+                    );
                 }
 
                 let min_fireteam_size = argmap.remove("min_fireteam_size");
@@ -272,6 +279,11 @@ impl BotCommand for ActivitiesCommand {
                 bot.send_plain_reply(&message, "Shortcut added".into());
             }
             "edit" => {
+                if args.len() < 2 {
+                    bot.send_plain_reply(&message, "Syntax: /activities edit ID KV".into());
+                    return ActivitiesCommand::usage(bot, &message);
+                }
+
                 let args: Vec<&str> = args[1].splitn(2, ' ').collect();
                 if args.len() != 2 {
                     return bot.send_plain_reply(
@@ -365,6 +377,11 @@ impl BotCommand for ActivitiesCommand {
                 }
             }
             "delete" => {
+                if args.len() < 2 {
+                    bot.send_plain_reply(&message, "Syntax: /activities delete ID".into());
+                    return ActivitiesCommand::usage(bot, &message);
+                }
+
                 let id = args[1].parse::<i32>();
                 if id.is_err() {
                     return bot.send_plain_reply(&message, "ActivityID must be a number".into());
@@ -391,6 +408,7 @@ impl BotCommand for ActivitiesCommand {
             }
             _ => {
                 bot.send_plain_reply(&message, "Unknown activities operation".into());
+                ActivitiesCommand::usage(bot, &message);
             }
         }
     }
