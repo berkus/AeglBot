@@ -5,9 +5,15 @@ use crate::{
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use failure::Error;
 use futures::Future;
+// use plurals::{Lang, Plural};
 use telebot::{functions::*, RcBot};
 
 // Destiny 2 schedules on tracking:
+
+// const WEEKS: Lang = Lang::En {
+//     singular: "week",
+//     plural: "weeks",
+// };
 
 // 1. Daily resets at 20:00 msk each day
 pub fn daily_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
