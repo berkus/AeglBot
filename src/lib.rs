@@ -217,6 +217,17 @@ impl Bot {
         );
     }
 
+    pub fn send_md_reply(&self, source: &telebot::objects::Message, text: String) {
+        self.spawn_message(
+            self.bot
+                .message(source.chat.id, text)
+                .reply_to_message_id(source.message_id)
+                .parse_mode(ParseMode::Markdown)
+                .disable_notification(true)
+                .disable_web_page_preview(true),
+        );
+    }
+
     pub fn send_plain_message(&self, chat: telebot::objects::Integer, text: String) {
         self.spawn_message(
             self.bot

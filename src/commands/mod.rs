@@ -13,6 +13,8 @@ mod activities_command;
 pub use self::activities_command::*;
 mod cancel_command;
 pub use self::cancel_command::*;
+mod d2week_command;
+pub use self::d2week_command::*;
 mod edit_command;
 pub use self::edit_command::*;
 mod editguar_command;

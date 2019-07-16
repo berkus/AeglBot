@@ -110,6 +110,7 @@ fn main() {
 
         bot.register_command(ActivitiesCommand::new());
         bot.register_command(CancelCommand::new());
+        bot.register_command(D2weekCommand::new());
         bot.register_command(EditCommand::new());
         bot.register_command(EditGuardianCommand::new());
         bot.register_command(HelpCommand::new());
