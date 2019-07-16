@@ -15,13 +15,7 @@ pub fn daily_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), 
     Ok(())
 }
 
-// 2. Weekly (main) resets at 20:00 msk every Tue
-// 5. On main reset: change in Protocol boss drops
-//    protocol on 5-week schedule
-// 6. On main reset: change in Dreaming City curse
-//    dreaming city on 3-week schedule
-//   6a. on Strongest Curse week the Shattered Throne is available
-pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+pub fn dreaming_city_cycle() -> String {
     let curses: [&'static str; 3] = ["Weak Curse", "Growing Curse", "Strongest Curse"];
     let urls: [&'static str; 3] = [
         "https://www.youtube.com/watch?v=6tJZXAa57fY",
@@ -29,7 +23,7 @@ pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Resu
         "https://www.youtube.com/watch?v=Bwgwa6HpXTI",
     ];
     let dc_week = dc_week_number(reference_date()) as usize;
-    let s = format!(
+    format!(
         "💫 Dreaming City: {} ([Ascendant Chests]({}))\n{}",
         curses[dc_week],
         urls[dc_week],
@@ -37,11 +31,15 @@ pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Resu
             "(Shattered Throne is available)".to_string()
         } else {
             format!(
-                "(Shattered Throne will become available in {} weeks)",
-                2 - dc_week
+                "(Shattered Throne will become available in {} {})",
+                2 - dc_week,
+                if 2 - dc_week == 1 { "week" } else { "weeks" }
             )
         }
-    );
+    )
+}
+
+pub fn escalation_protocol_cycle() -> String {
     let bosses: [&'static str; 5] = [
         "💀 Nur Abath, Crest of Xol\n⚔️ Shotgun",
         "💀 Kathok, Roar of Xol\n⚔️ SMG",
@@ -51,9 +49,21 @@ pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Resu
     ];
 
     let proto_week = protocol_week_number(reference_date()) as usize;
-    let p = format!("Escalation Protocol:\n{}", bosses[proto_week]);
+    format!("Escalation Protocol:\n{}", bosses[proto_week])
+}
 
-    let msg = format!("Weekly Reset:\n\n{}\n\n{}", s, p);
+// 2. Weekly (main) resets at 20:00 msk every Tue
+// 5. On main reset: change in Protocol boss drops
+//    protocol on 5-week schedule
+// 6. On main reset: change in Dreaming City curse
+//    dreaming city on 3-week schedule
+//   6a. on Strongest Curse week the Shattered Throne is available
+pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
+    let msg = format!(
+        "Weekly Reset:\n\n{}\n\n{}",
+        dreaming_city_cycle(),
+        escalation_protocol_cycle()
+    );
     bot.send_md_message(chat_id, msg);
     Ok(())
 }
