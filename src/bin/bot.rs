@@ -111,6 +111,7 @@ fn main() {
         bot.register_command(ActivitiesCommand::new());
         bot.register_command(CancelCommand::new());
         bot.register_command(D2weekCommand::new());
+        bot.register_command(D1weekCommand::new());
         bot.register_command(EditCommand::new());
         bot.register_command(EditGuardianCommand::new());
         bot.register_command(HelpCommand::new());
@@ -139,7 +140,7 @@ fn main() {
                 chrono::Duration::days(1).to_std().unwrap(),
             ),
             bot.clone(),
-            move |bot| destiny2_schedule::daily_reset(bot, lfg_chat),
+            move |bot| destiny_schedule::daily_reset(bot, lfg_chat),
         );
 
         let weekly_reset_task = setup_timer_task(
@@ -148,7 +149,7 @@ fn main() {
                 chrono::Duration::weeks(1).to_std().unwrap(),
             ),
             bot.clone(),
-            move |bot| destiny2_schedule::major_weekly_reset(bot, lfg_chat),
+            move |bot| destiny_schedule::major_weekly_reset(bot, lfg_chat),
         );
 
         let friday_reset_task = setup_timer_task(
@@ -157,7 +158,7 @@ fn main() {
                 chrono::Duration::weeks(1).to_std().unwrap(),
             ),
             bot.clone(),
-            move |bot| destiny2_schedule::minor_weekly_reset(bot, lfg_chat),
+            move |bot| destiny_schedule::minor_weekly_reset(bot, lfg_chat),
         );
 
         let monday_reset_task = setup_timer_task(
@@ -166,7 +167,7 @@ fn main() {
                 chrono::Duration::weeks(1).to_std().unwrap(),
             ),
             bot.clone(),
-            move |bot| destiny2_schedule::end_of_weekend(bot, lfg_chat),
+            move |bot| destiny_schedule::end_of_weekend(bot, lfg_chat),
         );
 
         bot.spawn(reminder_task);

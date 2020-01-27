@@ -8,6 +8,28 @@ use futures::Future;
 // use plurals::{Lang, Plural};
 use telebot::{functions::*, RcBot};
 
+// Destiny schedules on weekly featured Raid:
+
+pub fn raid_cycle() -> String {
+    let raids: [&'static str; 4] = [
+        "*Crota's End*, activity id: *crw*",
+        "*Vault of Glass*, activity id: *vogw*",
+        "*King's Fall*, activity id: *kfw*",
+        "*Wrath of the Machine*, activity id: *wotmw*",
+    ];
+
+    let raid_week = raid_week_number(reference_date()) as usize;
+    let next_week = raid_week_number(reference_date() + Duration::weeks(1)) as usize;
+    format!("Weekly Featured Raid: {}\nNext Week Raid: {}", raids[raid_week], raids[next_week])
+}
+
+fn raid_week_number(now: BotDateTime) -> i64 {
+    lazy_static! {
+        static ref START_WEEK: DateTime<Utc> = Utc.ymd(2019, 12, 31).and_hms(17, 0, 0);
+    }
+    (now - *START_WEEK).num_weeks() % 4
+}
+
 // Destiny 2 schedules on tracking:
 
 // const WEEKS: Lang = Lang::En {
@@ -30,18 +52,9 @@ pub fn dreaming_city_cycle() -> String {
     ];
     let dc_week = dc_week_number(reference_date()) as usize;
     format!(
-        "💫 Dreaming City: {} ([Ascendant Chests]({}))\n{}",
+        "💫 Dreaming City: {} ([Ascendant Chests]({}))\n(Shattered Throne is always available)",
         curses[dc_week],
         urls[dc_week],
-        if dc_week == 2 {
-            "(Shattered Throne is available)".to_string()
-        } else {
-            format!(
-                "(Shattered Throne will become available in {} {})",
-                2 - dc_week,
-                if 2 - dc_week == 1 { "week" } else { "weeks" }
-            )
-        }
     )
 }
 
@@ -66,12 +79,24 @@ pub fn escalation_protocol_cycle() -> String {
 //   6a. on Strongest Curse week the Shattered Throne is available
 pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
     let msg = format!(
-        "Weekly Reset:\n\n{}\n\n{}",
-        dreaming_city_cycle(),
-        escalation_protocol_cycle()
+        "⚡️ Weekly reset: {d1week}\n\n{d2week}",
+            d1week = this_week_in_d1(),
+            d2week = this_week_in_d2(),
     );
     bot.send_md_message(chat_id, msg);
     Ok(())
+}
+
+pub fn this_week_in_d1() -> String {
+    format!("This week in Destiny 1:\n\n{}", raid_cycle())
+}
+
+pub fn this_week_in_d2() -> String {
+    format!(
+        "This week in Destiny 2:\n\n{}\n\n{}",
+        dreaming_city_cycle(),
+        escalation_protocol_cycle()
+    )
 }
 
 // 3. Weekly (minor) resets at 20:00 msg every Fri
@@ -123,6 +148,18 @@ mod tests {
     fn test_protocol_weeks() {
         assert_eq!(
             protocol_week_number(Utc.ymd(2018, 10, 20).and_hms(12, 0, 0)),
+            3
+        );
+    }
+
+    #[test]
+    fn test_raid_weeks() {
+        assert_eq!(
+            raid_week_number(Utc.ymd(2020, 1, 28).and_hms(21, 0, 0)),
+            0
+        );
+        assert_eq!(
+            raid_week_number(Utc.ymd(2020, 1, 27).and_hms(12, 0, 0)),
             3
         );
     }

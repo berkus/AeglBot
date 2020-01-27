@@ -1,19 +1,19 @@
 use crate::{
-    services::{this_week_in_d2},
+    services::{this_week_in_d1},
     {Bot, BotCommand, DbConnection},
 };
 
-pub struct D2weekCommand;
+pub struct D1weekCommand;
 
-command_ctor!(D2weekCommand);
+command_ctor!(D1weekCommand);
 
-impl BotCommand for D2weekCommand {
+impl BotCommand for D1weekCommand {
     fn prefix(&self) -> &'static str {
-        "/d2week"
+        "/dweek"
     }
 
     fn description(&self) -> &'static str {
-        "Show current Destiny 2 week"
+        "Show current Destiny 1 week"
     }
 
     fn execute(
@@ -23,6 +23,6 @@ impl BotCommand for D2weekCommand {
         _command: Option<String>,
         _name: Option<String>,
     ) {
-        bot.send_md_reply(&message, this_week_in_d2());
+        bot.send_md_reply(&message, this_week_in_d1());
     }
 }
