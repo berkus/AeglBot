@@ -20,7 +20,10 @@ pub fn raid_cycle() -> String {
 
     let raid_week = raid_week_number(reference_date()) as usize;
     let next_week = raid_week_number(reference_date() + Duration::weeks(1)) as usize;
-    format!("Weekly Featured Raid: {}\nNext Week Raid: {}", raids[raid_week], raids[next_week])
+    format!(
+        "Weekly Featured Raid: {}\nNext Week Raid: {}",
+        raids[raid_week], raids[next_week]
+    )
 }
 
 fn raid_week_number(now: BotDateTime) -> i64 {
@@ -53,8 +56,7 @@ pub fn dreaming_city_cycle() -> String {
     let dc_week = dc_week_number(reference_date()) as usize;
     format!(
         "💫 Dreaming City: {} ([Ascendant Chests]({}))\n(Shattered Throne is always available)",
-        curses[dc_week],
-        urls[dc_week],
+        curses[dc_week], urls[dc_week],
     )
 }
 
@@ -150,13 +152,7 @@ mod tests {
 
     #[test]
     fn test_raid_weeks() {
-        assert_eq!(
-            raid_week_number(Utc.ymd(2020, 1, 28).and_hms(21, 0, 0)),
-            0
-        );
-        assert_eq!(
-            raid_week_number(Utc.ymd(2020, 1, 27).and_hms(12, 0, 0)),
-            3
-        );
+        assert_eq!(raid_week_number(Utc.ymd(2020, 1, 28).and_hms(21, 0, 0)), 0);
+        assert_eq!(raid_week_number(Utc.ymd(2020, 1, 27).and_hms(12, 0, 0)), 3);
     }
 }
