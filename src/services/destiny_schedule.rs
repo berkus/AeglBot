@@ -81,9 +81,9 @@ pub fn dreaming_city_cycle() -> String {
 //   6a. on Strongest Curse week the Shattered Throne is available
 pub fn major_weekly_reset(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
     let msg = format!(
-        "⚡️ Weekly reset: {d1week}\n\n{d2week}",
-            d1week = this_week_in_d1(),
-            d2week = this_week_in_d2(),
+        "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
+        d1week = this_week_in_d1(),
+        d2week = this_week_in_d2(),
     );
     bot.send_md_message(chat_id, msg);
     Ok(())
