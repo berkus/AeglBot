@@ -58,18 +58,18 @@ pub fn dreaming_city_cycle() -> String {
     )
 }
 
-pub fn escalation_protocol_cycle() -> String {
-    let bosses: [&'static str; 5] = [
-        "💀 Nur Abath, Crest of Xol\n⚔️ Shotgun",
-        "💀 Kathok, Roar of Xol\n⚔️ SMG",
-        "💀 Domkath, the Mask\n⚔️ Sniper Rifle",
-        "💀 Naksud, the Famine\n⚔️ Shotgun, SMG, Sniper Rifle",
-        "💀 Bok Litur, the Hunger of Xol\n⚔️ Shotgun, SMG, Sniper Rifle",
-    ];
+// pub fn escalation_protocol_cycle() -> String {
+//     let bosses: [&'static str; 5] = [
+//         "💀 Nur Abath, Crest of Xol\n⚔️ Shotgun",
+//         "💀 Kathok, Roar of Xol\n⚔️ SMG",
+//         "💀 Domkath, the Mask\n⚔️ Sniper Rifle",
+//         "💀 Naksud, the Famine\n⚔️ Shotgun, SMG, Sniper Rifle",
+//         "💀 Bok Litur, the Hunger of Xol\n⚔️ Shotgun, SMG, Sniper Rifle",
+//     ];
 
-    let proto_week = protocol_week_number(reference_date()) as usize;
-    format!("Escalation Protocol:\n{}", bosses[proto_week])
-}
+//     let proto_week = protocol_week_number(reference_date()) as usize;
+//     format!("Escalation Protocol:\n{}", bosses[proto_week])
+// }
 
 // 2. Weekly (main) resets at 20:00 msk every Tue
 // 5. On main reset: change in Protocol boss drops
@@ -92,11 +92,7 @@ pub fn this_week_in_d1() -> String {
 }
 
 pub fn this_week_in_d2() -> String {
-    format!(
-        "This week in Destiny 2:\n\n{}\n\n{}",
-        dreaming_city_cycle(),
-        escalation_protocol_cycle()
-    )
+    format!("This week in Destiny 2:\n\n{}", dreaming_city_cycle(),)
 }
 
 // 3. Weekly (minor) resets at 20:00 msg every Fri
