@@ -60,6 +60,41 @@ pub fn dreaming_city_cycle() -> String {
     )
 }
 
+pub fn ascendant_challenge_cycle() -> String {
+    let challenges: [&'static str; 6] = [
+        "Agonarch Abyss",
+        "Cimmerian Garrison",
+        "Ouroborea",
+        "Forfeit Shrine",
+        "Shattered Ruins",
+        "Keep of Honed Edges",
+    ];
+    let locations: [&'static str; 6] = [
+        "Bay of Drowned Wishes",
+        "Chamber of Starlight",
+        "Aphelion's Rest",
+        "Gardens of Esila",
+        "Spine of Keres",
+        "Harbinger's Seclude",
+    ];
+    let urls: [&'static str; 6] = [
+        "https://www.youtube.com/watch?v=xvHovs5CUMI",
+        "https://www.youtube.com/watch?v=sAZrihxy_30",
+        "https://www.youtube.com/watch?v=9-1a_jUxckQ",
+        "https://www.youtube.com/watch?v=29Z0kg8MFQY",
+        "https://www.youtube.com/watch?v=XUWD-IVuoHg",
+        "https://www.youtube.com/watch?v=cDaNB-GEP-o",
+    ];
+
+    let ac_week = ascendant_challenge_week_number(reference_date()) as usize;
+    format!(
+        "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): {name} ([{loc}]({url}))",
+        name = challenges[ac_week],
+        loc = locations[ac_week],
+        url = urls[ac_week],
+    )
+}
+
 // pub fn escalation_protocol_cycle() -> String {
 //     let bosses: [&'static str; 5] = [
 //         "💀 Nur Abath, Crest of Xol\n⚔️ Shotgun",
@@ -94,7 +129,11 @@ pub fn this_week_in_d1() -> String {
 }
 
 pub fn this_week_in_d2() -> String {
-    format!("This week in Destiny 2:\n\n{}", dreaming_city_cycle(),)
+    format!(
+        "This week in Destiny 2:\n\n{}\n{}",
+        dreaming_city_cycle(),
+        ascendant_challenge_cycle()
+    )
 }
 
 // 3. Weekly (minor) resets at 20:00 msg every Fri
@@ -126,6 +165,13 @@ fn protocol_week_number(now: BotDateTime) -> i64 {
         static ref START_WEEK: DateTime<Utc> = Utc.ymd(2018, 5, 8).and_hms(17, 0, 0);
     }
     (now - *START_WEEK).num_weeks() % 5
+}
+
+fn ascendant_challenge_week_number(now: BotDateTime) -> i64 {
+    lazy_static! {
+        static ref START_WEEK: DateTime<Utc> = Utc.ymd(2021, 7, 6).and_hms(17, 0, 0);
+    }
+    (now - *START_WEEK).num_weeks() % 6
 }
 
 #[cfg(test)]
