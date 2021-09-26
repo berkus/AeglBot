@@ -20,6 +20,7 @@ dependencies = [
  "diesel_derives_extra",
  "diesel_derives_traits",
  "diesel_logger",
+ "diesel_migrations",
  "dotenv",
  "fern",
  "futures 0.3.17",
@@ -355,6 +356,16 @@ checksum = "1d73a791d0f0fff4bc6244bd8b70776a45b1140716411efe1364be9a868cbea7"
 dependencies = [
  "diesel",
  "log",
+]
+
+[[package]]
+name = "diesel_migrations"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf3cde8413353dc7f5d72fa8ce0b99a560a359d2c5ef1e5817ca731cd9008f4c"
+dependencies = [
+ "migrations_internals",
+ "migrations_macros",
 ]
 
 [[package]]
@@ -788,6 +799,27 @@ name = "memoffset"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f9dc261e2b62d7a622bf416ea3c5245cdd5d9a7fcc428c0d06804dfce1775b3"
+
+[[package]]
+name = "migrations_internals"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b4fc84e4af020b837029e017966f86a1c2d5e83e64b589963d5047525995860"
+dependencies = [
+ "diesel",
+]
+
+[[package]]
+name = "migrations_macros"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9753f12909fd8d923f75ae5c3258cae1ed3c8ec052e1b38c93c21a6d157f789c"
+dependencies = [
+ "migrations_internals",
+ "proc-macro2 1.0.29",
+ "quote 1.0.9",
+ "syn 1.0.77",
+]
 
 [[package]]
 name = "mime"
