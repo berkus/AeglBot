@@ -9,7 +9,7 @@ use diesel_derives_traits::Model;
 use failure::Error;
 use futures::Future;
 use models::PlannedActivity;
-use telebot::{functions::*, RcBot};
+use telebot::{functions::*, Bot as RcBot};
 
 pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
     use schema::plannedactivities::dsl::*;

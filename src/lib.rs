@@ -45,7 +45,7 @@ use std::{
     env,
     sync::{Arc, RwLock},
 };
-use telebot::{functions::*, RcBot};
+use telebot::{functions::*, Bot as RcBot};
 
 pub mod commands;
 pub mod datetime;
@@ -83,9 +83,9 @@ pub struct Bot {
 impl Bot {
     // Public API
 
-    pub fn new(name: &str, handle: tokio_core::reactor::Handle, token: &str) -> Self {
+    pub fn new(name: &str, token: &str) -> Self {
         Bot {
-            bot: RcBot::new(handle, token).update_interval(200),
+            bot: RcBot::new(token).update_interval(200),
             bot_name: name.to_string(),
             commands: Arc::new(RwLock::new(Vec::new())),
             connection_pool: Self::establish_connection(),
@@ -121,12 +121,13 @@ impl Bot {
             })
     }
 
-    pub fn process_messages<'a>(&'a self) -> impl Stream<Item = (), Error = failure::Error> + 'a {
+    pub fn process_messages<'a>(&'a self) -> impl Stream<Item = ()> + 'a {
+        use futures::{future::Future, stream::Stream};
         self.bot
-            .get_stream()
-            .retry(Bot::handle_error)
-            .filter_map(|(bot, update)| update.message.map(|msg| (bot, msg)))
-            .and_then(move |(_, message)| {
+            .get_stream(None)
+            //impl Stream<Item = (RequestHandle, objects::Update), Error = Error> {
+            // .retry(Bot::handle_error)
+            .for_each(|(_, message)| {
                 log::debug!("{:#?}", message);
 
                 self.process_message(&message);
@@ -135,12 +136,7 @@ impl Bot {
             })
     }
 
-    pub fn spawn<F>(&self, f: F)
-    where
-        F: Future<Item = (), Error = ()> + 'static,
-    {
-        self.bot.inner.handle.spawn(f);
-    }
+    // Use tokio::spawn
 
     // Internal helpers
 
@@ -190,14 +186,17 @@ impl Bot {
     }
 
     pub fn spawn_message(&self, m: telebot::functions::WrapperSendMessage) {
-        self.bot
-            .inner
-            .handle
-            .spawn(m.send().map(|_| ()).map_err(|e| error!("Error: {:?}", e)));
+        tokio::spawn(
+            m.send()
+                .map(|_| ())
+                .map_err(|e| log::error!("Error: {:?}", e)),
+        );
         // does it return message id here or what?
     }
 
     pub fn send_plain_reply(&self, source: &telebot::objects::Message, text: String) {
+        use telebot::functions::*;
+
         self.spawn_message(
             self.bot
                 .message(source.chat.id, text)

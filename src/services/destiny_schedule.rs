@@ -6,7 +6,7 @@ use chrono::{DateTime, Duration, TimeZone, Utc};
 use failure::Error;
 use futures::Future;
 // use plurals::{Lang, Plural};
-use telebot::{functions::*, RcBot};
+use telebot::{functions::*, Bot as RcBot};
 
 // Destiny schedules on weekly featured Raid:
 
