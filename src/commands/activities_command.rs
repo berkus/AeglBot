@@ -433,16 +433,17 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
         Some(final_collect(fragments))
     } else {
         // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
-        let subfrags = itertools::Itertools::flatten(fragments[1..fragments.len() - 1].iter().map(
-            |x: &&str| {
+        let subfrags = fragments[1..fragments.len() - 1]
+            .iter()
+            .map(|x: &&str| {
                 x.rsplitn(2, ' ')
                     .collect::<Vec<&str>>()
                     .into_iter()
                     .rev()
                     .collect::<Vec<&str>>()
-            },
-        ))
-        .collect::<Vec<&str>>();
+            })
+            .flatten()
+            .collect::<Vec<&str>>();
 
         trace!("{:?}", subfrags);
 
