@@ -424,7 +424,7 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
 
     let fragments: Vec<&str> = args.split('=').collect();
 
-    trace!("{:?}", fragments);
+    log::trace!("{:?}", fragments);
 
     if fragments.len() < 2 {
         None
@@ -445,17 +445,17 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
             .flatten()
             .collect::<Vec<&str>>();
 
-        trace!("{:?}", subfrags);
+        log::trace!("{:?}", subfrags);
 
         let mut final_ = vec![fragments[0]];
         final_.extend(subfrags);
         final_.extend(vec![fragments[fragments.len() - 1]]);
 
-        trace!("Final {:?}", final_);
+        log::trace!("Final {:?}", final_);
 
         let the_map = final_collect(final_);
 
-        trace!(".. as map {:?}", the_map);
+        log::trace!(".. as map {:?}", the_map);
 
         Some(the_map)
     }

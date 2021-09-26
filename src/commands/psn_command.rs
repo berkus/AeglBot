@@ -28,7 +28,7 @@ impl BotCommand for PsnCommand {
         _command: Option<String>,
         name: Option<String>,
     ) {
-        info!("PSN command");
+        log::info!("PSN command");
 
         if name.is_none() {
             return bot.send_html_reply(

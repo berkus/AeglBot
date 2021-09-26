@@ -127,7 +127,7 @@ impl Bot {
             .retry(Bot::handle_error)
             .filter_map(|(bot, update)| update.message.map(|msg| (bot, msg)))
             .and_then(move |(_, message)| {
-                debug!("{:#?}", message);
+                log::debug!("{:#?}", message);
 
                 self.process_message(&message);
 
@@ -146,14 +146,14 @@ impl Bot {
 
     fn handle_error(error: Error) -> RetryPolicy<Error> {
         // count errors
-        error!("handle_error");
+        log::error!("handle_error");
         match error.downcast_ref::<telebot::error::Error>() {
             Some(te) => {
-                error!("Telegram error: {}, retrying connection.", te);
+                log::error!("Telegram error: {}, retrying connection.", te);
                 RetryPolicy::WaitRetry(Duration::from_secs(30))
             }
             None => {
-                error!("handle_error didnt match, real error {:?}", error);
+                log::error!("handle_error didnt match, real error {:?}", error);
                 //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
                 RetryPolicy::ForwardError(error)
             }
@@ -289,7 +289,7 @@ impl Bot {
         }
 
         let data = msg.text.as_ref().unwrap();
-        debug!("matching text {:#?}", data);
+        log::debug!("matching text {:#?}", data);
 
         let command = command.to_owned();
         let non_command = format!("{}@", command);
@@ -301,9 +301,9 @@ impl Bot {
         if data.ends_with(&format!("@{}", bot_name)) {
             let end = data.len() - bot_name.len() - 1;
             let data = &data[0..end];
-            debug!("matching {:#?} against {:#?}", data, command);
+            log::debug!("matching {:#?} against {:#?}", data, command);
             if data.starts_with(&command) {
-                debug!(".. matched");
+                log::debug!(".. matched");
                 return (
                     Some(command.clone()),
                     data.get(command.len()..)
@@ -314,9 +314,9 @@ impl Bot {
             return (None, None);
         }
 
-        debug!("matching {:#?} against {:#?}", data, long_command);
+        log::debug!("matching {:#?} against {:#?}", data, long_command);
         if data.starts_with(&long_command) {
-            debug!(".. matched");
+            log::debug!(".. matched");
             return (
                 Some(long_command.clone()),
                 data.get(long_command.len()..)
@@ -326,13 +326,13 @@ impl Bot {
         }
 
         if data.starts_with(&non_command) {
-            debug!(".. some other bot matched");
+            log::debug!(".. some other bot matched");
             return (None, None);
         }
 
-        debug!("matching {:#?} against {:#?}", data, command);
+        log::debug!("matching {:#?} against {:#?}", data, command);
         if data.starts_with(&command) {
-            debug!(".. matched");
+            log::debug!(".. matched");
             return (
                 Some(command.clone()),
                 data.get(command.len()..)

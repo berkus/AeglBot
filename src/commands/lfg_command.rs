@@ -44,7 +44,7 @@ impl BotCommand for LfgCommand {
         _command: Option<String>,
         args: Option<String>,
     ) {
-        info!("args are {:?}", args);
+        log::info!("args are {:?}", args);
 
         if args.is_none() {
             return LfgCommand::usage(bot, &message);
@@ -64,7 +64,7 @@ impl BotCommand for LfgCommand {
         let timespec = args[1];
         let connection = bot.connection();
 
-        info!("Adding activity `{}` at `{}`", &activity, &timespec);
+        log::info!("Adding activity `{}` at `{}`", &activity, &timespec);
 
         if let Some(guardian) = validate_username(bot, &message, &connection) {
             let act = ActivityShortcut::find_one_by_name(&connection, activity)
@@ -94,7 +94,7 @@ impl BotCommand for LfgCommand {
 
                 let act = act.unwrap();
 
-                info!("...parsed `{:?}`", start_time);
+                log::info!("...parsed `{:?}`", start_time);
 
                 let planned_activity = NewPlannedActivity {
                     author_id: guardian.id,

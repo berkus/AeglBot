@@ -14,7 +14,7 @@ use telebot::{functions::*, RcBot};
 pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
     use schema::plannedactivities::dsl::*;
 
-    info!("reminder check");
+    log::info!("reminder check");
 
     let reference = reference_date();
     let connection = bot.connection();

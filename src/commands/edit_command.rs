@@ -103,7 +103,7 @@ impl BotCommand for EditCommand {
                     // ...then convert back to UTC.
                     let start_time = start_time.unwrap().with_timezone(&Utc);
 
-                    info!("...parsed `{:?}`", start_time);
+                    log::info!("...parsed `{:?}`", start_time);
 
                     if planned.start < reference_date() - Duration::hours(1) {
                         return bot.send_plain_reply(

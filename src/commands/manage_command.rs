@@ -69,7 +69,7 @@ impl BotCommand for ManageCommand {
             None
         };
 
-        info!("{:?}", args);
+        log::info!("{:?}", args);
 
         match subcommand {
             "list-admins" => {
