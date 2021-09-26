@@ -2,6 +2,7 @@
 authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
 name = "aegl_bot"
 version = "0.1.0"
+edition = "2021"
 
 [dependencies]
 regex = "1.4"

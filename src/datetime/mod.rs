@@ -1,8 +1,9 @@
-use chrono::{prelude::*, Duration, Local};
-use chrono::{DateTime, NaiveTime, TimeZone, Utc};
-use chrono_tz::{Europe::Moscow, Tz};
-use diesel::{helper_types::AsExprOf, sql_types::Timestamptz};
-use std::{fmt::Write, time::Instant};
+use {
+    chrono::{prelude::*, DateTime, Duration, Local, NaiveTime, TimeZone, Utc},
+    chrono_tz::{Europe::Moscow, Tz},
+    diesel::{helper_types::AsExprOf, sql_types::Timestamptz},
+    std::{fmt::Write, time::Instant},
+};
 
 // Diesel, see issues/1752
 pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {

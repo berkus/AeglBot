@@ -1,13 +1,15 @@
-use chrono::{Duration, Local};
-use crate::{
-    commands::{decapitalize, validate_username},
-    datetime::{format_start_time, reference_date},
+use {
+    crate::{
+        commands::{decapitalize, validate_username},
+        datetime::{format_start_time, reference_date},
+        models::{Activity, NewPlannedActivityMember, PlannedActivity, PlannedActivityMember},
+        Bot, BotCommand, DbConnection,
+    },
+    chrono::{Duration, Local},
+    diesel::{self, associations::HasTable, prelude::*},
+    diesel_derives_traits::{Model, NewModel},
+    futures::Future,
 };
-use crate::{Bot, BotCommand, DbConnection};
-use diesel::{self, associations::HasTable, prelude::*};
-use diesel_derives_traits::{Model, NewModel};
-use futures::Future;
-use models::{Activity, NewPlannedActivityMember, PlannedActivity, PlannedActivityMember};
 
 pub struct JoinCommand;
 

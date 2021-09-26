@@ -1,11 +1,15 @@
-use crate::{commands::validate_username, models::PlannedActivity};
-use crate::{datetime::nowtz, Bot, BotCommand, DbConnection};
-use diesel::{
-    self,
-    dsl::{now, IntervalDsl},
-    prelude::*,
+use {
+    crate::{
+        commands::validate_username, datetime::nowtz, models::PlannedActivity, Bot, BotCommand,
+        DbConnection,
+    },
+    diesel::{
+        self,
+        dsl::{now, IntervalDsl},
+        prelude::*,
+    },
+    futures::Future,
 };
-use futures::Future;
 
 pub struct ListCommand;
 
@@ -27,7 +31,7 @@ impl BotCommand for ListCommand {
         _command: Option<String>,
         _args: Option<String>,
     ) {
-        use schema::plannedactivities::dsl::*;
+        use crate::schema::plannedactivities::dsl::*;
 
         let connection = bot.connection();
 

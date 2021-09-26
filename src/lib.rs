@@ -5,47 +5,27 @@
 #![allow(unused_imports)] // during development
 #![feature(type_ascription)]
 
-extern crate r2d2;
 #[macro_use]
 extern crate diesel;
-extern crate chrono;
-extern crate chrono_english;
-extern crate chrono_tz;
-extern crate diesel_logger;
-extern crate dotenv;
-extern crate itertools;
 #[macro_use]
 extern crate lazy_static;
-// extern crate rss;
-extern crate serde_json;
-extern crate telebot;
 #[macro_use]
 extern crate diesel_derives_extra;
-extern crate diesel_derives_traits;
-// extern crate failure;
-extern crate futures;
-extern crate futures_retry;
-#[macro_use]
-extern crate log;
-#[cfg(target_os = "linux")]
-extern crate procfs;
-extern crate regex;
-// extern crate tokio_core;
 
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use diesel_logger::LoggingConnection;
-use dotenv::dotenv;
-use failure::Error;
-use futures::{Future, Stream};
-use futures_retry::{RetryPolicy, StreamRetryExt};
-use r2d2::Pool;
-use std::time::Duration;
-use std::{
-    env,
-    sync::{Arc, RwLock},
+use {
+    diesel::{pg::PgConnection, prelude::*},
+    diesel_logger::LoggingConnection,
+    dotenv::dotenv,
+    futures::{Future, Stream},
+    futures_retry::{RetryPolicy, StreamRetryExt},
+    r2d2::Pool,
+    std::{
+        env,
+        sync::{Arc, RwLock},
+        time::Duration,
+    },
+    telebot::{functions::*, Bot as RcBot},
 };
-use telebot::{functions::*, Bot as RcBot};
 
 pub mod commands;
 pub mod datetime;
@@ -76,7 +56,7 @@ pub trait BotCommand {
 pub struct Bot {
     bot: RcBot,
     bot_name: String,
-    commands: Arc<RwLock<Vec<Box<BotCommand>>>>,
+    commands: Arc<RwLock<Vec<Box<dyn BotCommand>>>>,
     connection_pool: DbConnPool,
 }
 
@@ -99,7 +79,7 @@ impl Bot {
     //   that command.
     // - otherwise the command is inserted to the very beginning of vector.
     // This allows correct parsing order fof commands that are prefixes of another command.
-    pub fn register_command(&mut self, cmd: Box<BotCommand>) {
+    pub fn register_command(&mut self, cmd: Box<dyn BotCommand>) {
         let mut insertion_index = 0;
         for (idx, command) in self.commands.read().unwrap().iter().enumerate() {
             if command.prefix().starts_with(cmd.prefix()) {
@@ -345,8 +325,7 @@ impl Bot {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use tokio_core::reactor::Core;
+    use {super::*, tokio_core::reactor::Core};
 
     // Command is prefix of another command.
     struct PrefixCommand;

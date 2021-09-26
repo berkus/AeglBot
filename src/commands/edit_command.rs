@@ -1,12 +1,15 @@
-use chrono::prelude::*;
-use chrono::Duration;
-use chrono_english::{parse_date_string, Dialect};
-use chrono_tz::Europe::Moscow;
-use commands::validate_username;
-use crate::{Bot, BotCommand, DbConnection};
-use datetime::reference_date;
-use diesel_derives_traits::Model;
-use models::{ActivityShortcut, PlannedActivity};
+use {
+    crate::{
+        commands::validate_username,
+        datetime::reference_date,
+        models::{ActivityShortcut, PlannedActivity},
+        Bot, BotCommand, DbConnection,
+    },
+    chrono::{prelude::*, Duration},
+    chrono_english::{parse_date_string, Dialect},
+    chrono_tz::Europe::Moscow,
+    diesel_derives_traits::Model,
+};
 
 pub struct EditCommand;
 

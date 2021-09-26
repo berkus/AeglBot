@@ -1,7 +1,11 @@
-use crate::{commands::guardian_lookup, commands::validate_username, models::Guardian};
-use crate::{Bot, BotCommand, DbConnection};
-use diesel::prelude::*;
-use futures::Future;
+use {
+    crate::{
+        commands::guardian_lookup, commands::validate_username, models::Guardian, Bot, BotCommand,
+        DbConnection,
+    },
+    diesel::prelude::*,
+    futures::Future,
+};
 
 pub struct WhoisCommand;
 

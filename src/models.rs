@@ -1,13 +1,16 @@
-use chrono::prelude::*;
-use chrono::Duration;
-use crate::datetime::{format_start_time, reference_date};
-use crate::schema::*;
-use crate::DbConnection;
-use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
-use diesel_derives_traits::{Model, NewModel};
-use dotenv::dotenv;
-use serde_json::Value;
-use std::fmt;
+use {
+    crate::{
+        datetime::{format_start_time, reference_date},
+        schema::*,
+        DbConnection,
+    },
+    chrono::{prelude::*, Duration},
+    diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
+    diesel_derives_traits::{Model, NewModel},
+    dotenv::dotenv,
+    serde_json::Value,
+    std::fmt,
+};
 
 //
 // ActivityShortcut
@@ -37,8 +40,10 @@ impl ActivityShortcut {
         connection: &DbConnection,
         act_name: &str,
     ) -> diesel::result::QueryResult<Option<Self>> {
-        use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
-        use schema::activityshortcuts::dsl::*;
+        use {
+            crate::schema::activityshortcuts::dsl::*,
+            diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
+        };
 
         <Self as ::diesel::associations::HasTable>::table()
             .filter(name.eq(act_name))
@@ -306,7 +311,7 @@ impl PlannedActivity {
     }
 
     pub fn members(&self, connection: &DbConnection) -> Vec<PlannedActivityMember> {
-        use schema::plannedactivitymembers::dsl::*;
+        use crate::schema::plannedactivitymembers::dsl::*;
         plannedactivitymembers
             .filter(planned_activity_id.eq(self.id))
             .load::<PlannedActivityMember>(connection)
@@ -380,7 +385,7 @@ impl PlannedActivity {
         connection: &DbConnection,
         g: &Guardian,
     ) -> Option<PlannedActivityMember> {
-        use schema::plannedactivitymembers::dsl::*;
+        use crate::schema::plannedactivitymembers::dsl::*;
 
         plannedactivitymembers
             .filter(user_id.eq(g.id))
@@ -470,11 +475,7 @@ impl PlannedActivityMember {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::Bot;
-    use diesel::prelude::*;
-    use std::env;
-    use tokio_core::reactor::Core;
+    use {super::*, crate::Bot, diesel::prelude::*, std::env, tokio_core::reactor::Core};
 
     #[test]
     fn test_guardians() {

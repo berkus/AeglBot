@@ -1,10 +1,15 @@
-use crate::models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut};
-use crate::{commands::admin_check, Bot, BotCommand, DbConnection};
-use diesel::{self, prelude::*};
-use diesel_derives_traits::{Model, NewModel};
-use futures::Future;
-use itertools::Itertools;
-use std::collections::HashMap;
+use {
+    crate::{
+        commands::admin_check,
+        models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
+        Bot, BotCommand, DbConnection,
+    },
+    diesel::{self, prelude::*},
+    diesel_derives_traits::{Model, NewModel},
+    futures::Future,
+    itertools::Itertools,
+    std::collections::HashMap,
+};
 
 pub struct ActivitiesCommand;
 
@@ -67,8 +72,10 @@ impl BotCommand for ActivitiesCommand {
         let connection = bot.connection();
 
         if args.is_none() {
-            use schema::activities::dsl::{activities, id};
-            use schema::activityshortcuts::dsl::{activityshortcuts, game, name};
+            use crate::schema::{
+                activities::dsl::{activities, id},
+                activityshortcuts::dsl::{activityshortcuts, game, name},
+            };
 
             // Just /activities
             let games = activityshortcuts
@@ -119,7 +126,7 @@ impl BotCommand for ActivitiesCommand {
 
         match args[0] {
             "ids" => {
-                use schema::activities::dsl::{activities, id, mode, name};
+                use crate::schema::activities::dsl::{activities, id, mode, name};
 
                 let games = activities
                     .select((id, name, mode))

@@ -1,15 +1,17 @@
-use chrono::prelude::*;
-use chrono_english::{parse_date_string, Dialect};
-use chrono_tz::Europe::Moscow;
-use crate::{
-    commands::validate_username,
-    datetime::{format_start_time, reference_date, BotDateTime},
+use {
+    crate::{
+        commands::validate_username,
+        datetime::{format_start_time, reference_date, BotDateTime},
+        models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
+        Bot, BotCommand, DbConnection,
+    },
+    chrono::prelude::*,
+    chrono_english::{parse_date_string, Dialect},
+    chrono_tz::Europe::Moscow,
+    diesel::{self, associations::HasTable, prelude::*},
+    diesel_derives_traits::{Model, NewModel},
+    futures::Future,
 };
-use crate::{Bot, BotCommand, DbConnection};
-use diesel::{self, associations::HasTable, prelude::*};
-use diesel_derives_traits::{Model, NewModel};
-use futures::Future;
-use models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember};
 
 pub struct LfgCommand;
 
@@ -102,9 +104,10 @@ impl BotCommand for LfgCommand {
                     start: start_time,
                 };
 
-                use diesel::result::Error;
-                use schema::plannedactivities::dsl::*;
-                use schema::plannedactivitymembers::dsl::*;
+                use {
+                    crate::schema::{plannedactivities::dsl::*, plannedactivitymembers::dsl::*},
+                    diesel::result::Error,
+                };
 
                 connection
                     .transaction::<_, Error, _>(|| {

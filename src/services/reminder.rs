@@ -1,18 +1,22 @@
-use crate::{datetime::reference_date, Bot, DbConnection};
-use datetime::nowtz;
-use diesel::{
-    self,
-    dsl::{now, IntervalDsl},
-    prelude::*,
+use {
+    crate::{
+        datetime::{nowtz, reference_date},
+        models::PlannedActivity,
+        Bot, DbConnection,
+    },
+    diesel::{
+        self,
+        dsl::{now, IntervalDsl},
+        prelude::*,
+    },
+    diesel_derives_traits::Model,
+    failure::Error,
+    futures::Future,
+    telebot::{functions::*, Bot as RcBot},
 };
-use diesel_derives_traits::Model;
-use failure::Error;
-use futures::Future;
-use models::PlannedActivity;
-use telebot::{functions::*, Bot as RcBot};
 
 pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error> {
-    use schema::plannedactivities::dsl::*;
+    use crate::schema::plannedactivities::dsl::*;
 
     log::info!("reminder check");
 

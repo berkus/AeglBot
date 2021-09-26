@@ -5,33 +5,20 @@
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
 #![feature(futures_api, async_await, await_macro, nll)]
 
-extern crate aegl_bot;
-extern crate diesel;
-extern crate dotenv;
-extern crate failure;
-extern crate futures;
-extern crate r2d2;
-extern crate rss;
-extern crate telebot;
-extern crate tokio;
-extern crate tokio_core;
-#[macro_use]
-extern crate log;
-extern crate fern;
-
-use aegl_bot::{
-    commands::*,
-    datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
-    services::*,
-    Bot,
+use {
+    aegl_bot::{
+        commands::*,
+        datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
+        services::*,
+        Bot,
+    },
+    dotenv::dotenv,
+    failure::Error,
+    futures::{Future, IntoFuture, Stream},
+    std::{env, time::Instant},
+    tokio::timer::Interval,
+    tokio_core::reactor::Core,
 };
-use dotenv::dotenv;
-use failure::Error;
-use futures::{Future, IntoFuture, Stream};
-use std::env;
-use std::time::Instant;
-use tokio::timer::Interval;
-use tokio_core::reactor::Core;
 
 fn setup_logging() -> Result<(), fern::InitError> {
     use fern::colors::{Color, ColoredLevelConfig};

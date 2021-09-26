@@ -1,12 +1,14 @@
-use crate::{
-    datetime::{reference_date, BotDateTime},
-    Bot, DbConnection,
+use {
+    crate::{
+        datetime::{reference_date, BotDateTime},
+        Bot, DbConnection,
+    },
+    chrono::{DateTime, Duration, TimeZone, Utc},
+    futures::Future,
+    telebot::{functions::*, Bot as RcBot},
 };
-use chrono::{DateTime, Duration, TimeZone, Utc};
-use failure::Error;
-use futures::Future;
+// use anyhow::Result, failure::Error
 // use plurals::{Lang, Plural};
-use telebot::{functions::*, Bot as RcBot};
 
 // Destiny schedules on weekly featured Raid:
 
