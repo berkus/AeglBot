@@ -178,7 +178,8 @@ impl Alert {
             "💰"
         } else {
             ""
-        }.into()
+        }
+        .into()
     }
 
     pub fn is_blueprint(&self) -> bool {

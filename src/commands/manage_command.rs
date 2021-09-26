@@ -176,7 +176,8 @@ impl BotCommand for AddAdminSubcommand {
         }
 
         if args.is_none() {
-            return bot.send_plain_reply(&message, "Specify a guardian to promote to admins".into());
+            return bot
+                .send_plain_reply(&message, "Specify a guardian to promote to admins".into());
         }
 
         let name = args.unwrap();

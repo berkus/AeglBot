@@ -144,7 +144,8 @@ Enter `/edit{actId} details <free form description text>` to specify more detail
                         );
 
                         Ok(())
-                    }).expect("never happens, but please implement error handling");
+                    })
+                    .expect("never happens, but please implement error handling");
             }
         }
     }

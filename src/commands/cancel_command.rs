@@ -59,8 +59,10 @@ impl BotCommand for CancelCommand {
                 PlannedActivity::find_one(&connection, &activity_id).expect("Failed to run SQL");
 
             if planned.is_none() {
-                return bot
-                    .send_plain_reply(&message, format!("Activity {} was not found.", activity_id));
+                return bot.send_plain_reply(
+                    &message,
+                    format!("Activity {} was not found.", activity_id),
+                );
             }
 
             let planned = planned.unwrap();

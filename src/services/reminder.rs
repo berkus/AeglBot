@@ -40,7 +40,8 @@ pub fn check(bot: &Bot, chat_id: telebot::objects::Integer) -> Result<(), Error>
             } else {
                 false
             }
-        }).collect();
+        })
+        .collect();
 
     if upcoming_events.is_empty() {
         return Ok(());
