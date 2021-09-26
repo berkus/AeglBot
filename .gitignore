@@ -12,3 +12,5 @@ Cargo.lock
 bot-*.log
 
 aeglbot.sql
+src/schema.rs.orig
+
