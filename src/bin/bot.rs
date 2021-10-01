@@ -9,12 +9,22 @@ use {
     aegl_bot::{
         commands::*,
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
-        services::*,
+        services::{
+            reminder_actor::{
+                ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
+            },
+            *,
+        },
         BotMenu,
     },
     dotenv::dotenv,
     futures::{Future, Stream},
-    std::{env, pin::Pin, time::Instant},
+    // riker::prelude::*, doesn't work here!
+    riker::{
+        actor::Tell,
+        actors::{ActorRefFactory, ActorSystem},
+    },
+    std::{env, time::Instant},
     teloxide::{prelude::*, requests::ResponseResult},
 };
 
@@ -108,92 +118,20 @@ async fn main() {
     bot.register_command(PsnCommand::new());
     bot.register_command(WhoisCommand::new());
 
+    // Reminder tasks
+    let sys = ActorSystem::new().unwrap();
+    let actor = sys
+        .actor_of_args::<ReminderActor, _>("reminders", (bot.clone(), lfg_chat))
+        .unwrap();
+    // Schedule first run, the actor handler will reschedule.
+    actor.tell(ScheduleNextMinute, None);
+    actor.tell(ScheduleNextDay, None);
+    actor.tell(ScheduleNextWeek, None);
+
     teloxide::repl(bot.bot.clone(), |message| async {
         // @todo tell bot to process messages
         bot.process_message(message);
         ResponseResult::<()>::Ok(())
     })
     .await;
-
-    // let sys = ActorSystem::new();
-
-    // @todo use Riker actors for this:
-
-    // let time = start_at
-    // let actor = ctx.actor_of::<MyActor>("my-actor").unwrap();
-    //
-    // ctx.schedule_at_time(start_at_time(reference_date(), d2_reset_time()),
-    //                      actor,
-    //                      None,
-    //                      "one giant leap for mankind".into());
-
-    // Reminder task
-    // sys.schedule(Duration::from_secs(0), chrono::Duration::minutes(1).to_std().unwrap());
-    // move |bot| reminder::check(bot, lfg_chat),
-    //
-    //
-    // let daily_reset_task = setup_timer_task(
-    //     Interval::new(
-    //         start_at_time(reference_date(), d2_reset_time()),
-    //         chrono::Duration::days(1).to_std().unwrap(),
-    //     ),
-    //     bot.clone(),
-    //     move |bot| destiny_schedule::daily_reset(bot, lfg_chat),
-    // );
-    //
-    // let weekly_reset_task = setup_timer_task(
-    //     Interval::new(
-    //         start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time()),
-    //         chrono::Duration::weeks(1).to_std().unwrap(),
-    //     ),
-    //     bot.clone(),
-    //     move |bot| destiny_schedule::major_weekly_reset(bot, lfg_chat),
-    // );
-    //
-    // let friday_reset_task = setup_timer_task(
-    //     Interval::new(
-    //         start_at_weekday_time(reference_date(), chrono::Weekday::Fri, d2_reset_time()),
-    //         chrono::Duration::weeks(1).to_std().unwrap(),
-    //     ),
-    //     bot.clone(),
-    //     move |bot| destiny_schedule::minor_weekly_reset(bot, lfg_chat),
-    // );
-    //
-    // let monday_reset_task = setup_timer_task(
-    //     Interval::new(
-    //         start_at_weekday_time(reference_date(), chrono::Weekday::Mon, d2_reset_time()),
-    //         chrono::Duration::weeks(1).to_std().unwrap(),
-    //     ),
-    //     bot.clone(),
-    //     move |bot| destiny_schedule::end_of_weekend(bot, lfg_chat),
-    // );
-    //
-    // bot.spawn(reminder_task);
-    // bot.spawn(daily_reset_task);
-    // bot.spawn(weekly_reset_task);
-    // bot.spawn(friday_reset_task);
-    // bot.spawn(monday_reset_task);
-
-    // core.run(
-    // stream
-    //     .for_each(|_| Ok(()))
-    //     .map_err(|e| log::error!("Caught an error {}", e));
-    // .into_future(),
-    // )
-    // .unwrap();
-    // }
 }
-
-// Setup handling for timer Stream over interval `i` to run closure `f` using cloned bot `b`.
-// fn setup_timer_task<F>(
-//     interval: Interval,
-//     bot: BotMenu,
-//     mut fun: F,
-// ) -> impl Future<Item = (), Error = ()>
-// where
-//     F: FnMut(&BotMenu) -> Result<(), Error>,
-// {
-//     interval
-//         .for_each(move |_| fun(&bot).or_else(|_| Ok(())))
-//         .map_err(|e| panic!("Daily reset thread errored; err={:?}", e))
-// }

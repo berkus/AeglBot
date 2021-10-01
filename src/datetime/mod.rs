@@ -100,8 +100,8 @@ fn start_at_time_offset(now: BotDateTime, start: BotTime) -> Duration {
     first - now
 }
 
-pub fn start_at_time(now: BotDateTime, start: BotTime) -> Instant {
-    Instant::now() + start_at_time_offset(now, start).to_std().unwrap()
+pub fn start_at_time(now: BotDateTime, start: BotTime) -> BotDateTime {
+    reference_date() + start_at_time_offset(now, start)
 }
 
 // For weekly events - start on given day of week, at a given time.
@@ -132,11 +132,8 @@ fn start_at_weekday_time_offset(now: BotDateTime, wd: chrono::Weekday, start: Bo
     first - now
 }
 
-pub fn start_at_weekday_time(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> Instant {
-    Instant::now()
-        + start_at_weekday_time_offset(now, wd, start)
-            .to_std()
-            .unwrap()
+pub fn start_at_weekday_time(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> BotDateTime {
+    reference_date() + start_at_weekday_time_offset(now, wd, start)
 }
 
 /// Time and reference are in UTC? timezone!
