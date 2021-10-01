@@ -56,8 +56,8 @@ pub fn dreaming_city_cycle() -> String {
     ];
     let dc_week = dc_week_number(reference_date()) as usize;
     format!(
-        "💫 Dreaming City: {} ([Ascendant Chests]({}))\n(Shattered Throne is always available)",
-        curses[dc_week], urls[dc_week],
+        "💫 Dreaming City: {} \\- [Ascendant Chests]({})\n\\(Shattered Throne is always available\\)",
+        curses[dc_week], urls[dc_week]
     )
 }
 
@@ -89,7 +89,7 @@ pub fn ascendant_challenge_cycle() -> String {
 
     let ac_week = ascendant_challenge_week_number(reference_date()) as usize;
     format!(
-        "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): {name} ([{loc}]({url}))",
+        "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): {name} [{loc}]({url})",
         name = challenges[ac_week],
         loc = locations[ac_week],
         url = urls[ac_week],
