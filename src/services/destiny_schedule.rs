@@ -96,25 +96,11 @@ pub fn ascendant_challenge_cycle() -> String {
     )
 }
 
-// pub fn escalation_protocol_cycle() -> String {
-//     let bosses: [&'static str; 5] = [
-//         "💀 Nur Abath, Crest of Xol\n⚔️ Shotgun",
-//         "💀 Kathok, Roar of Xol\n⚔️ SMG",
-//         "💀 Domkath, the Mask\n⚔️ Sniper Rifle",
-//         "💀 Naksud, the Famine\n⚔️ Shotgun, SMG, Sniper Rifle",
-//         "💀 Bok Litur, the Hunger of Xol\n⚔️ Shotgun, SMG, Sniper Rifle",
-//     ];
-
-//     let proto_week = protocol_week_number(reference_date()) as usize;
-//     format!("Escalation Protocol:\n{}", bosses[proto_week])
-// }
-
 // 2. Weekly (main) resets at 20:00 msk every Tue
-// 5. On main reset: change in Protocol boss drops
-//    protocol on 5-week schedule
 // 6. On main reset: change in Dreaming City curse
 //    dreaming city on 3-week schedule
-//   6a. on Strongest Curse week the Shattered Throne is available
+// 7. On main reset: change in Dreaming City Ascendant Challenges
+//    dreaming city challenges on 6-week schedule
 pub fn major_weekly_reset(bot: &BotMenu, chat_id: teloxide::types::ChatId) -> Result<()> {
     let msg = format!(
         "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
@@ -137,36 +123,12 @@ pub fn this_week_in_d2() -> String {
     )
 }
 
-// 3. Weekly (minor) resets at 20:00 msg every Fri
-//   3a. Whisper of the Worm becomes available
-pub fn minor_weekly_reset(_bot: &BotMenu, _chat_id: teloxide::types::ChatId) -> Result<()> {
-    // bot.send_plain_message(chat_id, "Whisper of the Worm mission now available".into());
-    Ok(())
-}
-
-// 4. Monday 20:00 msg end of Whisper of the Worm quest
-pub fn end_of_weekend(_bot: &BotMenu, _chat_id: teloxide::types::ChatId) -> Result<()> {
-    // bot.send_html_message(
-    //     chat_id,
-    //     "Whisper of the Worm mission is not available until next weekend".into(),
-    // );
-    Ok(())
-}
-
-// a. need to calculate current d2 week number
 fn dc_week_number(now: BotDateTime) -> i64 {
     lazy_static! {
         static ref START_WEEK: DateTime<Utc> = Utc.ymd(2018, 9, 11).and_hms(17, 0, 0);
     }
     (now - *START_WEEK).num_weeks() % 3
 }
-
-// fn protocol_week_number(now: BotDateTime) -> i64 {
-//     lazy_static! {
-//         static ref START_WEEK: DateTime<Utc> = Utc.ymd(2018, 5, 8).and_hms(17, 0, 0);
-//     }
-//     (now - *START_WEEK).num_weeks() % 5
-// }
 
 fn ascendant_challenge_week_number(now: BotDateTime) -> i64 {
     lazy_static! {
