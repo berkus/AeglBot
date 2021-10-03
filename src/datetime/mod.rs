@@ -5,7 +5,7 @@ use {
     std::{fmt::Write, time::Instant},
 };
 
-// Diesel, see issues/1752
+// Diesel farts, see issues/1752
 pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {
     use diesel::{dsl::now, helper_types::AsExprOf, sql_types::Timestamptz, IntoSql};
     now.into_sql::<Timestamptz>()
@@ -69,10 +69,12 @@ pub fn d2_reset_time() -> BotTime {
     BotTime::from_hms(17, 0, 0)
 }
 
+/// Display time in Moscow timezone (MSK)
 pub fn display_time(t: BotDateTime) -> DateTime<Tz> {
     Moscow.from_utc_datetime(&t.naive_utc())
 }
 
+/// Replace the time in the given datatime.
 fn time_override(now: BotDateTime, start: BotTime) -> BotDateTime {
     now.with_hour(start.hour())
         .unwrap()
