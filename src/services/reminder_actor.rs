@@ -2,11 +2,13 @@ use {
     crate::{
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
         services::{destiny_schedule, reminder},
-        BotMenu,
+        BotMenu, BotMenuMsg,
     },
     chrono::Timelike,
     riker::{
-        actors::{actor, Actor, ActorFactoryArgs, BasicActorRef, Context, Receive, Sender, Tell},
+        actors::{
+            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Receive, Sender, Tell,
+        },
         system::Timer,
     },
     teloxide::types::ChatId,
@@ -21,7 +23,8 @@ use {
     ScheduleNextWeek
 )]
 pub struct ReminderActor {
-    bot: BotMenu,
+    bot: BotMenu, // @todo decouple accessors from Bot struct
+    bot_ref: ActorRef<BotMenuMsg>,
     lfg_chat: i64,
 }
 
@@ -33,9 +36,13 @@ impl Actor for ReminderActor {
     }
 }
 
-impl ActorFactoryArgs<(BotMenu, i64)> for ReminderActor {
-    fn create_args((bot, lfg_chat): (BotMenu, i64)) -> Self {
-        Self { bot, lfg_chat }
+impl ActorFactoryArgs<(BotMenu, ActorRef<BotMenuMsg>, i64)> for ReminderActor {
+    fn create_args((bot, bot_ref, lfg_chat): (BotMenu, ActorRef<BotMenuMsg>, i64)) -> Self {
+        Self {
+            bot,
+            bot_ref,
+            lfg_chat,
+        }
     }
 }
 
@@ -51,27 +58,31 @@ pub struct WeeklyReset;
 impl Receive<Reminders> for ReminderActor {
     type Msg = ReminderActorMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: Reminders, sender: Sender) {
-        reminder::check(&self.bot, ChatId::Id(self.lfg_chat));
-        ctx.myself().tell(ScheduleNextMinute, sender);
+    fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: Reminders, _sender: Sender) {
+        reminder::check(
+            self.bot_ref.clone(),
+            self.bot.connection(),
+            ChatId::Id(self.lfg_chat),
+        );
+        ctx.myself().tell(ScheduleNextMinute, None);
     }
 }
 
 impl Receive<DailyReset> for ReminderActor {
     type Msg = ReminderActorMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: DailyReset, sender: Sender) {
-        destiny_schedule::daily_reset(&self.bot, ChatId::Id(self.lfg_chat));
-        ctx.myself().tell(ScheduleNextDay, sender);
+    fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: DailyReset, _sender: Sender) {
+        destiny_schedule::daily_reset(self.bot_ref.clone(), ChatId::Id(self.lfg_chat));
+        ctx.myself().tell(ScheduleNextDay, None);
     }
 }
 
 impl Receive<WeeklyReset> for ReminderActor {
     type Msg = ReminderActorMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: WeeklyReset, sender: Sender) {
-        destiny_schedule::major_weekly_reset(&self.bot, ChatId::Id(self.lfg_chat));
-        ctx.myself().tell(ScheduleNextWeek, sender);
+    fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: WeeklyReset, _sender: Sender) {
+        destiny_schedule::major_weekly_reset(self.bot_ref.clone(), ChatId::Id(self.lfg_chat));
+        ctx.myself().tell(ScheduleNextWeek, None);
     }
 }
 

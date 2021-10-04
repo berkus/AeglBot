@@ -1,11 +1,13 @@
+use crate::{Format, Notify};
 use {
     crate::{
         datetime::{reference_date, BotDateTime},
-        BotMenu, DbConnection,
+        BotMenuMsg, DbConnection, SendMessage,
     },
     anyhow::Result,
     chrono::{DateTime, Duration, TimeZone, Utc},
     futures::Future,
+    riker::{actor::Tell, actors::ActorRef},
 };
 // use plurals::{Lang, Plural};
 
@@ -41,9 +43,12 @@ fn raid_week_number(now: BotDateTime) -> i64 {
 //     plural: "weeks",
 // };
 
-// 1. Daily resets at 20:00 msk each day
-pub fn daily_reset(bot: &BotMenu, chat_id: teloxide::types::ChatId) -> Result<()> {
-    bot.send_plain_message(chat_id, "⚡️ Daily reset".into());
+// 1. Daily resets at 20:00 MSK (17:00 UTC) every day
+pub fn daily_reset(bot: ActorRef<BotMenuMsg>, chat_id: teloxide::types::ChatId) -> Result<()> {
+    bot.tell(
+        SendMessage("⚡️ Daily reset".into(), chat_id, Format::Plain, Notify::Off),
+        None,
+    );
     Ok(())
 }
 
@@ -101,13 +106,19 @@ pub fn ascendant_challenge_cycle() -> String {
 //    dreaming city on 3-week schedule
 // 7. On main reset: change in Dreaming City Ascendant Challenges
 //    dreaming city challenges on 6-week schedule
-pub fn major_weekly_reset(bot: &BotMenu, chat_id: teloxide::types::ChatId) -> Result<()> {
+pub fn major_weekly_reset(
+    bot: ActorRef<BotMenuMsg>,
+    chat_id: teloxide::types::ChatId,
+) -> Result<()> {
     let msg = format!(
         "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
         d1week = this_week_in_d1(),
         d2week = this_week_in_d2(),
     );
-    bot.send_md_message(chat_id, msg);
+    bot.tell(
+        SendMessage(msg, chat_id, Format::Markdown, Notify::Off),
+        None,
+    );
     Ok(())
 }
 

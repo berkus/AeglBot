@@ -11,6 +11,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate diesel_derives_extra;
 
+use std::fmt::Formatter;
 use {
     diesel::{pg::PgConnection, prelude::*},
     diesel_logger::LoggingConnection,
@@ -61,7 +62,7 @@ pub trait BotCommand: Send + Sync {
 }
 
 #[derive(Clone)]
-#[actor(SendPlainMessage, SendMarkdownMessage, SendHtmlMessage)]
+#[actor(SendMessage)]
 pub struct BotMenu {
     pub bot: AutoSend<Bot>,
     bot_name: String,
@@ -71,7 +72,15 @@ pub struct BotMenu {
 
 unsafe impl Send for BotMenu {}
 
+impl std::fmt::Debug for BotMenu {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BotMenu")
+    }
+}
+
 pub type UpdateMessage = UpdateWithCx<AutoSend<Bot>, Message>;
+
+pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
 
 impl BotMenu {
     // Public API
@@ -160,9 +169,7 @@ impl BotMenu {
             .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
     }
 
-    pub fn connection(
-        &self,
-    ) -> r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>> {
+    pub fn connection(&self) -> BotConnection {
         self.connection_pool.get().unwrap()
     }
 
@@ -196,41 +203,6 @@ impl BotMenu {
                 .disable_web_page_preview(true)
                 .send(),
         );
-    }
-
-    pub async fn send_plain_message(&self, chat: ChatId, text: String) -> impl Future {
-        self.bot
-            .send_message(chat, text)
-            .disable_notification(true)
-            .disable_web_page_preview(true)
-    }
-
-    pub async fn send_md_message(&self, chat: ChatId, text: String) -> impl Future {
-        self.bot
-            .send_message(chat, text)
-            .parse_mode(ParseMode::MarkdownV2)
-            .disable_notification(true)
-            .disable_web_page_preview(true)
-    }
-
-    pub fn send_html_message(
-        &self,
-        chat: ChatId,
-        text: String,
-    ) -> <AutoSend<Bot> as Requester>::SendMessage {
-        self.bot
-            .send_message(chat, text)
-            .parse_mode(ParseMode::Html)
-            .disable_notification(true)
-            .disable_web_page_preview(true)
-    }
-
-    pub fn send_html_message_with_notification(&self, chat: ChatId, text: String) -> impl Future {
-        self.bot
-            .send_message(chat, text)
-            .parse_mode(ParseMode::Html)
-            .disable_notification(false)
-            .disable_web_page_preview(true)
     }
 
     /// Match command in both variations (with bot name and without bot name).
@@ -320,50 +292,52 @@ impl ActorFactoryArgs<(String, String)> for BotMenu {
 }
 
 #[derive(Clone, Debug)]
-pub struct SendPlainMessage(String, ChatId);
+pub enum Format {
+    Plain,
+    Markdown,
+    Html,
+}
 
 #[derive(Clone, Debug)]
-pub struct SendMarkdownMessage(String, ChatId);
+pub enum Notify {
+    Off,
+    On,
+}
 
 #[derive(Clone, Debug)]
-pub struct SendHtmlMessage(String, ChatId);
+pub struct SendMessage(String, ChatId, Format, Notify);
 
-impl Receive<SendPlainMessage> for BotMenu {
+impl Receive<SendMessage> for BotMenu {
     type Msg = BotMenuMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendPlainMessage, _sender: Sender) {
-        // The following call causes escaping self, so inline it manually.
-        // ctx.run(self.send_plain_message(msg.1, msg.0));
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessage, _sender: Sender) {
         let fut = self
             .bot
             .send_message(msg.1, msg.0)
-            .disable_notification(true)
+            .disable_notification(match msg.3 {
+                Notify::On => false,
+                Notify::Off => true,
+            })
             .disable_web_page_preview(true);
+
+        let fut = match msg.2 {
+            Format::Html => fut.parse_mode(ParseMode::Html),
+            Format::Markdown => fut.parse_mode(ParseMode::MarkdownV2),
+            Format::Plain => fut,
+        };
+
         ctx.run(fut);
     }
 }
 
-impl Receive<SendMarkdownMessage> for BotMenu {
+#[derive(Clone, Debug)]
+pub struct RegisterCommand(Box<dyn BotCommand>);
+
+impl Receive<RegisterCommand> for BotMenu {
     type Msg = BotMenuMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMarkdownMessage, _sender: Sender) {
-        // The following call causes escaping self, so inline it manually.
-        // ctx.run(self.send_md_message(msg.1, msg.0));
-        let fut = self
-            .bot
-            .send_message(msg.1, msg.0)
-            .parse_mode(ParseMode::MarkdownV2)
-            .disable_notification(true)
-            .disable_web_page_preview(true);
-        ctx.run(fut);
-    }
-}
-
-impl Receive<SendHtmlMessage> for BotMenu {
-    type Msg = BotMenuMsg;
-
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendHtmlMessage, _sender: Sender) {
-        ctx.run(self.send_html_message(msg.1, msg.0));
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: RegisterCommand, _sender: Sender) {
+        self.register_command(msg.0);
     }
 }
 

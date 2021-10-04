@@ -2,7 +2,7 @@ use {
     crate::{
         datetime::{nowtz, reference_date},
         models::PlannedActivity,
-        BotMenu, DbConnection,
+        BotConnection, BotMenu, BotMenuMsg, Format, Notify, SendMessage,
     },
     anyhow::Result,
     diesel::{
@@ -12,16 +12,17 @@ use {
     },
     diesel_derives_traits::Model,
     futures::Future,
+    riker::{actor::Tell, actors::ActorRef},
     teloxide::types::ChatId,
 };
 
-pub fn check(bot: &BotMenu, chat_id: ChatId) -> Result<()> {
+pub fn check(bot: ActorRef<BotMenuMsg>, connection: BotConnection, chat_id: ChatId) -> Result<()> {
     use crate::schema::plannedactivities::dsl::*;
 
     log::info!("reminder check");
 
     let reference = reference_date();
-    let connection = bot.connection();
+    // let connection = bot.connection();
 
     let upcoming_events = plannedactivities
         .filter(start.ge(nowtz() - 60_i32.minutes()))
@@ -53,7 +54,7 @@ pub fn check(bot: &BotMenu, chat_id: ChatId) -> Result<()> {
             acc + &format!("{}\n\n", event.display(&connection, None))
         });
 
-    bot.send_html_message_with_notification(chat_id, text);
+    bot.tell(SendMessage(text, chat_id, Format::Html, Notify::On), None);
 
     Ok(())
 }

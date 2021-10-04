@@ -100,26 +100,26 @@ async fn main() {
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
 
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-    // @todo create Bot as an actor
-    let mut bot = Box::leak(box BotMenu::new(&bot_name, &token));
+    let sys = ActorSystem::new().unwrap();
 
-    bot.register_command(ActivitiesCommand::new());
-    bot.register_command(CancelCommand::new());
-    bot.register_command(D2weekCommand::new());
-    bot.register_command(D1weekCommand::new());
-    bot.register_command(EditCommand::new());
-    bot.register_command(EditGuardianCommand::new());
-    bot.register_command(HelpCommand::new());
-    bot.register_command(InfoCommand::new());
-    bot.register_command(JoinCommand::new());
-    bot.register_command(LfgCommand::new());
-    bot.register_command(ListCommand::new());
-    bot.register_command(ManageCommand::new());
-    bot.register_command(PsnCommand::new());
-    bot.register_command(WhoisCommand::new());
+    let bot = sys.actor_of_args::<BotMenu, _>("bot", (bot_name, token))?;
+
+    bot.tell(RegisterCommand(ActivitiesCommand::new()), None);
+    bot.tell(RegisterCommand(CancelCommand::new()), None);
+    bot.tell(RegisterCommand(D2weekCommand::new()), None);
+    bot.tell(RegisterCommand(D1weekCommand::new()), None);
+    bot.tell(RegisterCommand(EditCommand::new()), None);
+    bot.tell(RegisterCommand(EditGuardianCommand::new()), None);
+    bot.tell(RegisterCommand(HelpCommand::new()), None);
+    bot.tell(RegisterCommand(InfoCommand::new()), None);
+    bot.tell(RegisterCommand(JoinCommand::new()), None);
+    bot.tell(RegisterCommand(LfgCommand::new()), None);
+    bot.tell(RegisterCommand(ListCommand::new()), None);
+    bot.tell(RegisterCommand(ManageCommand::new()), None);
+    bot.tell(RegisterCommand(PsnCommand::new()), None);
+    bot.tell(RegisterCommand(WhoisCommand::new()), None);
 
     // Reminder tasks
-    let sys = ActorSystem::new().unwrap();
     let actor = sys
         .actor_of_args::<ReminderActor, _>("reminders", (bot.clone(), lfg_chat))
         .unwrap();
@@ -130,7 +130,7 @@ async fn main() {
 
     teloxide::repl(bot.bot.clone(), |message| async {
         // @todo tell bot to process messages
-        bot.process_message(message);
+        bot.tell(ProcessMessage(message), None);
         ResponseResult::<()>::Ok(())
     })
     .await;
