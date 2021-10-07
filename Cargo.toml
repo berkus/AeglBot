@@ -21,7 +21,7 @@ dotenv = "0.15"
 anyhow = "1.0"
 futures = "0.3"
 serde_json = "1.0"
-teloxide = { version = "0.5", features = ["macros", "auto-send"] }
+teloxide = { version = "0.5", features = ["macros"] }
 log = "0.4"
 fern = { version = "0.6", features = ["colored"] }
 futures-retry = "0.6"

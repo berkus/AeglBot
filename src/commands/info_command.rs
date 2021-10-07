@@ -1,12 +1,14 @@
 #[cfg(target_os = "linux")]
 use procfs::{ProcResult, Process};
 use {
-    crate::{BotCommand, BotMenu, DbConnection, Format, Notify, SendMessageReply, UpdateMessage},
+    crate::{
+        ActorUpdateMessage, BotCommand, BotMenu, DbConnection, Format, Notify, SendMessageReply,
+    },
     riker::actors::{Receive, Tell},
     teloxide::prelude::*,
 };
 
-command_actor!(InfoCommand, [UpdateMessage]);
+command_actor!(InfoCommand, [ActorUpdateMessage]);
 
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {
@@ -37,10 +39,10 @@ impl BotCommand for InfoCommand {
     }
 }
 
-impl Receive<UpdateMessage> for InfoCommand {
+impl Receive<ActorUpdateMessage> for InfoCommand {
     type Msg = InfoCommandMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: UpdateMessage, _sender: Sender) {
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
         self.bot_ref.tell(
             SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
             None,

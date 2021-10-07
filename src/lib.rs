@@ -86,11 +86,8 @@ pub trait BotCommand: Clone + Send + Sync {
 #[derive(Clone)]
 #[actor(SendMessage, SendMessageReply)]
 pub struct BotMenu {
-    pub bot: AutoSend<Bot>,
+    pub bot: Bot,
     bot_name: String,
-    // @todo Make commands into actors:
-    // pass them Bot ActorRef on start and subscribe to "commands" channel
-    // commands: Arc<RwLock<Vec<Box<dyn BotCommand>>>>,
     connection_pool: DbConnPool,
 }
 
@@ -102,7 +99,23 @@ impl std::fmt::Debug for BotMenu {
     }
 }
 
-pub type UpdateMessage = UpdateWithCx<AutoSend<Bot>, Message>;
+pub type UpdateMessage = UpdateWithCx<Bot, Message>;
+pub type ActorUpdateMessage = ActorUpdateWithCx<Bot, Message>;
+
+#[derive(Debug, Clone)]
+pub struct ActorUpdateWithCx<R, Upd> {
+    pub requester: R,
+    pub update: Upd,
+}
+
+impl From<UpdateMessage> for ActorUpdateMessage {
+    fn from(m: UpdateMessage) -> Self {
+        Self {
+            requester: m.requester,
+            update: m.update,
+        }
+    }
+}
 
 pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
 
@@ -111,9 +124,8 @@ impl BotMenu {
 
     pub fn new(name: &str, token: &str) -> Self {
         BotMenu {
-            bot: AutoSend::new(Bot::new(token)),
+            bot: Bot::new(token),
             bot_name: name.to_string(),
-            // commands: Arc::new(RwLock::new(Vec::new())),
             connection_pool: Self::establish_connection(),
         }
     }
@@ -322,12 +334,12 @@ impl Receive<SendMessage> for BotMenu {
             Format::Plain => fut,
         };
 
-        ctx.run(fut);
+        ctx.run(fut.send());
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct SendMessageReply(String, UpdateMessage, Format, Notify);
+pub struct SendMessageReply(String, ActorUpdateMessage, Format, Notify);
 
 impl Receive<SendMessageReply> for BotMenu {
     type Msg = BotMenuMsg;
@@ -335,6 +347,7 @@ impl Receive<SendMessageReply> for BotMenu {
     fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessageReply, _sender: Sender) {
         let fut = msg
             .1
+            .update
             .reply_to(msg.0)
             .disable_notification(match msg.3 {
                 Notify::On => false,
@@ -348,7 +361,7 @@ impl Receive<SendMessageReply> for BotMenu {
             Format::Plain => fut,
         };
 
-        ctx.run(fut);
+        ctx.run(fut.send());
     }
 }
 

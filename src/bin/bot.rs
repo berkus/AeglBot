@@ -104,9 +104,9 @@ async fn main() {
 
     let bot = sys.actor_of_args::<BotMenu, _>("bot", (bot_name, token))?;
 
-    let chan: ChannelRef<UpdateMessage> = channel("commands", &sys).unwrap();
+    let chan: ChannelRef<ActorUpdateMessage> = channel("commands", &sys).unwrap();
 
-    fn new_command<T>(sys: ActorSystem, chan: &ChannelRef<UpdateMessage>) /*->anyhow::Result<()>*/
+    fn new_command<T>(sys: ActorSystem, chan: &ChannelRef<ActorUpdateMessage>) /*->anyhow::Result<()>*/
     {
         let cmd = sys.actor_of::<T>()?;
         chan.tell(
@@ -145,7 +145,7 @@ async fn main() {
     teloxide::repl(bot.bot.clone(), |message| async {
         chan.tell(
             Publish {
-                msg: message,
+                msg: message.into::<ActorUpdateMessage>(),
                 topic: "raw-commands".into(),
             },
             None,

@@ -55,6 +55,7 @@ macro_rules! command_actor {
 // pub use self::help_command::*;
 mod info_command;
 pub use self::info_command::*;
+use crate::UpdateMessage;
 // mod join_command;
 // pub use self::join_command::*;
 // mod lfg_command;
@@ -78,7 +79,7 @@ pub fn decapitalize(s: &str) -> String {
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub fn validate_username(
     bot: &BotMenu,
-    message: &UpdateWithCx<AutoSend<Bot>, Message>,
+    message: &UpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     let username = match message.update.from().as_ref().unwrap().username {
@@ -116,7 +117,7 @@ pub fn validate_username(
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub fn admin_check(
     bot: &BotMenu,
-    message: &UpdateWithCx<AutoSend<Bot>, Message>,
+    message: &UpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     validate_username(bot, message, connection).filter(|g| g.is_admin)
