@@ -3,6 +3,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct HelpCommand;
 
 command_ctor!(HelpCommand);

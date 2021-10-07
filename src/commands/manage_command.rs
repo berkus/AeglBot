@@ -3,9 +3,16 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct ManageCommand;
+
+#[derive(Clone)]
 struct ListAdminsSubcommand;
+
+#[derive(Clone)]
 struct AddAdminSubcommand;
+
+#[derive(Clone)]
 struct RemoveAdminSubcommand;
 
 command_ctor!(ManageCommand);

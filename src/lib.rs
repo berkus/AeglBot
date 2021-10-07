@@ -43,7 +43,7 @@ pub mod services;
 pub type DbConnection = LoggingConnection<PgConnection>;
 pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
 
-pub trait BotCommand: Send + Sync {
+pub trait BotCommand: Clone + Send + Sync {
     /// Print command usage instructions.
     // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);
     /// Return command prefix to match.
@@ -51,22 +51,46 @@ pub trait BotCommand: Send + Sync {
     fn prefix(&self) -> &'static str;
     /// Return command description.
     fn description(&self) -> &'static str;
-    /// Execute matched command.
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateWithCx<AutoSend<Bot>, Message>,
-        command: Option<String>,
-        text: Option<String>,
-    );
+    // Execute matched command.
+    // fn execute(
+    //     &self,
+    //     bot: &BotMenu,
+    //     message: &UpdateMessage,
+    //     command: Option<String>,
+    //     text: Option<String>,
+    // );
 }
 
+// https://chaoslibrary.blot.im/rust-cloning-a-trait-object/
+//
+// trait BotCommandClone {
+//     fn clone_box(&self) -> Box<dyn BotCommand>;
+// }
+//
+// impl<T> BotCommandClone for T
+// where
+//     T: 'static + BotCommand + Clone,
+// {
+//     fn clone_box(&self) -> Box<dyn BotCommand> {
+//         Box::new(self.clone())
+//     }
+// }
+//
+// impl Clone for Box<dyn BotCommand> {
+//     fn clone(&self) -> Box<dyn BotCommand> {
+//         self.clone_box()
+//     }
+// }
+
+// @todo rename to BotActor
 #[derive(Clone)]
-#[actor(SendMessage)]
+#[actor(SendMessage, SendMessageReply)]
 pub struct BotMenu {
     pub bot: AutoSend<Bot>,
     bot_name: String,
-    commands: Arc<RwLock<Vec<Box<dyn BotCommand>>>>,
+    // @todo Make commands into actors:
+    // pass them Bot ActorRef on start and subscribe to "commands" channel
+    // commands: Arc<RwLock<Vec<Box<dyn BotCommand>>>>,
     connection_pool: DbConnPool,
 }
 
@@ -89,7 +113,7 @@ impl BotMenu {
         BotMenu {
             bot: AutoSend::new(Bot::new(token)),
             bot_name: name.to_string(),
-            commands: Arc::new(RwLock::new(Vec::new())),
+            // commands: Arc::new(RwLock::new(Vec::new())),
             connection_pool: Self::establish_connection(),
         }
     }
@@ -101,29 +125,27 @@ impl BotMenu {
     //   that command.
     // - otherwise the command is inserted to the very beginning of vector.
     // This allows correct parsing order fof commands that are prefixes of another command.
-    pub fn register_command(&mut self, cmd: Box<dyn BotCommand>) {
-        let mut insertion_index = 0;
-        for (idx, command) in self.commands.read().unwrap().iter().enumerate() {
-            if command.prefix().starts_with(cmd.prefix()) {
-                insertion_index = idx + 1;
-            }
-        }
+    // pub fn register_command(&mut self, cmd: Box<dyn BotCommand>) {
+    //     let mut insertion_index = 0;
+    //     for (idx, command) in self.commands.read().unwrap().iter().enumerate() {
+    //         if command.prefix().starts_with(cmd.prefix()) {
+    //             insertion_index = idx + 1;
+    //         }
+    //     }
+    //
+    //     self.commands.write().unwrap().insert(insertion_index, cmd);
+    // }
 
-        self.commands.write().unwrap().insert(insertion_index, cmd);
-    }
-
-    pub fn list_commands(&self) -> Vec<(String, String)> {
-        self.commands
-            .read()
-            .unwrap()
-            .iter()
-            .fold(vec![], |mut acc, cmd| {
-                acc.push((cmd.prefix().to_string(), cmd.description().to_string()));
-                acc
-            })
-    }
-
-    // Use tokio::spawn
+    // pub fn list_commands(&self) -> Vec<(String, String)> {
+    //     self.commands
+    //         .read()
+    //         .unwrap()
+    //         .iter()
+    //         .fold(vec![], |mut acc, cmd| {
+    //             acc.push((cmd.prefix().to_string(), cmd.description().to_string()));
+    //             acc
+    //         })
+    // }
 
     // Internal helpers
 
@@ -145,16 +167,16 @@ impl BotMenu {
 
     // @todo Make this a message processor in Actor
     // @todo Send commands as messages too? Need dynamic command definition then...
-    pub fn process_message(&self, message: UpdateMessage) {
-        let message = &message;
-        for cmd in self.commands.read().unwrap().iter() {
-            if let (Some(cmdname), text) =
-                Self::match_command(message, cmd.prefix(), &self.bot_name)
-            {
-                return cmd.execute(&self, message, Some(cmdname), text);
-            }
-        }
-    }
+    // pub fn process_message(&self, message: UpdateMessage) {
+    //     let message = &message;
+    //     for cmd in self.commands.read().unwrap().iter() {
+    //         if let (Some(cmdname), text) =
+    //             Self::match_command(message, cmd.prefix(), &self.bot_name)
+    //         {
+    //             return cmd.execute(&self, message, Some(cmdname), text);
+    //         }
+    //     }
+    // }
 
     pub fn establish_connection() -> DbConnPool {
         dotenv().ok();
@@ -173,38 +195,7 @@ impl BotMenu {
         self.connection_pool.get().unwrap()
     }
 
-    pub fn send_plain_reply(&self, source: &UpdateMessage, text: String) {
-        tokio::spawn(
-            source
-                .reply_to(text)
-                .disable_notification(true)
-                .disable_web_page_preview(true)
-                .send(),
-        ); //spawn may return awaitable future if we need the result of the execution
-    }
-
-    pub fn send_html_reply(&self, source: &UpdateMessage, text: String) {
-        tokio::spawn(
-            source
-                .reply_to(text)
-                .parse_mode(ParseMode::Html)
-                .disable_notification(true)
-                .disable_web_page_preview(true)
-                .send(),
-        );
-    }
-
-    pub fn send_md_reply(&self, source: &UpdateMessage, text: String) {
-        tokio::spawn(
-            source
-                .reply_to(text)
-                .parse_mode(ParseMode::MarkdownV2)
-                .disable_notification(true)
-                .disable_web_page_preview(true)
-                .send(),
-        );
-    }
-
+    // @todo Move this to outside helper function and call inside each Command actor
     /// Match command in both variations (with bot name and without bot name).
     /// @param data Input text received from Telegram.
     /// @param command Command name without leading slash.
@@ -231,6 +222,11 @@ impl BotMenu {
         // Some clients send /cancel593@AeglBot on click, so probably need to match longest
         // command prefix if the bot name also matches in command
         // (basically, if ends_with "@BotName", strip it off and match command prefixes)
+
+        // todo: split by @
+        // if right side exsist, must match bot name, otherwise bail
+        // if only left side, must match the command
+
         if data.ends_with(&format!("@{}", bot_name)) {
             let end = data.len() - bot_name.len() - 1;
             let data = &data[0..end];
@@ -331,15 +327,41 @@ impl Receive<SendMessage> for BotMenu {
 }
 
 #[derive(Clone, Debug)]
-pub struct RegisterCommand(Box<dyn BotCommand>);
+pub struct SendMessageReply(String, UpdateMessage, Format, Notify);
 
-impl Receive<RegisterCommand> for BotMenu {
+impl Receive<SendMessageReply> for BotMenu {
     type Msg = BotMenuMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: RegisterCommand, _sender: Sender) {
-        self.register_command(msg.0);
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessageReply, _sender: Sender) {
+        let fut = msg
+            .1
+            .reply_to(msg.0)
+            .disable_notification(match msg.3 {
+                Notify::On => false,
+                Notify::Off => true,
+            })
+            .disable_web_page_preview(true);
+
+        let fut = match msg.2 {
+            Format::Html => fut.parse_mode(ParseMode::Html),
+            Format::Markdown => fut.parse_mode(ParseMode::MarkdownV2),
+            Format::Plain => fut,
+        };
+
+        ctx.run(fut);
     }
 }
+
+// #[derive(Clone, Debug)]
+// pub struct RegisterCommand(Box<dyn BotCommand>);
+//
+// impl Receive<RegisterCommand> for BotMenu {
+//     type Msg = BotMenuMsg;
+//
+//     fn receive(&mut self, ctx: &Context<Self::Msg>, msg: RegisterCommand, _sender: Sender) {
+//         self.register_command(msg.0);
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

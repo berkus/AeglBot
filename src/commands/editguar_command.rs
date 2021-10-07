@@ -7,6 +7,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct EditGuardianCommand;
 
 command_ctor!(EditGuardianCommand);

@@ -12,6 +12,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct CancelCommand;
 
 command_ctor!(CancelCommand);

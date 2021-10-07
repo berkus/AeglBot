@@ -12,6 +12,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct ActivitiesCommand;
 
 command_ctor!(ActivitiesCommand);

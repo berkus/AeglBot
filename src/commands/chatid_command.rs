@@ -3,6 +3,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct ChatidCommand;
 
 command_ctor!(ChatidCommand);

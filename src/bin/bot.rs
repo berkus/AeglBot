@@ -15,14 +15,14 @@ use {
             },
             *,
         },
-        BotMenu,
+        BotMenu, UpdateMessage,
     },
     dotenv::dotenv,
     futures::{Future, Stream},
     // riker::prelude::*, doesn't work here!
     riker::{
         actor::Tell,
-        actors::{ActorRefFactory, ActorSystem},
+        actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Subscribe},
     },
     std::{env, time::Instant},
     teloxide::{prelude::*, requests::ResponseResult},
@@ -104,33 +104,52 @@ async fn main() {
 
     let bot = sys.actor_of_args::<BotMenu, _>("bot", (bot_name, token))?;
 
-    bot.tell(RegisterCommand(ActivitiesCommand::new()), None);
-    bot.tell(RegisterCommand(CancelCommand::new()), None);
-    bot.tell(RegisterCommand(D2weekCommand::new()), None);
-    bot.tell(RegisterCommand(D1weekCommand::new()), None);
-    bot.tell(RegisterCommand(EditCommand::new()), None);
-    bot.tell(RegisterCommand(EditGuardianCommand::new()), None);
-    bot.tell(RegisterCommand(HelpCommand::new()), None);
-    bot.tell(RegisterCommand(InfoCommand::new()), None);
-    bot.tell(RegisterCommand(JoinCommand::new()), None);
-    bot.tell(RegisterCommand(LfgCommand::new()), None);
-    bot.tell(RegisterCommand(ListCommand::new()), None);
-    bot.tell(RegisterCommand(ManageCommand::new()), None);
-    bot.tell(RegisterCommand(PsnCommand::new()), None);
-    bot.tell(RegisterCommand(WhoisCommand::new()), None);
+    let chan: ChannelRef<UpdateMessage> = channel("commands", &sys).unwrap();
+
+    fn new_command<T>(sys: ActorSystem, chan: &ChannelRef<UpdateMessage>) /*->anyhow::Result<()>*/
+    {
+        let cmd = sys.actor_of::<T>()?;
+        chan.tell(
+            Subscribe {
+                actor: cmd,
+                topic: "raw-commands".into(),
+            },
+            None,
+        );
+    }
+
+    // new_command::<ActivitiesCommand>();
+    // new_command::<CancelCommand>();
+    // new_command::<D2weekCommand>();
+    // new_command::<D1weekCommand>();
+    // new_command::<EditCommand>();
+    // new_command::<EditGuardianCommand>();
+    // new_command::<HelpCommand>();
+    new_command::<InfoCommand>(sys, &chan);
+    // new_command::<JoinCommand>();
+    // new_command::<LfgCommand>();
+    // new_command::<ListCommand>();
+    // new_command::<ManageCommand>();
+    // new_command::<PsnCommand>();
+    // new_command::<WhoisCommand>();
 
     // Reminder tasks
-    let actor = sys
+    let reminders = sys
         .actor_of_args::<ReminderActor, _>("reminders", (bot.clone(), lfg_chat))
         .unwrap();
     // Schedule first run, the actor handler will reschedule.
-    actor.tell(ScheduleNextMinute, None);
-    actor.tell(ScheduleNextDay, None);
-    actor.tell(ScheduleNextWeek, None);
+    reminders.tell(ScheduleNextMinute, None);
+    reminders.tell(ScheduleNextDay, None);
+    reminders.tell(ScheduleNextWeek, None);
 
     teloxide::repl(bot.bot.clone(), |message| async {
-        // @todo tell bot to process messages
-        bot.tell(ProcessMessage(message), None);
+        chan.tell(
+            Publish {
+                msg: message,
+                topic: "raw-commands".into(),
+            },
+            None,
+        );
         ResponseResult::<()>::Ok(())
     })
     .await;

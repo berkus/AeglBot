@@ -6,6 +6,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct D2weekCommand;
 
 command_ctor!(D2weekCommand);

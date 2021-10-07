@@ -9,6 +9,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct PsnCommand;
 
 command_ctor!(PsnCommand);

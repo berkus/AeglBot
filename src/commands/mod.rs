@@ -9,46 +9,64 @@ use {
 };
 
 #[macro_export]
-macro_rules! command_ctor {
-    ($name:ident) => {
-        impl $name {
-            pub fn new() -> Box<Self> {
-                Box::new($name)
+macro_rules! command_actor {
+    ($name:ident, [ $msgs:ident ]) => {
+        use riker::actors::{
+            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender,
+        };
+
+        #[derive(Clone)]
+        #[actor($msgs)]
+        pub struct $name {
+            bot_ref: ActorRef<BotMenu>,
+        }
+
+        impl Actor for $name {
+            type Msg = InfoCommandMsg;
+
+            fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
+                self.receive(ctx, msg, sender);
+            }
+        }
+
+        impl ActorFactoryArgs<ActorRef<BotMenu>> for $name {
+            fn create_args(bot_ref: ActorRef<BotMenu>) -> Self {
+                Self { bot_ref }
             }
         }
     };
 }
 
-mod activities_command;
-pub use self::activities_command::*;
-mod cancel_command;
-pub use self::cancel_command::*;
-mod chatid_command;
-pub use self::chatid_command::*;
-mod d2week_command;
-pub use self::d2week_command::*;
-mod dweek_command;
-pub use self::dweek_command::*;
-mod edit_command;
-pub use self::edit_command::*;
-mod editguar_command;
-pub use self::editguar_command::*;
-mod help_command;
-pub use self::help_command::*;
+// mod activities_command;
+// pub use self::activities_command::*;
+// mod cancel_command;
+// pub use self::cancel_command::*;
+// mod chatid_command;
+// pub use self::chatid_command::*;
+// mod d2week_command;
+// pub use self::d2week_command::*;
+// mod dweek_command;
+// pub use self::dweek_command::*;
+// mod edit_command;
+// pub use self::edit_command::*;
+// mod editguar_command;
+// pub use self::editguar_command::*;
+// mod help_command;
+// pub use self::help_command::*;
 mod info_command;
 pub use self::info_command::*;
-mod join_command;
-pub use self::join_command::*;
-mod lfg_command;
-pub use self::lfg_command::*;
-mod list_command;
-pub use self::list_command::*;
-mod manage_command;
-pub use self::manage_command::*;
-mod psn_command;
-pub use self::psn_command::*;
-mod whois_command;
-pub use self::whois_command::*;
+// mod join_command;
+// pub use self::join_command::*;
+// mod lfg_command;
+// pub use self::lfg_command::*;
+// mod list_command;
+// pub use self::list_command::*;
+// mod manage_command;
+// pub use self::manage_command::*;
+// mod psn_command;
+// pub use self::psn_command::*;
+// mod whois_command;
+// pub use self::whois_command::*;
 
 pub fn decapitalize(s: &str) -> String {
     s.chars()

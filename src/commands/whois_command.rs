@@ -8,6 +8,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct WhoisCommand;
 
 command_ctor!(WhoisCommand);

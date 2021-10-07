@@ -14,6 +14,7 @@ use {
     teloxide::prelude::*,
 };
 
+#[derive(Clone)]
 pub struct LfgCommand;
 
 command_ctor!(LfgCommand);
