@@ -1,36 +1,44 @@
 use {
     crate::{
+        bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg, Format, Notify, SendMessageReply},
+        DbConnection,
         {models::Guardian, schema::guardians::dsl::*},
-        {BotMenu, DbConnection},
     },
     diesel::prelude::*,
     futures::Future,
+    riker::actors::{ActorRef, Tell},
     teloxide::prelude::*,
 };
 
 #[macro_export]
 macro_rules! command_actor {
-    ($name:ident, [ $msgs:ident ]) => {
+    ($name:ident, [ $($msgs:ident),* ]) => {
+        use crate::{bot_actor::BotActorMsg, NamedActor};
         use riker::actors::{
             actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender,
         };
+        use paste::paste;
 
         #[derive(Clone)]
-        #[actor($msgs)]
+        #[actor($($msgs)*)]
         pub struct $name {
-            bot_ref: ActorRef<BotMenu>,
+            bot_ref: ActorRef<BotActorMsg>,
+        }
+
+        impl NamedActor for $name {
+            fn name() -> String { std::stringify!($name).into() }
         }
 
         impl Actor for $name {
-            type Msg = InfoCommandMsg;
+            type Msg = paste! { [<$name Msg>] };
 
             fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
                 self.receive(ctx, msg, sender);
             }
         }
 
-        impl ActorFactoryArgs<ActorRef<BotMenu>> for $name {
-            fn create_args(bot_ref: ActorRef<BotMenu>) -> Self {
+        impl ActorFactoryArgs<ActorRef<BotActorMsg>> for $name {
+            fn create_args(bot_ref: ActorRef<BotActorMsg>) -> Self {
                 Self { bot_ref }
             }
         }
@@ -55,7 +63,6 @@ macro_rules! command_actor {
 // pub use self::help_command::*;
 mod info_command;
 pub use self::info_command::*;
-use crate::UpdateMessage;
 // mod join_command;
 // pub use self::join_command::*;
 // mod lfg_command;
@@ -78,15 +85,20 @@ pub fn decapitalize(s: &str) -> String {
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub fn validate_username(
-    bot: &BotMenu,
-    message: &UpdateMessage,
+    bot: &ActorRef<BotActorMsg>,
+    message: &ActorUpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     let username = match message.update.from().as_ref().unwrap().username {
         None => {
-            bot.send_plain_reply(
-                message,
-                "You have no telegram username, register your telegram account first.".into(),
+            bot.tell(
+                SendMessageReply(
+                    "You have no telegram username, register your telegram account first.".into(),
+                    message.clone(),
+                    Format::Plain,
+                    Notify::Off,
+                ),
+                None,
             );
             return None;
         }
@@ -101,14 +113,27 @@ pub fn validate_username(
     match db_user {
         Ok(Some(user)) => Some(user),
         Ok(None) => {
-            bot.send_plain_reply(
-                message,
-                "You need to link your PSN account first: use /psn command".into(),
+            bot.tell(
+                SendMessageReply(
+                    "You need to link your PSN account first: use /psn command".into(),
+                    message.clone(),
+                    Format::Plain,
+                    Notify::Off,
+                ),
+                None,
             );
             None
         }
         Err(_) => {
-            bot.send_plain_reply(message, "Error querying guardian info.".into());
+            bot.tell(
+                SendMessageReply(
+                    "Error querying guardian info.".into(),
+                    message.clone(),
+                    Format::Plain,
+                    Notify::Off,
+                ),
+                None,
+            );
             None
         }
     }
@@ -116,8 +141,8 @@ pub fn validate_username(
 
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub fn admin_check(
-    bot: &BotMenu,
-    message: &UpdateMessage,
+    bot: &ActorRef<BotActorMsg>,
+    message: &ActorUpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     validate_username(bot, message, connection).filter(|g| g.is_admin)

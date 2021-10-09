@@ -1,8 +1,9 @@
 use {
     crate::{
+        bot_actor::{BotActor, BotActorMsg, Format, Notify, SendMessage},
         datetime::{nowtz, reference_date},
         models::PlannedActivity,
-        BotConnection, BotMenu, BotMenuMsg, Format, Notify, SendMessage,
+        BotConnection,
     },
     anyhow::Result,
     diesel::{
@@ -16,7 +17,7 @@ use {
     teloxide::types::ChatId,
 };
 
-pub fn check(bot: ActorRef<BotMenuMsg>, connection: BotConnection, chat_id: ChatId) -> Result<()> {
+pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) -> Result<()> {
     use crate::schema::plannedactivities::dsl::*;
 
     log::info!("reminder check");

@@ -4,27 +4,19 @@
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
 #![feature(box_syntax, nll)]
+#![feature(associated_type_bounds)]
 
 use {
     aegl_bot::{
-        commands::*,
-        datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
-        services::{
-            reminder_actor::{
-                ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
-            },
-            *,
+        bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
+        services::reminder_actor::{
+            ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
-        BotMenu, UpdateMessage,
     },
     dotenv::dotenv,
-    futures::{Future, Stream},
     // riker::prelude::*, doesn't work here!
-    riker::{
-        actor::Tell,
-        actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Subscribe},
-    },
-    std::{env, time::Instant},
+    riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
+    std::env,
     teloxide::{prelude::*, requests::ResponseResult},
 };
 
@@ -88,7 +80,7 @@ fn setup_logging() -> Result<(), fern::InitError> {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
@@ -102,55 +94,35 @@ async fn main() {
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
     let sys = ActorSystem::new().unwrap();
 
-    let bot = sys.actor_of_args::<BotMenu, _>("bot", (bot_name, token))?;
+    let tgbot = Bot::new(token);
 
     let chan: ChannelRef<ActorUpdateMessage> = channel("commands", &sys).unwrap();
 
-    fn new_command<T>(sys: ActorSystem, chan: &ChannelRef<ActorUpdateMessage>) /*->anyhow::Result<()>*/
-    {
-        let cmd = sys.actor_of::<T>()?;
-        chan.tell(
-            Subscribe {
-                actor: cmd,
-                topic: "raw-commands".into(),
-            },
-            None,
-        );
-    }
-
-    // new_command::<ActivitiesCommand>();
-    // new_command::<CancelCommand>();
-    // new_command::<D2weekCommand>();
-    // new_command::<D1weekCommand>();
-    // new_command::<EditCommand>();
-    // new_command::<EditGuardianCommand>();
-    // new_command::<HelpCommand>();
-    new_command::<InfoCommand>(sys, &chan);
-    // new_command::<JoinCommand>();
-    // new_command::<LfgCommand>();
-    // new_command::<ListCommand>();
-    // new_command::<ManageCommand>();
-    // new_command::<PsnCommand>();
-    // new_command::<WhoisCommand>();
+    let bot_ref =
+        sys.actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone()))?;
 
     // Reminder tasks
     let reminders = sys
-        .actor_of_args::<ReminderActor, _>("reminders", (bot.clone(), lfg_chat))
+        .actor_of_args::<ReminderActor, _>("reminders", (bot_ref.clone(), lfg_chat))
         .unwrap();
     // Schedule first run, the actor handler will reschedule.
     reminders.tell(ScheduleNextMinute, None);
     reminders.tell(ScheduleNextDay, None);
     reminders.tell(ScheduleNextWeek, None);
 
-    teloxide::repl(bot.bot.clone(), |message| async {
-        chan.tell(
-            Publish {
-                msg: message.into::<ActorUpdateMessage>(),
-                topic: "raw-commands".into(),
-            },
-            None,
-        );
-        ResponseResult::<()>::Ok(())
+    teloxide::repl(tgbot.clone(), move |message: UpdateMessage| {
+        let chan = chan.clone();
+        async move {
+            chan.tell(
+                Publish {
+                    msg: message.into(),
+                    topic: "raw-commands".into(),
+                },
+                None,
+            );
+            ResponseResult::<()>::Ok(())
+        }
     })
     .await;
+    Ok(())
 }

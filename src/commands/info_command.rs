@@ -2,7 +2,8 @@
 use procfs::{ProcResult, Process};
 use {
     crate::{
-        ActorUpdateMessage, BotCommand, BotMenu, DbConnection, Format, Notify, SendMessageReply,
+        bot_actor::{ActorUpdateMessage, BotActor, Format, Notify, SendMessageReply},
+        BotCommand, DbConnection,
     },
     riker::actors::{Receive, Tell},
     teloxide::prelude::*,
@@ -42,7 +43,7 @@ impl BotCommand for InfoCommand {
 impl Receive<ActorUpdateMessage> for InfoCommand {
     type Msg = InfoCommandMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
         self.bot_ref.tell(
             SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
             None,
