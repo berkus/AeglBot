@@ -113,6 +113,7 @@ async fn main() -> anyhow::Result<()> {
     teloxide::repl(tgbot.clone(), move |message: UpdateMessage| {
         let chan = chan.clone();
         async move {
+            log::debug!("Processing message {}", message.update.id);
             chan.tell(
                 Publish {
                     msg: message.into(),

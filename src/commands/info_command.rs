@@ -44,6 +44,7 @@ impl Receive<ActorUpdateMessage> for InfoCommand {
     type Msg = InfoCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+        log::debug!("Received raw-command");
         self.bot_ref.tell(
             SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
             None,

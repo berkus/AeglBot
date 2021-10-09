@@ -298,6 +298,7 @@ impl Receive<SendMessage> for BotActor {
     type Msg = BotActorMsg;
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessage, _sender: Sender) {
+        log::debug!("SendMessage: {}", &msg.0);
         let fut = self
             .bot
             .send_message(msg.1, msg.0)
@@ -321,6 +322,7 @@ impl Receive<SendMessageReply> for BotActor {
     type Msg = BotActorMsg;
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessageReply, _sender: Sender) {
+        log::debug!("SendMessageReply: {}", &msg.0);
         let message = msg.1;
 
         let fut = self
