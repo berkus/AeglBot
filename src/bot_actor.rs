@@ -3,7 +3,7 @@ use {
     diesel::{pg::PgConnection, prelude::*},
     diesel_logger::LoggingConnection,
     dotenv::dotenv,
-    futures::{Future, Stream},
+    futures::{executor::block_on, Future, Stream},
     futures_retry::{RetryPolicy, StreamRetryExt},
     r2d2::Pool,
     riker::{
@@ -299,7 +299,7 @@ impl Receive<SendMessage> for BotActor {
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessage, _sender: Sender) {
         log::debug!("SendMessage: {}", &msg.0);
-        let fut = self
+        let resp = self
             .bot
             .send_message(msg.1, msg.0)
             .disable_notification(match msg.3 {
@@ -308,13 +308,18 @@ impl Receive<SendMessage> for BotActor {
             })
             .disable_web_page_preview(true);
 
-        let mut fut = match msg.2 {
-            Format::Html => fut.parse_mode(ParseMode::Html),
-            Format::Markdown => fut.parse_mode(ParseMode::MarkdownV2),
-            Format::Plain => fut,
+        let mut resp = match msg.2 {
+            Format::Html => resp.parse_mode(ParseMode::Html),
+            Format::Markdown => resp.parse_mode(ParseMode::MarkdownV2),
+            Format::Plain => resp,
         };
 
-        ctx.run(fut.send()).unwrap();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        rt.block_on(resp.send());
     }
 }
 
@@ -341,6 +346,11 @@ impl Receive<SendMessageReply> for BotActor {
             Format::Plain => fut,
         };
 
-        ctx.run(fut.send()).unwrap();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        rt.block_on(fut.send());
     }
 }
