@@ -95,7 +95,7 @@ pub fn ascendant_challenge_cycle() -> String {
 
     let ac_week = ascendant_challenge_week_number(reference_date()) as usize;
     format!(
-        "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): {name} [{loc}]({url})",
+        "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): [{name}]({url}) in the {loc}",
         name = challenges[ac_week],
         loc = locations[ac_week],
         url = urls[ac_week],
