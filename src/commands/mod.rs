@@ -23,6 +23,7 @@ macro_rules! command_actor {
         #[actor($($msgs)*)]
         pub struct $name {
             bot_ref: ActorRef<BotActorMsg>,
+            bot_name: String,
         }
 
         impl NamedActor for $name {
@@ -37,9 +38,9 @@ macro_rules! command_actor {
             }
         }
 
-        impl ActorFactoryArgs<ActorRef<BotActorMsg>> for $name {
-            fn create_args(bot_ref: ActorRef<BotActorMsg>) -> Self {
-                Self { bot_ref }
+        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String)> for $name {
+            fn create_args((bot_ref, bot_name): (ActorRef<BotActorMsg>, String)) -> Self {
+                Self { bot_ref, bot_name }
             }
         }
     };
