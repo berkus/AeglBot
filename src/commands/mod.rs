@@ -26,7 +26,7 @@ macro_rules! command_actor {
         }
 
         impl NamedActor for $name {
-            fn name() -> String { std::stringify!($name).into() }
+            fn actor_name() -> String { std::stringify!($name).into() }
         }
 
         impl Actor for $name {

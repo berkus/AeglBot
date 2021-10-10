@@ -30,7 +30,7 @@ pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
 pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
 
 pub trait NamedActor {
-    fn name() -> String;
+    fn actor_name() -> String;
 }
 
 pub trait BotCommand {
