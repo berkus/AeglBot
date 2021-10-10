@@ -104,21 +104,21 @@ impl BotActor {
 
     // Internal helpers
 
-    fn handle_error(error: anyhow::Error) -> RetryPolicy<anyhow::Error> {
-        // count errors
-        log::error!("handle_error");
-        match error.downcast_ref::<anyhow::Error>() {
-            Some(te) => {
-                log::error!("Telegram error: {}, retrying connection.", te);
-                RetryPolicy::WaitRetry(Duration::from_secs(30))
-            }
-            None => {
-                log::error!("handle_error didn't match, real error {:?}", error);
-                //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
-                RetryPolicy::ForwardError(error)
-            }
-        }
-    }
+    // fn handle_error(error: anyhow::Error) -> RetryPolicy<anyhow::Error> {
+    //     // count errors
+    //     log::error!("handle_error");
+    //     match error.downcast_ref::<anyhow::Error>() {
+    //         Some(te) => {
+    //             log::error!("Telegram error: {}, retrying connection.", te);
+    //             RetryPolicy::WaitRetry(Duration::from_secs(30))
+    //         }
+    //         None => {
+    //             log::error!("handle_error didn't match, real error {:?}", error);
+    //             //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
+    //             RetryPolicy::ForwardError(error)
+    //         }
+    //     }
+    // }
 
     // @todo Make this a message processor in Actor
     // @todo Send commands as messages too? Need dynamic command definition then...
