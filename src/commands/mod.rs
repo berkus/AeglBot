@@ -50,12 +50,12 @@ macro_rules! command_actor {
 // pub use self::activities_command::*;
 // mod cancel_command;
 // pub use self::cancel_command::*;
-// mod chatid_command;
-// pub use self::chatid_command::*;
-// mod d2week_command;
-// pub use self::d2week_command::*;
-// mod dweek_command;
-// pub use self::dweek_command::*;
+mod chatid_command;
+pub use self::chatid_command::*;
+mod d2week_command;
+pub use self::d2week_command::*;
+mod dweek_command;
+pub use self::dweek_command::*;
 // mod edit_command;
 // pub use self::edit_command::*;
 // mod editguar_command;

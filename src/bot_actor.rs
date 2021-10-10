@@ -1,5 +1,5 @@
 use {
-    crate::{commands::InfoCommand, BotConnection, DbConnPool, NamedActor},
+    crate::{commands::*, BotConnection, DbConnPool, NamedActor},
     diesel::{pg::PgConnection, prelude::*},
     diesel_logger::LoggingConnection,
     dotenv::dotenv,
@@ -173,8 +173,9 @@ impl Actor for BotActor {
 
         // new_command::<ActivitiesCommand>();
         // new_command::<CancelCommand>();
-        // new_command::<D2weekCommand>();
-        // new_command::<D1weekCommand>();
+        new_command!(ChatidCommand);
+        new_command!(D1weekCommand);
+        new_command!(D2weekCommand);
         // new_command::<EditCommand>();
         // new_command::<EditGuardianCommand>();
         // new_command::<HelpCommand>();

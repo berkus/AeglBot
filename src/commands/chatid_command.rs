@@ -1,12 +1,13 @@
 use {
-    crate::{BotCommand, BotMenu, DbConnection},
-    teloxide::prelude::*,
+    crate::{
+        bot_actor::{ActorUpdateMessage, BotActor, Format, Notify, SendMessageReply},
+        commands::match_command,
+        BotCommand, DbConnection,
+    },
+    riker::actors::{Receive, Tell},
 };
 
-#[derive(Clone)]
-pub struct ChatidCommand;
-
-command_ctor!(ChatidCommand);
+command_actor!(ChatidCommand, [ActorUpdateMessage]);
 
 impl BotCommand for ChatidCommand {
     fn prefix(&self) -> &'static str {
@@ -16,14 +17,22 @@ impl BotCommand for ChatidCommand {
     fn description(&self) -> &'static str {
         "Figure out the numeric chat ID"
     }
+}
 
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateWithCx<AutoSend<Bot>, Message>,
-        _command: Option<String>,
-        _name: Option<String>,
-    ) {
-        bot.send_html_reply(&message, format!("ChatId: {}", message.chat_id()));
+impl Receive<ActorUpdateMessage> for ChatidCommand {
+    type Msg = ChatidCommandMsg;
+
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+        if let (Some(_), _) = match_command(&msg, self.prefix(), &self.bot_name) {
+            self.bot_ref.tell(
+                SendMessageReply(
+                    format!("ChatId: {}", msg.update.chat_id()),
+                    msg,
+                    Format::Plain,
+                    Notify::Off,
+                ),
+                None,
+            );
+        }
     }
 }

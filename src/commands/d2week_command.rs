@@ -1,15 +1,14 @@
 use {
     crate::{
+        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        commands::match_command,
         services::this_week_in_d2,
-        {BotCommand, BotMenu, DbConnection, UpdateMessage},
+        BotCommand,
     },
-    teloxide::prelude::*,
+    riker::actors::{Receive, Tell},
 };
 
-#[derive(Clone)]
-pub struct D2weekCommand;
-
-command_ctor!(D2weekCommand);
+command_actor!(D2weekCommand, [ActorUpdateMessage]);
 
 impl BotCommand for D2weekCommand {
     fn prefix(&self) -> &'static str {
@@ -19,14 +18,17 @@ impl BotCommand for D2weekCommand {
     fn description(&self) -> &'static str {
         "Show current Destiny 2 week"
     }
+}
 
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateMessage,
-        _command: Option<String>,
-        _name: Option<String>,
-    ) {
-        bot.send_md_reply(&message, this_week_in_d2());
+impl Receive<ActorUpdateMessage> for D2weekCommand {
+    type Msg = D2weekCommandMsg;
+
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+        if let (Some(_), _) = match_command(&msg, self.prefix(), &self.bot_name) {
+            self.bot_ref.tell(
+                SendMessageReply(this_week_in_d2(), msg, Format::Markdown, Notify::Off),
+                None,
+            );
+        }
     }
 }
