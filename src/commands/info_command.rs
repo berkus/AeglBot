@@ -3,6 +3,7 @@ use procfs::{ProcResult, Process};
 use {
     crate::{
         bot_actor::{ActorUpdateMessage, BotActor, Format, Notify, SendMessageReply},
+        commands::match_command,
         BotCommand, DbConnection,
     },
     riker::actors::{Receive, Tell},
@@ -45,9 +46,11 @@ impl Receive<ActorUpdateMessage> for InfoCommand {
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
         log::debug!("Received raw-command");
-        self.bot_ref.tell(
-            SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
-            None,
-        );
+        if let (Some(_), Some(_)) = match_command(&msg, self.prefix(), &self.bot_name) {
+            self.bot_ref.tell(
+                SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
+                None,
+            );
+        }
     }
 }
