@@ -220,7 +220,7 @@ pub struct SendMessageReply(pub String, pub ActorUpdateMessage, pub Format, pub 
 impl Receive<SendMessage> for BotActor {
     type Msg = BotActorMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessage, _sender: Sender) {
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: SendMessage, _sender: Sender) {
         log::debug!("SendMessage: {}", &msg.0);
         let resp = self
             .bot
@@ -231,7 +231,7 @@ impl Receive<SendMessage> for BotActor {
             })
             .disable_web_page_preview(true);
 
-        let mut resp = match msg.2 {
+        let resp = match msg.2 {
             Format::Html => resp.parse_mode(ParseMode::Html),
             Format::Markdown => resp.parse_mode(ParseMode::MarkdownV2),
             Format::Plain => resp,
@@ -242,14 +242,14 @@ impl Receive<SendMessage> for BotActor {
             .build()
             .unwrap();
 
-        rt.block_on(resp.send());
+        rt.block_on(resp.send()).unwrap();
     }
 }
 
 impl Receive<SendMessageReply> for BotActor {
     type Msg = BotActorMsg;
 
-    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: SendMessageReply, _sender: Sender) {
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: SendMessageReply, _sender: Sender) {
         log::debug!("SendMessageReply: {}", &msg.0);
         let message = msg.1;
 
@@ -263,7 +263,7 @@ impl Receive<SendMessageReply> for BotActor {
             })
             .disable_web_page_preview(true);
 
-        let mut fut = match msg.2 {
+        let fut = match msg.2 {
             Format::Html => fut.parse_mode(ParseMode::Html),
             Format::Markdown => fut.parse_mode(ParseMode::MarkdownV2),
             Format::Plain => fut,
@@ -274,6 +274,6 @@ impl Receive<SendMessageReply> for BotActor {
             .build()
             .unwrap();
 
-        rt.block_on(fut.send());
+        rt.block_on(fut.send()).unwrap();
     }
 }
