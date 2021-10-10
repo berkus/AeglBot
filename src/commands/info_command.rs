@@ -7,7 +7,6 @@ use {
         BotCommand, DbConnection,
     },
     riker::actors::{Receive, Tell},
-    teloxide::prelude::*,
 };
 
 command_actor!(InfoCommand, [ActorUpdateMessage]);
@@ -45,8 +44,7 @@ impl Receive<ActorUpdateMessage> for InfoCommand {
     type Msg = InfoCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
-        log::debug!("Received raw-command");
-        if let (Some(_), Some(_)) = match_command(&msg, self.prefix(), &self.bot_name) {
+        if let (Some(_), _) = match_command(&msg, self.prefix(), &self.bot_name) {
             self.bot_ref.tell(
                 SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
                 None,
