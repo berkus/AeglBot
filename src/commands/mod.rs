@@ -168,8 +168,8 @@ pub fn guardian_lookup(
 }
 
 /// Match command in both variations (with bot name and without bot name).
-/// @param data Input text received from Telegram.
-/// @param command Command name without leading slash.
+/// @param msg Input message received from Telegram.
+/// @param command Command name with leading slash, if it's a root command. FIXME: Is it correct?
 /// @param bot_name Registered bot name.
 /// @returns A pair of matched command and remainder of the message text.
 /// (None, None) if command did not match,
@@ -211,6 +211,7 @@ fn match_command(
                     log::debug!(".. matched");
                     Some((
                         Some(cmd.into()),
+                        // TODO: Erase the bot name here, if any!
                         data.get(command.len()..)
                             .map(|x| x.trim_start().to_string())
                             .filter(|y| !y.is_empty()),
