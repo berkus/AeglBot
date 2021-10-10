@@ -159,7 +159,7 @@ impl Actor for BotActor {
         macro_rules! new_command {
             ($T:ident) => {
                 let cmd = ctx
-                    .actor_of_args::<$T, _>(&$T::name(), ctx.myself().clone())
+                    .actor_of_args::<$T, _>(&$T::actor_name(), (ctx.myself().clone(), self.bot_name.clone()))
                     .unwrap(); // FIXME: panics in pre_start do not cause actor restart, so this is faulty!
                 self.update_channel.tell(
                     Subscribe {
