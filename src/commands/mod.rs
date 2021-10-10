@@ -165,3 +165,59 @@ pub fn guardian_lookup(
     }
     // @todo: lookup by integer id, positive
 }
+
+/// Match command in both variations (with bot name and without bot name).
+/// @param data Input text received from Telegram.
+/// @param command Command name without leading slash.
+/// @param bot_name Registered bot name.
+/// @returns A pair of matched command and remainder of the message text.
+/// (None, None) if command did not match,
+/// (command, and Some remaining text after command otherwise).
+fn match_command(
+    msg: &ActorUpdateMessage,
+    command: &str,
+    bot_name: &str,
+) -> (Option<String>, Option<String>) {
+    // Take first token in the text - that must be the command, if any.
+    // Split it by @ to see if we have a bot name attached
+    // If we do - it must match out bot name completely.
+    // Strip trailing numeric digits from the left side - this might be part of the command argument, remember it.
+    // The rest of the left side must match EXACTLY, not as a prefix.
+    msg.update
+        .text()
+        .map(|data| {
+            log::debug!("matching {:#?} against {:#?}", data, command);
+            data.split_whitespace()
+                .next()
+                .map(|s| {
+                    let mut matches = s.split('@');
+                    let cmd = matches.next();
+                    if let Some(bot) = matches.next() {
+                        if bot != bot_name {
+                            log::debug!(".. some other bot matched");
+                            return None;
+                        }
+                    }
+                    cmd
+                })
+                .unwrap_or(None)
+                .map(|cmd| {
+                    // Some clients send /cancel593@AeglBot on click, so strip the numeric code at the end, if any.
+                    let cmd = cmd.trim_end_matches(|c: char| c.is_digit(10));
+                    if cmd != command {
+                        return None;
+                    }
+                    log::debug!(".. matched");
+                    Some((
+                        Some(cmd.into()),
+                        data.get(command.len()..)
+                            .map(|x| x.trim_start().to_string())
+                            .filter(|y| !y.is_empty()),
+                    ))
+                })
+                .unwrap_or(None)
+        })
+        .unwrap_or(None)
+        .or(Some((None, None)))
+        .unwrap()
+}
