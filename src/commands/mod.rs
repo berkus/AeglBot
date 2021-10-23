@@ -13,7 +13,7 @@ use {
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use crate::{bot_actor::BotActorMsg, NamedActor};
+        use crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
         use riker::actors::{
             actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender,
         };
@@ -24,6 +24,13 @@ macro_rules! command_actor {
         pub struct $name {
             bot_ref: ActorRef<BotActorMsg>,
             bot_name: String,
+            connection_pool: DbConnPool,
+        }
+
+        impl $name {
+            pub fn connection(&self) -> BotConnection {
+                self.connection_pool.get().unwrap()
+            }
         }
 
         impl NamedActor for $name {
@@ -38,9 +45,9 @@ macro_rules! command_actor {
             }
         }
 
-        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String)> for $name {
-            fn create_args((bot_ref, bot_name): (ActorRef<BotActorMsg>, String)) -> Self {
-                Self { bot_ref, bot_name }
+        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String, DbConnPool)> for $name {
+            fn create_args((bot_ref, bot_name, connection_pool): (ActorRef<BotActorMsg>, String, DbConnPool)) -> Self {
+                Self { bot_ref, bot_name, connection_pool }
             }
         }
     };

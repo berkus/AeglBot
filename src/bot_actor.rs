@@ -145,10 +145,6 @@ impl BotActor {
             .build(manager)
             .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
     }
-
-    pub fn connection(&self) -> BotConnection {
-        self.connection_pool.get().unwrap()
-    }
 }
 
 impl Actor for BotActor {
@@ -159,7 +155,7 @@ impl Actor for BotActor {
         macro_rules! new_command {
             ($T:ident) => {
                 let cmd = ctx
-                    .actor_of_args::<$T, _>(&$T::actor_name(), (ctx.myself().clone(), self.bot_name.clone()))
+                    .actor_of_args::<$T, _>(&$T::actor_name(), (ctx.myself().clone(), self.bot_name.clone(), self.connection_pool.clone()))
                     .unwrap(); // FIXME: panics in pre_start do not cause actor restart, so this is faulty!
                 self.update_channel.tell(
                     Subscribe {
