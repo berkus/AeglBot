@@ -23,7 +23,7 @@ impl Receive<ActorUpdateMessage> for ChatidCommand {
     type Msg = ChatidCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(&msg, self.prefix(), &self.bot_name) {
+        if let (Some(_), _) = match_command(msg.update.text(), self.prefix(), &self.bot_name) {
             self.bot_ref.tell(
                 SendMessageReply(
                     format!("ChatId: {}", msg.update.chat_id()),

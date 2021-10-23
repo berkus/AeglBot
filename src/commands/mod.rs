@@ -182,7 +182,9 @@ pub fn guardian_lookup(
 /// (None, None) if command did not match,
 /// (command, and Some remaining text after command otherwise).
 fn match_command(
-    msg: &ActorUpdateMessage,
+    // TODO: pass msg.update.text()
+    // msg: &ActorUpdateMessage,
+    text: Option<&str>,
     command: &str,
     bot_name: &str,
 ) -> (Option<String>, Option<String>) {
@@ -191,42 +193,72 @@ fn match_command(
     // If we do - it must match out bot name completely.
     // Strip trailing numeric digits from the left side - this might be part of the command argument, remember it.
     // The rest of the left side must match EXACTLY, not as a prefix.
-    msg.update
-        .text()
-        .map(|data| {
-            log::debug!("matching {:#?} against {:#?}", data, command);
-            data.split_whitespace()
-                .next()
-                .map(|s| {
-                    let mut matches = s.split('@');
-                    let cmd = matches.next();
-                    if let Some(bot) = matches.next() {
-                        if bot != bot_name {
-                            log::debug!(".. some other bot matched");
-                            return None;
-                        }
-                    }
-                    cmd
-                })
-                .unwrap_or(None)
-                .map(|cmd| {
-                    // Some clients send /cancel593@AeglBot on click, so strip the numeric code at the end, if any.
-                    let cmd = cmd.trim_end_matches(|c: char| c.is_digit(10));
-                    if cmd != command {
+    text.map(|data| {
+        log::debug!("matching {:#?} against {:#?}", data, command);
+        data.split_whitespace()
+            .next()
+            .map(|s| {
+                let mut matches = s.split('@');
+                let cmd = matches.next();
+                if let Some(bot) = matches.next() {
+                    if bot != bot_name {
+                        log::debug!(".. some other bot matched");
                         return None;
                     }
-                    log::debug!(".. matched");
-                    Some((
-                        Some(cmd.into()),
-                        // TODO: Erase the bot name here, if any!
-                        data.get(command.len()..)
-                            .map(|x| x.trim_start().to_string())
-                            .filter(|y| !y.is_empty()),
-                    ))
-                })
-                .unwrap_or(None)
-        })
-        .unwrap_or(None)
-        .or(Some((None, None)))
-        .unwrap()
+                }
+                cmd
+            })
+            .unwrap_or(None)
+            .map(|cmd| {
+                // Some clients send /cancel593@AeglBot on click, so strip the numeric code at the end, if any.
+                let cmd = cmd.trim_end_matches(|c: char| c.is_digit(10));
+                if cmd != command {
+                    return None;
+                }
+                log::debug!(".. matched");
+                Some((
+                    Some(cmd.into()),
+                    data.get(command.len()..)
+                        .map(|x| {
+                            let prefix = x.matches(|c: char| c.is_digit(10)).nth(0).unwrap_or("");
+                            // "593@AeglBot something something"
+                            let x = x
+                                .trim_start_matches(prefix)
+                                .trim_start_matches("@")
+                                .trim_start_matches(bot_name)
+                                .trim_start();
+                            // TODO: Prepend the ID stripped from the command previously
+                            // "593 something something"
+                            format!("{} {}", prefix, x).trim_start().to_string()
+                        })
+                        .filter(|y| !y.is_empty()),
+                ))
+            })
+            .unwrap_or(None)
+    })
+    .unwrap_or(Some((None, None)))
+    .unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::match_command;
+
+    #[test]
+    fn test_command_match_without_bot_name_and_no_prefix() {
+        assert_eq!(
+            match_command(Some("/cmd some text"), "/cmd", "BotName"),
+            (Some("/cmd".into()), Some(" some text".into()))
+        );
+    }
+
+    // ..all the way to
+
+    #[test]
+    fn test_command_match_with_bot_name_and_prefix() {
+        assert_eq!(
+            match_command(Some("/cmd735@TestBot some text"), "/cmd", "TestBot"),
+            (Some("/cmd".into()), Some("735 some text".into()))
+        );
+    }
 }

@@ -44,7 +44,7 @@ impl Receive<ActorUpdateMessage> for InfoCommand {
     type Msg = InfoCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(&msg, self.prefix(), &self.bot_name) {
+        if let (Some(_), _) = match_command(msg.update.text(), self.prefix(), &self.bot_name) {
             self.bot_ref.tell(
                 SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
                 None,
