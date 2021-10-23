@@ -5,7 +5,7 @@ use {
         services::this_week_in_d1,
         BotCommand,
     },
-    riker::actors::{Receive, Tell},
+    riker::actors::Tell,
 };
 
 command_actor!(D1weekCommand, [ActorUpdateMessage]);

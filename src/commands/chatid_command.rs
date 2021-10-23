@@ -4,7 +4,7 @@ use {
         commands::match_command,
         BotCommand, DbConnection,
     },
-    riker::actors::{Receive, Tell},
+    riker::actors::Tell,
 };
 
 command_actor!(ChatidCommand, [ActorUpdateMessage]);

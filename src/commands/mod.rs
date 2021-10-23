@@ -15,7 +15,7 @@ macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
         use crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
         use riker::actors::{
-            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender,
+            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
         };
         use paste::paste;
 
