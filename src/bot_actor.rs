@@ -167,7 +167,7 @@ impl Actor for BotActor {
             }
         }
 
-        // new_command::<ActivitiesCommand>();
+        new_command!(ActivitiesCommand);
         // new_command::<CancelCommand>();
         new_command!(ChatidCommand);
         new_command!(D1weekCommand);
