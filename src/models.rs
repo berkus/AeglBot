@@ -474,9 +474,9 @@ impl PlannedActivityMember {
 // Tests
 //=================================================================================================
 
-#[cfg(test)]
+#[cfg(testing)]
 mod tests {
-    use {super::*, crate::Bot, diesel::prelude::*, std::env, tokio_core::reactor::Core};
+    use {super::*, crate::Bot, diesel::prelude::*, std::env};
 
     #[test]
     fn test_guardians() {

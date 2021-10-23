@@ -164,14 +164,6 @@ mod tests {
     }
 
     #[test]
-    fn test_protocol_weeks() {
-        assert_eq!(
-            protocol_week_number(Utc.ymd(2018, 10, 20).and_hms(12, 0, 0)),
-            3
-        );
-    }
-
-    #[test]
     fn test_raid_weeks() {
         assert_eq!(raid_week_number(Utc.ymd(2020, 1, 28).and_hms(21, 0, 0)), 0);
         assert_eq!(raid_week_number(Utc.ymd(2020, 1, 27).and_hms(12, 0, 0)), 3);

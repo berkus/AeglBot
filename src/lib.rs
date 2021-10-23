@@ -74,7 +74,7 @@ pub trait BotCommand {
 
 #[cfg(test)]
 mod tests {
-    use {super::*, tokio_core::reactor::Core};
+    use {super::*, dotenv::dotenv, std::env};
 
     // Command is prefix of another command.
     struct PrefixCommand;
@@ -95,15 +95,6 @@ mod tests {
         fn description(&self) -> &'static str {
             "Test"
         }
-
-        fn execute(
-            &self,
-            _bot: &Bot,
-            _message: &UpdateMessage,
-            _command: Option<String>,
-            _name: Option<String>,
-        ) {
-        }
     }
 
     impl PrefixTwoCommand {
@@ -119,15 +110,6 @@ mod tests {
 
         fn description(&self) -> &'static str {
             "Test two"
-        }
-
-        fn execute(
-            &self,
-            _bot: &Bot,
-            _message: &telebot::objects::Message,
-            _command: Option<String>,
-            _name: Option<String>,
-        ) {
         }
     }
 
