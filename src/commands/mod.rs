@@ -5,7 +5,6 @@ use {
         {models::Guardian, schema::guardians::dsl::*},
     },
     diesel::prelude::*,
-    futures::Future,
     riker::actors::{ActorRef, Tell},
     teloxide::prelude::*,
 };
@@ -182,8 +181,6 @@ pub fn guardian_lookup(
 /// (None, None) if command did not match,
 /// (command, and Some remaining text after command otherwise).
 fn match_command(
-    // TODO: pass msg.update.text()
-    // msg: &ActorUpdateMessage,
     text: Option<&str>,
     command: &str,
     bot_name: &str,
