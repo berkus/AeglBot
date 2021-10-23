@@ -190,11 +190,12 @@ fn match_command(
     // If we do - it must match out bot name completely.
     // Strip trailing numeric digits from the left side - this might be part of the command argument, remember it.
     // The rest of the left side must match EXACTLY, not as a prefix.
-    text.map(|data| {
-        log::debug!("matching {:#?} against {:#?}", data, command);
-        data.split_whitespace()
+    text.and_then(|input| {
+        log::debug!("matching {:#?} against {:#?}", input, command);
+        input
+            .split_whitespace()
             .next()
-            .map(|s| {
+            .and_then(|s| {
                 let mut matches = s.split('@');
                 let cmd = matches.next();
                 if let Some(bot) = matches.next() {
@@ -205,35 +206,38 @@ fn match_command(
                 }
                 cmd
             })
-            .unwrap_or(None)
-            .map(|cmd| {
+            .and_then(|cmd| {
                 // Some clients send /cancel593@AeglBot on click, so strip the numeric code at the end, if any.
-                let cmd = cmd.trim_end_matches(|c: char| c.is_digit(10));
+                let cmd = cmd.trim_end_matches(char::is_numeric);
                 if cmd != command {
                     return None;
                 }
                 log::debug!(".. matched");
                 Some((
                     Some(cmd.into()),
-                    data.get(command.len()..)
+                    input
+                        .get(command.len()..)
                         .map(|x| {
-                            let prefix = x.matches(|c: char| c.is_digit(10)).nth(0).unwrap_or("");
+                            let prefix = x
+                                .chars()
+                                .take_while(|c| c.is_numeric())
+                                .fold(String::new(), |a, b| format!("{}{}", a, b));
+                            log::debug!("Matched prefix {}", prefix);
                             // "593@AeglBot something something"
                             let x = x
-                                .trim_start_matches(prefix)
+                                .trim_start_matches(&prefix)
                                 .trim_start_matches("@")
                                 .trim_start_matches(bot_name)
                                 .trim_start();
                             // TODO: Prepend the ID stripped from the command previously
                             // "593 something something"
-                            format!("{} {}", prefix, x).trim_start().to_string()
+                            format!("{} {}", prefix, x).trim().to_string()
                         })
                         .filter(|y| !y.is_empty()),
                 ))
             })
-            .unwrap_or(None)
     })
-    .unwrap_or(Some((None, None)))
+    .or(Some((None, None)))
     .unwrap()
 }
 
@@ -245,7 +249,23 @@ mod tests {
     fn test_command_match_without_bot_name_and_no_prefix() {
         assert_eq!(
             match_command(Some("/cmd some text"), "/cmd", "BotName"),
-            (Some("/cmd".into()), Some(" some text".into()))
+            (Some("/cmd".into()), Some("some text".into()))
+        );
+    }
+
+    #[test]
+    fn test_command_match_without_bot_name_and_no_prefix_and_one_arg() {
+        assert_eq!(
+            match_command(Some("/cmd66"), "/cmd", "BotName"),
+            (Some("/cmd".into()), Some("66".into()))
+        );
+    }
+
+    #[test]
+    fn test_command_did_not_match_without_bot_name_and_no_prefix() {
+        assert_eq!(
+            match_command(Some("/othercmd some text"), "/cmd", "BotName"),
+            (None, None)
         );
     }
 
@@ -256,6 +276,14 @@ mod tests {
         assert_eq!(
             match_command(Some("/cmd735@TestBot some text"), "/cmd", "TestBot"),
             (Some("/cmd".into()), Some("735 some text".into()))
+        );
+    }
+
+    #[test]
+    fn test_command_did_not_match_with_bot_name_and_prefix() {
+        assert_eq!(
+            match_command(Some("/othercmd735@TestBot some text"), "/cmd", "TestBot"),
+            (None, None)
         );
     }
 }
