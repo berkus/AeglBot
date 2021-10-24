@@ -1,21 +1,28 @@
 use {
     crate::{
-        commands::validate_username, datetime::nowtz, models::PlannedActivity, BotCommand, BotMenu,
-        DbConnection,
+        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        commands::{match_command, validate_username},
+        datetime::nowtz,
+        models::PlannedActivity,
+        BotCommand,
     },
-    diesel::{
-        self,
-        dsl::{now, IntervalDsl},
-        prelude::*,
-    },
-    futures::Future,
-    teloxide::prelude::*,
+    diesel::{self, dsl::IntervalDsl, prelude::*},
+    riker::actors::Tell,
 };
 
-#[derive(Clone)]
-pub struct ListCommand;
+command_actor!(ListCommand, [ActorUpdateMessage]);
 
-command_ctor!(ListCommand);
+impl ListCommand {
+    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
+    where
+        S: Into<String>,
+    {
+        self.bot_ref.tell(
+            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
+            None,
+        );
+    }
+}
 
 impl BotCommand for ListCommand {
     fn prefix(&self) -> &'static str {
@@ -25,39 +32,41 @@ impl BotCommand for ListCommand {
     fn description(&self) -> &'static str {
         "List current events"
     }
+}
 
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateWithCx<AutoSend<Bot>, Message>,
-        _command: Option<String>,
-        _args: Option<String>,
-    ) {
-        use crate::schema::plannedactivities::dsl::*;
+impl Receive<ActorUpdateMessage> for ListCommand {
+    type Msg = ListCommandMsg;
 
-        let connection = bot.connection();
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        if let (Some(_), _) = match_command(message.update.text(), self.prefix(), &self.bot_name) {
+            use crate::schema::plannedactivities::dsl::*;
 
-        let upcoming_events = plannedactivities
-            .filter(start.ge(nowtz() - 60_i32.minutes()))
-            .order(start.asc())
-            .load::<PlannedActivity>(&connection)
-            .expect("TEMP loading @FIXME");
+            let connection = self.connection();
 
-        if upcoming_events.is_empty() {
-            return bot.send_plain_reply(
-                &message,
-                "No activities planned, add something with /lfg".into(),
-            );
-        }
+            let upcoming_events = plannedactivities
+                .filter(start.ge(nowtz() - 60_i32.minutes()))
+                .order(start.asc())
+                .load::<PlannedActivity>(&connection)
+                .expect("TEMP loading @FIXME");
 
-        if let Some(guardian) = validate_username(bot, &message, &connection) {
-            let text = upcoming_events
-                .iter()
-                .fold("Planned activities:\n\n".to_owned(), |acc, event| {
-                    acc + &format!("{}\n\n", event.display(&connection, Some(&guardian)))
-                });
+            if upcoming_events.is_empty() {
+                return self.send_reply(
+                    &message,
+                    "No activities planned, add something with /lfg",
+                    Format::Plain,
+                );
+            }
 
-            bot.send_html_reply(&message, text);
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                let text = upcoming_events.iter().fold(
+                    "Planned activities:\n\n".to_owned(),
+                    |acc, event| {
+                        acc + &format!("{}\n\n", event.display(&connection, Some(&guardian)))
+                    },
+                );
+
+                self.send_reply(&message, text, Format::Html);
+            }
         }
     }
 }
