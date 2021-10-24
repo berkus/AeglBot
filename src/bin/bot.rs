@@ -80,7 +80,7 @@ fn setup_logging() -> Result<(), fern::InitError> {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
@@ -125,5 +125,4 @@ async fn main() -> anyhow::Result<()> {
         }
     })
     .await;
-    Ok(())
 }

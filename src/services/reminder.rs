@@ -5,13 +5,12 @@ use {
         models::PlannedActivity,
         BotConnection,
     },
-    anyhow::Result,
     diesel::{self, dsl::IntervalDsl, prelude::*},
     riker::{actor::Tell, actors::ActorRef},
     teloxide::types::ChatId,
 };
 
-pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) -> Result<()> {
+pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) {
     use crate::schema::plannedactivities::dsl::*;
 
     log::info!("reminder check");
@@ -40,7 +39,7 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
         .collect();
 
     if upcoming_events.is_empty() {
-        return Ok(());
+        return;
     }
 
     let text = upcoming_events
@@ -50,6 +49,4 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
         });
 
     bot.tell(SendMessage(text, chat_id, Format::Html, Notify::On), None);
-
-    Ok(())
 }
