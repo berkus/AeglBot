@@ -1,29 +1,34 @@
 use {
     crate::{
-        commands::{decapitalize, validate_username},
+        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
-        models::{Activity, NewPlannedActivityMember, PlannedActivity, PlannedActivityMember},
-        BotCommand, BotMenu, DbConnection,
+        models::{NewPlannedActivityMember, PlannedActivity},
+        BotCommand,
     },
-    chrono::{Duration, Local},
-    diesel::{self, associations::HasTable, prelude::*},
+    chrono::Duration,
     diesel_derives_traits::{Model, NewModel},
-    futures::Future,
-    teloxide::prelude::*,
+    riker::actors::Tell,
 };
 
-#[derive(Clone)]
-pub struct JoinCommand;
-
-command_ctor!(JoinCommand);
+command_actor!(JoinCommand, [ActorUpdateMessage]);
 
 impl JoinCommand {
-    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
-        bot.send_plain_reply(
-            &message,
+    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    where
+        S: Into<String>,
+    {
+        self.bot_ref.tell(
+            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
+            None,
+        );
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(
+            message,
             "To join a fireteam provide fireteam id
-Fireteam IDs are available from output of /list command."
-                .into(),
+Fireteam IDs are available from output of /list command.",
         );
     }
 }
@@ -36,76 +41,75 @@ impl BotCommand for JoinCommand {
     fn description(&self) -> &'static str {
         "Join existing activity from the list"
     }
+}
 
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateWithCx<AutoSend<Bot>, Message>,
-        _command: Option<String>,
-        activity_id: Option<String>,
-    ) {
-        if activity_id.is_none() {
-            return JoinCommand::usage(bot, &message);
-        }
+impl Receive<ActorUpdateMessage> for JoinCommand {
+    type Msg = JoinCommandMsg;
 
-        let activity_id = activity_id.unwrap().parse::<i32>();
-        if activity_id.is_err() {
-            return JoinCommand::usage(bot, &message);
-        }
-
-        let activity_id = activity_id.unwrap();
-        let connection = bot.connection();
-
-        if let Some(guardian) = validate_username(bot, &message, &connection) {
-            let planned =
-                PlannedActivity::find_one(&connection, &activity_id).expect("Failed to run SQL");
-
-            if planned.is_none() {
-                return bot.send_plain_reply(
-                    &message,
-                    format!("Activity {} was not found.", activity_id),
-                );
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        if let (Some(_), activity_id) =
+            match_command(message.update.text(), self.prefix(), &self.bot_name)
+        {
+            if activity_id.is_none() {
+                return self.usage(&message);
             }
 
-            let planned = planned.unwrap();
-
-            let member = planned.find_member(&connection, &guardian);
-
-            if member.is_some() {
-                return bot
-                    .send_plain_reply(&message, "You are already part of this group.".into());
+            let activity_id = activity_id.unwrap().parse::<i32>();
+            if activity_id.is_err() {
+                return self.usage(&message);
             }
 
-            if planned.is_full(&connection) {
-                return bot.send_plain_reply(&message, "This activity group is full.".into());
-            }
+            let activity_id = activity_id.unwrap();
+            let connection = self.connection();
 
-            if planned.start < reference_date() - Duration::hours(1) {
-                return bot.send_plain_reply(&message, "You can not join past activities.".into());
-            }
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                let planned = PlannedActivity::find_one(&connection, &activity_id)
+                    .expect("Failed to run SQL");
 
-            let planned_activity_member = NewPlannedActivityMember {
-                user_id: guardian.id,
-                planned_activity_id: planned.id,
-                added: reference_date(),
-            };
+                if planned.is_none() {
+                    return self
+                        .send_reply(&message, format!("Activity {} was not found.", activity_id));
+                }
 
-            planned_activity_member
-                .save(&connection)
-                .expect("Unexpected error saving group joiner");
+                let planned = planned.unwrap();
 
-            let text = format!(
-                "{guarName} has joined {actName} group {actTime}
+                let member = planned.find_member(&connection, &guardian);
+
+                if member.is_some() {
+                    return self.send_reply(&message, "You are already part of this group.");
+                }
+
+                if planned.is_full(&connection) {
+                    return self.send_reply(&message, "This activity group is full.");
+                }
+
+                if planned.start < reference_date() - Duration::hours(1) {
+                    return self.send_reply(&message, "You can not join past activities.");
+                }
+
+                let planned_activity_member = NewPlannedActivityMember {
+                    user_id: guardian.id,
+                    planned_activity_id: planned.id,
+                    added: reference_date(),
+                };
+
+                planned_activity_member
+                    .save(&connection)
+                    .expect("Unexpected error saving group joiner");
+
+                let text = format!(
+                    "{guarName} has joined {actName} group {actTime}
 {otherGuars} are going
 {joinPrompt}",
-                guarName = guardian,
-                actName = planned.activity(&connection).format_name(),
-                actTime = decapitalize(&format_start_time(planned.start, reference_date())),
-                otherGuars = planned.members_formatted_list(&connection),
-                joinPrompt = planned.join_prompt(&connection)
-            );
+                    guarName = guardian,
+                    actName = planned.activity(&connection).format_name(),
+                    actTime = decapitalize(&format_start_time(planned.start, reference_date())),
+                    otherGuars = planned.members_formatted_list(&connection),
+                    joinPrompt = planned.join_prompt(&connection)
+                );
 
-            bot.send_plain_reply(&message, text);
+                self.send_reply(&message, text);
+            }
         }
     }
 }

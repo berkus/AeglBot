@@ -163,7 +163,7 @@ impl Actor for BotActor {
         // new_command::<EditGuardianCommand>();
         // new_command::<HelpCommand>();
         new_command!(InfoCommand);
-        // new_command::<JoinCommand>();
+        new_command!(JoinCommand);
         new_command!(LfgCommand);
         // new_command::<ListCommand>();
         // new_command::<ManageCommand>();
