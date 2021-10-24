@@ -69,34 +69,34 @@ mod tests {
 
     struct PrefixTwoCommand;
 
-    impl PrefixCommand {
-        pub fn new() -> Box<Self> {
-            Box::new(PrefixCommand)
-        }
-    }
+    // impl PrefixCommand {
+    //     pub fn new() -> Box<Self> {
+    //         Box::new(PrefixCommand)
+    //     }
+    // }
 
     impl BotCommand for PrefixCommand {
-        fn prefix(&self) -> &'static str {
+        fn prefix() -> &'static str {
             "/prefix"
         }
 
-        fn description(&self) -> &'static str {
+        fn description() -> &'static str {
             "Test"
         }
     }
 
-    impl PrefixTwoCommand {
-        pub fn new() -> Box<Self> {
-            Box::new(PrefixTwoCommand)
-        }
-    }
+    // impl PrefixTwoCommand {
+    //     pub fn new() -> Box<Self> {
+    //         Box::new(PrefixTwoCommand)
+    //     }
+    // }
 
     impl BotCommand for PrefixTwoCommand {
-        fn prefix(&self) -> &'static str {
+        fn prefix() -> &'static str {
             "/prefixtwo"
         }
 
-        fn description(&self) -> &'static str {
+        fn description() -> &'static str {
             "Test two"
         }
     }
