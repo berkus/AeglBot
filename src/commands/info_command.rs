@@ -1,5 +1,5 @@
 #[cfg(target_os = "linux")]
-use procfs::{ProcResult, Process};
+use procfs::process::Process;
 use {
     crate::{
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
