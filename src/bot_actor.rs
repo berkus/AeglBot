@@ -124,7 +124,7 @@ impl Actor for BotActor {
         new_command!(ChatidCommand);
         new_command!(D1weekCommand);
         new_command!(D2weekCommand);
-        // new_command::<EditCommand>();
+        new_command!(EditCommand);
         // new_command::<EditGuardianCommand>();
         new_command!(HelpCommand);
         new_command!(InfoCommand);
