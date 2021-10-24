@@ -77,8 +77,8 @@ mod list_command;
 pub use self::list_command::*;
 // mod manage_command;
 // pub use self::manage_command::*;
-// mod psn_command;
-// pub use self::psn_command::*;
+mod psn_command;
+pub use self::psn_command::*;
 // mod whois_command;
 // pub use self::whois_command::*;
 

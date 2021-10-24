@@ -167,7 +167,7 @@ impl Actor for BotActor {
         new_command!(LfgCommand);
         new_command!(ListCommand);
         // new_command::<ManageCommand>();
-        // new_command::<PsnCommand>();
+        new_command!(PsnCommand);
         // new_command::<WhoisCommand>();
     }
 
