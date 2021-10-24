@@ -13,7 +13,7 @@ use {
 pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) {
     use crate::schema::plannedactivities::dsl::*;
 
-    log::info!("reminder check at {}", reference_date());
+    // log::info!("reminder check at {}", reference_date());
 
     let reference = reference_date();
 
