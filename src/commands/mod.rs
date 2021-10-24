@@ -79,8 +79,8 @@ pub use self::list_command::*;
 // pub use self::manage_command::*;
 mod psn_command;
 pub use self::psn_command::*;
-// mod whois_command;
-// pub use self::whois_command::*;
+mod whois_command;
+pub use self::whois_command::*;
 
 pub fn decapitalize(s: &str) -> String {
     s.chars()

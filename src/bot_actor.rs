@@ -168,7 +168,7 @@ impl Actor for BotActor {
         new_command!(ListCommand);
         // new_command::<ManageCommand>();
         new_command!(PsnCommand);
-        // new_command::<WhoisCommand>();
+        new_command!(WhoisCommand);
     }
 
     fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
