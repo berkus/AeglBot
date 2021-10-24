@@ -14,20 +14,27 @@ use {
     riker::actors::Tell,
 };
 
-#[derive(Clone)]
-pub struct LfgCommand;
-
-command_ctor!(LfgCommand);
+command_actor!(LfgCommand, [ActorUpdateMessage]);
 
 impl LfgCommand {
-    fn usage(bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>) {
-        bot.send_html_reply(
+    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
+    where
+        S: Into<String>,
+    {
+        self.bot_ref.tell(
+            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
+            None,
+        );
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(
             &message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
 For a list of activity codes: /activities
 Example: /lfg kf 2018-09-10 23:00
-Times are in Moscow (MSK) timezone."
-                .into(),
+Times are in Moscow (MSK) timezone.",
+            Format::Html,
         );
     }
 }
@@ -40,57 +47,61 @@ impl BotCommand for LfgCommand {
     fn description(&self) -> &'static str {
         "Create a new Looking For Group event"
     }
+}
 
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateWithCx<AutoSend<Bot>, Message>,
-        _command: Option<String>,
-        args: Option<String>,
-    ) {
-        log::info!("args are {:?}", args);
+impl Receive<ActorUpdateMessage> for LfgCommand {
+    type Msg = LfgCommandMsg;
 
-        if args.is_none() {
-            return LfgCommand::usage(bot, &message);
-        }
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        if let (Some(_), args) = match_command(message.update.text(), self.prefix(), &self.bot_name)
+        {
+            log::info!("args are {:?}", args);
 
-        // Split args in two:
-        // activity spec,
-        // and timespec
-        let args = args.unwrap();
-        let args: Vec<&str> = args.splitn(2, ' ').collect();
+            if args.is_none() {
+                return self.usage(&message);
+            }
 
-        if args.len() < 2 {
-            return LfgCommand::usage(bot, &message);
-        }
+            // Split args in two:
+            // activity spec,
+            // and timespec
+            let args = args.unwrap();
+            let args: Vec<&str> = args.splitn(2, ' ').collect();
 
-        let activity = args[0];
-        let timespec = args[1];
-        let connection = bot.connection();
+            if args.len() < 2 {
+                return self.usage(&message);
+            }
 
-        log::info!("Adding activity `{}` at `{}`", &activity, &timespec);
+            let activity = args[0];
+            let timespec = args[1];
+            let connection = self.connection();
 
-        if let Some(guardian) = validate_username(bot, &message, &connection) {
-            let act = ActivityShortcut::find_one_by_name(&connection, activity)
-                .expect("Failed to load Activity shortcut");
+            log::info!("Adding activity `{}` at `{}`", &activity, &timespec);
 
-            if act.is_none() {
-                bot.send_plain_reply(
-                    &message,
-                    format!(
-                        "Activity {} was not found. Use /activities for a list.",
-                        activity
-                    ),
-                );
-            } else {
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                let act = ActivityShortcut::find_one_by_name(&connection, activity)
+                    .expect("Failed to load Activity shortcut");
+
+                if act.is_none() {
+                    return self.send_reply(
+                        &message,
+                        format!(
+                            "Activity {} was not found. Use /activities to see the list.",
+                            activity
+                        ),
+                        Format::Plain,
+                    );
+                }
                 // Parse input in MSK timezone...
                 let start_time =
                     parse_date_string(timespec, Local::now().with_timezone(&Moscow), Dialect::Uk);
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
-                    return bot
-                        .send_plain_reply(&message, format!("Failed to parse time {}", timespec));
+                    return self.send_reply(
+                        &message,
+                        format!("Failed to parse time {}", timespec),
+                        Format::Plain,
+                    );
                 }
 
                 // ...then convert back to UTC.
@@ -106,10 +117,7 @@ impl BotCommand for LfgCommand {
                     start: start_time,
                 };
 
-                use {
-                    crate::schema::{plannedactivities::dsl::*, plannedactivitymembers::dsl::*},
-                    diesel::result::Error,
-                };
+                use diesel::result::Error;
 
                 connection
                     .transaction::<_, Error, _>(|| {
@@ -131,7 +139,7 @@ impl BotCommand for LfgCommand {
                             .expect("Couldn't find linked activity")
                             .unwrap();
 
-                        bot.send_plain_reply(
+                        self.send_reply(
                             &message,
                             format!(
                                 "{guarName} is looking for {groupName} group {onTime}
@@ -143,6 +151,7 @@ Enter `/edit{actId} details <free form description text>` to specify more detail
                                 joinPrompt = planned_activity.join_prompt(&connection),
                                 actId = planned_activity.id
                             ),
+                            Format::Plain,
                         );
 
                         Ok(())
