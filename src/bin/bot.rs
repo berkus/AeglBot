@@ -7,12 +7,7 @@
 #![feature(associated_type_bounds)]
 
 use {
-    aegl_bot::{
-        bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
-        services::reminder_actor::{
-            ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
-        },
-    },
+    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
     dotenv::dotenv,
     // riker::prelude::*, doesn't work here!
     riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
@@ -98,17 +93,9 @@ async fn main() {
 
     let chan: ChannelRef<ActorUpdateMessage> = channel("commands", &sys).unwrap();
 
-    let bot_ref =
-        sys.actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone()))?;
-
-    // Reminder tasks
-    let reminders = sys
-        .actor_of_args::<ReminderActor, _>("reminders", (bot_ref.clone(), lfg_chat))
-        .unwrap();
-    // Schedule first run, the actor handler will reschedule.
-    reminders.tell(ScheduleNextMinute, None);
-    reminders.tell(ScheduleNextDay, None);
-    reminders.tell(ScheduleNextWeek, None);
+    let _bot_ref = sys
+        .actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone(), lfg_chat))
+        .expect("Couldn't start the bot");
 
     teloxide::repl(tgbot.clone(), move |message: UpdateMessage| {
         let chan = chan.clone();

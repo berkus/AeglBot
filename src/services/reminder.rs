@@ -13,10 +13,9 @@ use {
 pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) {
     use crate::schema::plannedactivities::dsl::*;
 
-    log::info!("reminder check");
+    log::info!("reminder check at {}", reference_date());
 
     let reference = reference_date();
-    // let connection = bot.connection();
 
     let upcoming_events = plannedactivities
         .filter(start.ge(nowtz() - 60_i32.minutes()))

@@ -1,5 +1,11 @@
 use {
-    crate::{commands::*, BotCommand, DbConnPool, NamedActor},
+    crate::{
+        commands::*,
+        services::reminder_actor::{
+            ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
+        },
+        BotCommand, DbConnPool, NamedActor,
+    },
     dotenv::dotenv,
     riker::actors::{
         actor, Actor, ActorFactoryArgs, ActorRefFactory, BasicActorRef, ChannelRef, Context,
@@ -17,6 +23,7 @@ use {
 pub struct BotActor {
     pub bot: Bot,
     bot_name: String,
+    lfg_chat_id: i64,
     update_channel: ChannelRef<ActorUpdateMessage>,
     connection_pool: DbConnPool,
     commands_list: Vec<(String, String)>,
@@ -52,10 +59,16 @@ impl From<UpdateMessage> for ActorUpdateMessage {
 impl BotActor {
     // Public API
 
-    pub fn new(name: &str, bot: Bot, chan: ChannelRef<ActorUpdateMessage>) -> Self {
+    pub fn new(
+        name: &str,
+        bot: Bot,
+        chan: ChannelRef<ActorUpdateMessage>,
+        lfg_chat_id: i64,
+    ) -> Self {
         BotActor {
             bot,
             bot_name: name.to_string(),
+            lfg_chat_id,
             update_channel: chan,
             connection_pool: Self::establish_connection(),
             commands_list: vec![],
@@ -134,6 +147,22 @@ impl Actor for BotActor {
         new_command!(ManageCommand);
         new_command!(PsnCommand);
         new_command!(WhoisCommand);
+
+        // Create reminder tasks actor
+        let reminders = ctx
+            .actor_of_args::<ReminderActor, _>(
+                "reminders",
+                (
+                    ctx.myself().clone(),
+                    self.lfg_chat_id,
+                    self.connection_pool.clone(),
+                ),
+            )
+            .unwrap();
+        // Schedule first run, the actor handler will reschedule.
+        reminders.tell(ScheduleNextMinute, None);
+        reminders.tell(ScheduleNextDay, None);
+        reminders.tell(ScheduleNextWeek, None);
     }
 
     fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
@@ -141,9 +170,11 @@ impl Actor for BotActor {
     }
 }
 
-impl ActorFactoryArgs<(String, Bot, ChannelRef<ActorUpdateMessage>)> for BotActor {
-    fn create_args((bot_name, bot, chan): (String, Bot, ChannelRef<ActorUpdateMessage>)) -> Self {
-        Self::new(&bot_name, bot, chan)
+impl ActorFactoryArgs<(String, Bot, ChannelRef<ActorUpdateMessage>, i64)> for BotActor {
+    fn create_args(
+        (bot_name, bot, chan, lfg_chat): (String, Bot, ChannelRef<ActorUpdateMessage>, i64),
+    ) -> Self {
+        Self::new(&bot_name, bot, chan, lfg_chat)
     }
 }
 

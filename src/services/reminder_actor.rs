@@ -2,7 +2,8 @@ use {
     crate::{
         bot_actor::BotActorMsg,
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
-        services::destiny_schedule,
+        services::{destiny_schedule, reminder},
+        BotConnection, DbConnPool,
     },
     chrono::Timelike,
     riker::{
@@ -25,6 +26,13 @@ use {
 pub struct ReminderActor {
     bot_ref: ActorRef<BotActorMsg>,
     lfg_chat: i64,
+    connection_pool: DbConnPool,
+}
+
+impl ReminderActor {
+    pub fn connection(&self) -> BotConnection {
+        self.connection_pool.get().unwrap()
+    }
 }
 
 impl Actor for ReminderActor {
@@ -35,9 +43,15 @@ impl Actor for ReminderActor {
     }
 }
 
-impl ActorFactoryArgs<(ActorRef<BotActorMsg>, i64)> for ReminderActor {
-    fn create_args((bot_ref, lfg_chat): (ActorRef<BotActorMsg>, i64)) -> Self {
-        Self { bot_ref, lfg_chat }
+impl ActorFactoryArgs<(ActorRef<BotActorMsg>, i64, DbConnPool)> for ReminderActor {
+    fn create_args(
+        (bot_ref, lfg_chat, connection_pool): (ActorRef<BotActorMsg>, i64, DbConnPool),
+    ) -> Self {
+        Self {
+            bot_ref,
+            lfg_chat,
+            connection_pool,
+        }
     }
 }
 
@@ -54,11 +68,11 @@ impl Receive<Reminders> for ReminderActor {
     type Msg = ReminderActorMsg;
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: Reminders, _sender: Sender) {
-        // reminder::check(
-        //     self.bot_ref.clone(),
-        //     self.bot.connection(), // @todo obtain connection from some shared resource
-        //     ChatId::Id(self.lfg_chat),
-        // );
+        reminder::check(
+            self.bot_ref.clone(),
+            self.connection(),
+            ChatId::Id(self.lfg_chat),
+        );
         ctx.myself().tell(ScheduleNextMinute, None);
     }
 }
