@@ -62,11 +62,11 @@ min_level=n                           <optional>",
 }
 
 impl BotCommand for ActivitiesCommand {
-    fn prefix(&self) -> &'static str {
+    fn prefix() -> &'static str {
         "/activities"
     }
 
-    fn description(&self) -> &'static str {
+    fn description() -> &'static str {
         "List available activity shortcuts"
     }
 }
@@ -88,7 +88,8 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
     type Msg = ActivitiesCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) = match_command(message.update.text(), self.prefix(), &self.bot_name)
+        if let (Some(_), args) =
+            match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             let connection = self.connection();
 

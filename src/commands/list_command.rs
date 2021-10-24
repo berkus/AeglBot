@@ -25,11 +25,11 @@ impl ListCommand {
 }
 
 impl BotCommand for ListCommand {
-    fn prefix(&self) -> &'static str {
+    fn prefix() -> &'static str {
         "/list"
     }
 
-    fn description(&self) -> &'static str {
+    fn description() -> &'static str {
         "List current events"
     }
 }
@@ -38,7 +38,7 @@ impl Receive<ActorUpdateMessage> for ListCommand {
     type Msg = ListCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(message.update.text(), self.prefix(), &self.bot_name) {
+        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
             use crate::schema::plannedactivities::dsl::*;
 
             let connection = self.connection();

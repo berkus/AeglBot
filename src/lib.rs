@@ -34,9 +34,9 @@ pub trait BotCommand {
     // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);
     /// Return command prefix to match.
     /// To support sub-commands the prefix for root commands should start with '/'.
-    fn prefix(&self) -> &'static str;
+    fn prefix() -> &'static str;
     /// Return command description.
-    fn description(&self) -> &'static str;
+    fn description() -> &'static str;
 }
 
 // https://chaoslibrary.blot.im/rust-cloning-a-trait-object/

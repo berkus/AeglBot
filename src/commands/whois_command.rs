@@ -22,11 +22,11 @@ impl WhoisCommand {
 }
 
 impl BotCommand for WhoisCommand {
-    fn prefix(&self) -> &'static str {
+    fn prefix() -> &'static str {
         "/whois"
     }
 
-    fn description(&self) -> &'static str {
+    fn description() -> &'static str {
         "Query telegram or PSN id"
     }
 }
@@ -35,7 +35,8 @@ impl Receive<ActorUpdateMessage> for WhoisCommand {
     type Msg = WhoisCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), name) = match_command(message.update.text(), self.prefix(), &self.bot_name)
+        if let (Some(_), name) =
+            match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if name.is_none() {
                 return self.send_reply(

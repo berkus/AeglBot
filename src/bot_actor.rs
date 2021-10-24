@@ -1,5 +1,5 @@
 use {
-    crate::{commands::*, DbConnPool, NamedActor},
+    crate::{commands::*, BotCommand, DbConnPool, NamedActor},
     dotenv::dotenv,
     riker::actors::{
         actor, Actor, ActorFactoryArgs, ActorRefFactory, BasicActorRef, ChannelRef, Context,
@@ -13,12 +13,13 @@ use {
 };
 
 #[derive(Clone)]
-#[actor(SendMessage, SendMessageReply)]
+#[actor(SendMessage, SendMessageReply, ListCommands)]
 pub struct BotActor {
     pub bot: Bot,
     bot_name: String,
     update_channel: ChannelRef<ActorUpdateMessage>,
     connection_pool: DbConnPool,
+    commands_list: Vec<(String, String)>,
 }
 
 unsafe impl Send for BotActor {}
@@ -57,7 +58,12 @@ impl BotActor {
             bot_name: name.to_string(),
             update_channel: chan,
             connection_pool: Self::establish_connection(),
+            commands_list: vec![],
         }
+    }
+
+    pub fn list_commands(&self) -> Vec<(String, String)> {
+        self.commands_list.clone()
     }
 
     // pub fn register_catchall(cmd: Box<BotCommand>) {}
@@ -76,17 +82,6 @@ impl BotActor {
     //     }
     //
     //     self.commands.write().unwrap().insert(insertion_index, cmd);
-    // }
-
-    // pub fn list_commands(&self) -> Vec<(String, String)> {
-    //     self.commands
-    //         .read()
-    //         .unwrap()
-    //         .iter()
-    //         .fold(vec![], |mut acc, cmd| {
-    //             acc.push((cmd.prefix().to_string(), cmd.description().to_string()));
-    //             acc
-    //         })
     // }
 
     // Internal helpers
@@ -144,6 +139,7 @@ impl Actor for BotActor {
                 let cmd = ctx
                     .actor_of_args::<$T, _>(&$T::actor_name(), (ctx.myself().clone(), self.bot_name.clone(), self.connection_pool.clone()))
                     .unwrap(); // FIXME: panics in pre_start do not cause actor restart, so this is faulty!
+                self.commands_list.push(($T::prefix().into(), $T::description().into()));
                 self.update_channel.tell(
                     Subscribe {
                         actor: Box::new(cmd),
@@ -161,7 +157,7 @@ impl Actor for BotActor {
         new_command!(D2weekCommand);
         // new_command::<EditCommand>();
         // new_command::<EditGuardianCommand>();
-        // new_command::<HelpCommand>();
+        new_command!(HelpCommand);
         new_command!(InfoCommand);
         new_command!(JoinCommand);
         new_command!(LfgCommand);
@@ -200,6 +196,9 @@ pub struct SendMessage(pub String, pub ChatId, pub Format, pub Notify);
 
 #[derive(Clone, Debug)]
 pub struct SendMessageReply(pub String, pub ActorUpdateMessage, pub Format, pub Notify);
+
+#[derive(Clone, Debug)]
+pub struct ListCommands(pub ActorUpdateMessage);
 
 impl Receive<SendMessage> for BotActor {
     type Msg = BotActorMsg;
@@ -259,5 +258,26 @@ impl Receive<SendMessageReply> for BotActor {
             .unwrap();
 
         rt.block_on(fut.send()).unwrap();
+    }
+}
+
+impl Receive<ListCommands> for BotActor {
+    type Msg = BotActorMsg;
+
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: ListCommands, _sender: Sender) {
+        log::debug!("ListCommands");
+        let message = msg.0;
+
+        let mut sorted_cmds = self.list_commands();
+        sorted_cmds.sort_by_key(|v| v.0.clone());
+        let reply = sorted_cmds.into_iter().fold(
+            "<b>Help</b> 🚑\nThese are the registered commands for this Bot:\n\n".into(),
+            |acc, pair| format!("{}{} — {}\n\n", acc, pair.0, pair.1),
+        );
+
+        ctx.myself.tell(
+            SendMessageReply(reply, message, Format::Html, Notify::Off),
+            None,
+        );
     }
 }

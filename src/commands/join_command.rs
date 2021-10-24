@@ -34,11 +34,11 @@ Fireteam IDs are available from output of /list command.",
 }
 
 impl BotCommand for JoinCommand {
-    fn prefix(&self) -> &'static str {
+    fn prefix() -> &'static str {
         "/join"
     }
 
-    fn description(&self) -> &'static str {
+    fn description() -> &'static str {
         "Join existing activity from the list"
     }
 }
@@ -48,7 +48,7 @@ impl Receive<ActorUpdateMessage> for JoinCommand {
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
         if let (Some(_), activity_id) =
-            match_command(message.update.text(), self.prefix(), &self.bot_name)
+            match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
                 return self.usage(&message);

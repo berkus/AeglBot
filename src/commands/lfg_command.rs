@@ -40,11 +40,11 @@ Times are in Moscow (MSK) timezone.",
 }
 
 impl BotCommand for LfgCommand {
-    fn prefix(&self) -> &'static str {
+    fn prefix() -> &'static str {
         "/lfg"
     }
 
-    fn description(&self) -> &'static str {
+    fn description() -> &'static str {
         "Create a new Looking For Group event"
     }
 }
@@ -53,7 +53,8 @@ impl Receive<ActorUpdateMessage> for LfgCommand {
     type Msg = LfgCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) = match_command(message.update.text(), self.prefix(), &self.bot_name)
+        if let (Some(_), args) =
+            match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             log::info!("args are {:?}", args);
 

@@ -1,38 +1,30 @@
 use {
-    crate::{BotCommand, BotMenu, DbConnection},
-    teloxide::prelude::*,
+    crate::{
+        bot_actor::{ActorUpdateMessage, ListCommands},
+        commands::match_command,
+        BotCommand,
+    },
+    riker::actors::Tell,
 };
 
-#[derive(Clone)]
-pub struct HelpCommand;
-
-command_ctor!(HelpCommand);
+command_actor!(HelpCommand, [ActorUpdateMessage]);
 
 impl BotCommand for HelpCommand {
-    fn prefix(&self) -> &'static str {
+    fn prefix() -> &'static str {
         "/help"
     }
 
-    fn description(&self) -> &'static str {
+    fn description() -> &'static str {
         "List available commands"
     }
+}
 
-    fn execute(
-        &self,
-        bot: &BotMenu,
-        message: &UpdateWithCx<AutoSend<Bot>, Message>,
-        _command: Option<String>,
-        _name: Option<String>,
-    ) {
-        let mut sorted_cmds = bot.list_commands();
-        sorted_cmds.sort_by_cached_key(|v| v.0.to_owned());
+impl Receive<ActorUpdateMessage> for HelpCommand {
+    type Msg = HelpCommandMsg;
 
-        bot.send_html_reply(
-            &message,
-            sorted_cmds.into_iter().fold(
-                "<b>Help</b> 🚑\nThese are the registered commands for this Bot:\n\n".into(),
-                |acc, pair| format!("{}{} — {}\n\n", acc, pair.0, pair.1),
-            ),
-        );
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
+            self.bot_ref.tell(ListCommands(message), None);
+        }
     }
 }
