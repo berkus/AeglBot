@@ -1,17 +1,15 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActor, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{admin_check, match_command},
         models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
-        BotCommand, DbConnection,
+        BotCommand,
     },
     diesel::{self, prelude::*},
     diesel_derives_traits::{Model, NewModel},
-    futures::Future,
     itertools::Itertools,
     riker::actors::Tell,
     std::collections::HashMap,
-    teloxide::prelude::*,
 };
 
 command_actor!(ActivitiesCommand, [ActorUpdateMessage]);

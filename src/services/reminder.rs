@@ -1,18 +1,12 @@
 use {
     crate::{
-        bot_actor::{BotActor, BotActorMsg, Format, Notify, SendMessage},
+        bot_actor::{BotActorMsg, Format, Notify, SendMessage},
         datetime::{nowtz, reference_date},
         models::PlannedActivity,
         BotConnection,
     },
     anyhow::Result,
-    diesel::{
-        self,
-        dsl::{now, IntervalDsl},
-        prelude::*,
-    },
-    diesel_derives_traits::Model,
-    futures::Future,
+    diesel::{self, dsl::IntervalDsl, prelude::*},
     riker::{actor::Tell, actors::ActorRef},
     teloxide::types::ChatId,
 };

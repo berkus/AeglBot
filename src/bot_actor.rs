@@ -1,27 +1,14 @@
 use {
-    crate::{commands::*, BotConnection, DbConnPool, NamedActor},
-    diesel::{pg::PgConnection, prelude::*},
-    diesel_logger::LoggingConnection,
+    crate::{commands::*, DbConnPool, NamedActor},
     dotenv::dotenv,
-    futures::{executor::block_on, Future, Stream},
-    futures_retry::{RetryPolicy, StreamRetryExt},
-    r2d2::Pool,
-    riker::{
-        actors::{
-            actor, Actor, ActorFactoryArgs, ActorRef, ActorRefFactory, BasicActorRef, ChannelRef,
-            Context, Receive, Sender, Subscribe, Tell,
-        },
-        system::Run,
+    riker::actors::{
+        actor, Actor, ActorFactoryArgs, ActorRefFactory, BasicActorRef, ChannelRef, Context,
+        Receive, Sender, Subscribe, Tell,
     },
-    std::{
-        env,
-        fmt::Formatter,
-        sync::{Arc, RwLock},
-        time::Duration,
-    },
+    std::{env, fmt::Formatter},
     teloxide::{
         prelude::*,
-        types::{Chat, ChatId, ParseMode, User},
+        types::{ChatId, ParseMode},
     },
 };
 

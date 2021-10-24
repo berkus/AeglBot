@@ -1,8 +1,8 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActor, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::match_command,
-        BotCommand, DbConnection,
+        BotCommand,
     },
     riker::actors::Tell,
 };

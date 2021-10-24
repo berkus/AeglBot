@@ -1,12 +1,11 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
         DbConnection,
         {models::Guardian, schema::guardians::dsl::*},
     },
     diesel::prelude::*,
     riker::actors::{ActorRef, Tell},
-    teloxide::prelude::*,
 };
 
 #[macro_export]

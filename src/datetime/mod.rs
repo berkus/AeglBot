@@ -1,13 +1,13 @@
 use {
-    chrono::{prelude::*, DateTime, Duration, Local, NaiveTime, TimeZone, Utc},
+    chrono::{prelude::*, DateTime, Duration, TimeZone, Utc},
     chrono_tz::{Europe::Moscow, Tz},
     diesel::{helper_types::AsExprOf, sql_types::Timestamptz},
-    std::{fmt::Write, time::Instant},
+    std::fmt::Write,
 };
 
 // Diesel farts, see issues/1752
 pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {
-    use diesel::{dsl::now, helper_types::AsExprOf, sql_types::Timestamptz, IntoSql};
+    use diesel::{dsl::now, IntoSql};
     now.into_sql::<Timestamptz>()
 }
 
@@ -89,8 +89,6 @@ fn time_override(now: BotDateTime, start: BotTime) -> BotDateTime {
 // https://gitlab.com/Douman/snow-white/blob/master/src/system/discord.rs#L377-397
 // This fn calculates only offset to be testable, the public fn `start_at_time` uses it.
 fn start_at_time_offset(now: BotDateTime, start: BotTime) -> Duration {
-    use chrono::Timelike;
-
     let now_time = now.time();
 
     let first = if now_time > start {
@@ -109,8 +107,6 @@ pub fn start_at_time(now: BotDateTime, start: BotTime) -> BotDateTime {
 // For weekly events - start on given day of week, at a given time.
 // This fn calculates only offset to be testable, the public fn `start_at_weekday_time` uses it.
 fn start_at_weekday_time_offset(now: BotDateTime, wd: chrono::Weekday, start: BotTime) -> Duration {
-    use chrono::{Datelike, Timelike};
-
     let first = if wd.number_from_monday() < now.weekday().number_from_monday() {
         // That weekday passed, schedule for next week
         let num_days = (7 - now.weekday().number_from_monday() + wd.number_from_monday()) as i64;

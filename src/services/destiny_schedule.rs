@@ -3,11 +3,9 @@ use {
     crate::{
         bot_actor::{BotActorMsg, SendMessage},
         datetime::{reference_date, BotDateTime},
-        DbConnection,
     },
     anyhow::Result,
     chrono::{DateTime, Duration, TimeZone, Utc},
-    futures::Future,
     riker::{actor::Tell, actors::ActorRef},
 };
 // use plurals::{Lang, Plural};

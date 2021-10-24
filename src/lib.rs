@@ -1,7 +1,7 @@
 #![feature(nll)] // features from edition-2018
 // #![feature(type_alias_enum_variants)]
 #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
-#![allow(unused_imports)] // during development
+#![warn(unused_imports)] // during development
 #![feature(type_ascription)]
 
 #[macro_use]
@@ -11,11 +11,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate diesel_derives_extra;
 
-use {
-    diesel::{pg::PgConnection, prelude::*},
-    diesel_logger::LoggingConnection,
-    r2d2::Pool,
-};
+use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool};
 
 pub mod bot_actor;
 pub mod commands;
@@ -74,7 +70,7 @@ pub trait BotCommand {
 
 #[cfg(test)]
 mod tests {
-    use {super::*, dotenv::dotenv, std::env};
+    use super::*;
 
     // Command is prefix of another command.
     struct PrefixCommand;

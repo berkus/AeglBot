@@ -6,8 +6,7 @@ use {
     },
     chrono::{prelude::*, Duration},
     diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
-    diesel_derives_traits::{Model, NewModel},
-    dotenv::dotenv,
+    diesel_derives_traits::Model,
     serde_json::Value,
     std::fmt,
 };
@@ -40,10 +39,7 @@ impl ActivityShortcut {
         connection: &DbConnection,
         act_name: &str,
     ) -> diesel::result::QueryResult<Option<Self>> {
-        use {
-            crate::schema::activityshortcuts::dsl::*,
-            diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
-        };
+        use crate::schema::activityshortcuts::dsl::*;
 
         <Self as ::diesel::associations::HasTable>::table()
             .filter(name.eq(act_name))
