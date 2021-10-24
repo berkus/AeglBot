@@ -53,8 +53,8 @@ macro_rules! command_actor {
 
 mod activities_command;
 pub use self::activities_command::*;
-// mod cancel_command;
-// pub use self::cancel_command::*;
+mod cancel_command;
+pub use self::cancel_command::*;
 mod chatid_command;
 pub use self::chatid_command::*;
 mod d2week_command;
