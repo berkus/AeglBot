@@ -37,14 +37,6 @@ pub trait BotCommand {
     fn prefix(&self) -> &'static str;
     /// Return command description.
     fn description(&self) -> &'static str;
-    // Execute matched command.
-    // fn execute(
-    //     &self,
-    //     bot: &BotMenu,
-    //     message: &UpdateMessage,
-    //     command: Option<String>,
-    //     text: Option<String>,
-    // );
 }
 
 // https://chaoslibrary.blot.im/rust-cloning-a-trait-object/
