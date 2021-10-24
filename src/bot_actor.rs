@@ -66,24 +66,6 @@ impl BotActor {
         self.commands_list.clone()
     }
 
-    // pub fn register_catchall(cmd: Box<BotCommand>) {}
-
-    // Insert into commands while maintaining certain property:
-    // - if command is a prefix of another inserted command, it must be inserted after
-    //   that command.
-    // - otherwise the command is inserted to the very beginning of vector.
-    // This allows correct parsing order fof commands that are prefixes of another command.
-    // pub fn register_command(&mut self, cmd: Box<dyn BotCommand>) {
-    //     let mut insertion_index = 0;
-    //     for (idx, command) in self.commands.read().unwrap().iter().enumerate() {
-    //         if command.prefix().starts_with(cmd.prefix()) {
-    //             insertion_index = idx + 1;
-    //         }
-    //     }
-    //
-    //     self.commands.write().unwrap().insert(insertion_index, cmd);
-    // }
-
     // Internal helpers
 
     // fn handle_error(error: anyhow::Error) -> RetryPolicy<anyhow::Error> {
@@ -98,19 +80,6 @@ impl BotActor {
     //             log::error!("handle_error didn't match, real error {:?}", error);
     //             //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
     //             RetryPolicy::ForwardError(error)
-    //         }
-    //     }
-    // }
-
-    // @todo Make this a message processor in Actor
-    // @todo Send commands as messages too? Need dynamic command definition then...
-    // pub fn process_message(&self, message: UpdateMessage) {
-    //     let message = &message;
-    //     for cmd in self.commands.read().unwrap().iter() {
-    //         if let (Some(cmdname), text) =
-    //             Self::match_command(message, cmd.prefix(), &self.bot_name)
-    //         {
-    //             return cmd.execute(&self, message, Some(cmdname), text);
     //         }
     //     }
     // }
