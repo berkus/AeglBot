@@ -311,6 +311,7 @@ impl PlannedActivity {
         use crate::schema::plannedactivitymembers::dsl::*;
         plannedactivitymembers
             .filter(planned_activity_id.eq(self.id))
+            .order(added.asc())
             .load::<PlannedActivityMember>(connection)
             .expect("Failed to load PlannedActivity members")
     }
