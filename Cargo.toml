@@ -39,6 +39,7 @@ riker = "0.4"
 paste = "1"
 tera = "1"
 include_dir = { version = "0.7.4", features = ["glob", "metadata", "nightly"] }
+surrealdb = { version = "1.0.0-beta.8", git = "https://github.com/surrealdb/surrealdb" }
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.17"
