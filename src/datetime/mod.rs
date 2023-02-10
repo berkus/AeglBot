@@ -110,20 +110,14 @@ fn start_at_weekday_time_offset(now: BotDateTime, wd: chrono::Weekday, start: Bo
     let first = if wd.number_from_monday() < now.weekday().number_from_monday() {
         // That weekday passed, schedule for next week
         let num_days = (7 - now.weekday().number_from_monday() + wd.number_from_monday()) as i64;
-        let next = time_override(now, start);
-        let next = next + Duration::days(num_days);
-        next
+        time_override(now, start) + Duration::days(num_days)
     } else {
         let num_days = (wd.number_from_monday() - now.weekday().number_from_monday()) as i64;
         // The day is right, but time has passed - schedule to next week
         if num_days == 0 && now.time() > start {
-            let next = time_override(now, start);
-            let next = next + Duration::weeks(1);
-            next
+            time_override(now, start) + Duration::weeks(1)
         } else {
-            let next = time_override(now, start);
-            let next = next + Duration::days(num_days);
-            next
+            time_override(now, start) + Duration::days(num_days)
         }
     };
 

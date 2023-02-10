@@ -27,10 +27,7 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
         .iter()
         .filter(|event| {
             if event.start > reference {
-                match (event.start - reference).num_minutes() {
-                    60 | 15 | 0 => true,
-                    _ => false,
-                }
+                matches!((event.start - reference).num_minutes(), 60 | 15 | 0)
             } else {
                 false
             }

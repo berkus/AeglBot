@@ -138,7 +138,7 @@ impl ManageCommand {
             .expect("Cannot execute SQL query");
 
         if admins.is_empty() {
-            return self.send_reply(&message, "No admins found");
+            return self.send_reply(message, "No admins found");
         }
 
         let text = admins
@@ -147,7 +147,7 @@ impl ManageCommand {
                 acc + &format!("{}\n", admin)
             });
 
-        self.send_reply(&message, text);
+        self.send_reply(message, text);
     }
 }
 
@@ -164,20 +164,20 @@ impl ManageCommand {
 impl ManageCommand {
     fn add_admin_subcommand(&self, message: &ActorUpdateMessage, args: Option<String>) {
         let connection = self.connection();
-        let admin = admin_check(&self.bot_ref, &message, &connection);
+        let admin = admin_check(&self.bot_ref, message, &connection);
 
         if admin.is_none() {
-            return self.send_reply(&message, "You are not admin");
+            return self.send_reply(message, "You are not admin");
         }
 
         let admin = admin.unwrap();
 
         if !admin.is_superadmin {
-            return self.send_reply(&message, "You are not superadmin");
+            return self.send_reply(message, "You are not superadmin");
         }
 
         if args.is_none() {
-            return self.send_reply(&message, "Specify a guardian to promote to admin");
+            return self.send_reply(message, "Specify a guardian to promote to admin");
         }
 
         let name = args.unwrap();
@@ -189,7 +189,7 @@ impl ManageCommand {
                 let tg_name = guardian.telegram_name.clone();
 
                 if guardian.is_admin {
-                    return self.send_reply(&message, format!("@{} is already an admin", &tg_name));
+                    return self.send_reply(message, format!("@{} is already an admin", &tg_name));
                 }
 
                 use diesel_derives_traits::Model;
@@ -199,13 +199,13 @@ impl ManageCommand {
                     .save(&connection) // @todo handle DbError
                     .expect("Cannot execute SQL query");
 
-                self.send_reply(&message, format!("@{} is now an admin!", &tg_name));
+                self.send_reply(message, format!("@{} is now an admin!", &tg_name));
             }
             Ok(None) => {
-                self.send_reply(&message, format!("Guardian {} was not found.", &name));
+                self.send_reply(message, format!("Guardian {} was not found.", &name));
             }
             Err(_) => {
-                self.send_reply(&message, "Error querying guardian name.");
+                self.send_reply(message, "Error querying guardian name.");
             }
         }
     }
@@ -228,17 +228,17 @@ impl ManageCommand {
         let admin = admin_check(&self.bot_ref, message, &connection);
 
         if admin.is_none() {
-            return self.send_reply(&message, "You are not admin");
+            return self.send_reply(message, "You are not admin");
         }
 
         let admin = admin.unwrap();
 
         if !admin.is_superadmin {
-            return self.send_reply(&message, "You are not superadmin");
+            return self.send_reply(message, "You are not superadmin");
         }
 
         if args.is_none() {
-            return self.send_reply(&message, "Specify a guardian to demote from admins");
+            return self.send_reply(message, "Specify a guardian to demote from admins");
         }
 
         let name = args.unwrap();
@@ -251,12 +251,12 @@ impl ManageCommand {
 
                 if !guardian.is_admin {
                     return self
-                        .send_reply(&message, format!("@{} is already not an admin", &tg_name));
+                        .send_reply(message, format!("@{} is already not an admin", &tg_name));
                 }
 
                 if guardian.is_superadmin {
                     return self.send_reply(
-                        &message,
+                        message,
                         format!("@{} is a superadmin, you can not demote.", &tg_name),
                     );
                 }
@@ -268,13 +268,13 @@ impl ManageCommand {
                     .save(&connection) // @todo handle DbError
                     .expect("Cannot execute SQL query");
 
-                self.send_reply(&message, format!("@{} is not an admin anymore!", &tg_name));
+                self.send_reply(message, format!("@{} is not an admin anymore!", &tg_name));
             }
             Ok(None) => {
-                self.send_reply(&message, format!("Guardian {} was not found.", &name));
+                self.send_reply(message, format!("Guardian {} was not found.", &name));
             }
             Err(_) => {
-                self.send_reply(&message, "Error querying guardian name.");
+                self.send_reply(message, "Error querying guardian name.");
             }
         }
     }

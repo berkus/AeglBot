@@ -11,7 +11,7 @@ use {
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
+        use $crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
         use riker::actors::{
             actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
         };
@@ -84,7 +84,7 @@ pub use self::whois_command::*;
 
 pub fn decapitalize(s: &str) -> String {
     s.chars()
-        .nth(0)
+        .next()
         .map(|item| item.to_lowercase().chain(s.chars().skip(1)).collect())
         .unwrap()
 }
@@ -158,9 +158,9 @@ pub fn guardian_lookup(
     name: &str,
     connection: &DbConnection,
 ) -> Result<Option<Guardian>, diesel::result::Error> {
-    if name.starts_with('@') {
+    if let Some(name) = name.strip_prefix('@') {
         guardians
-            .filter(telegram_name.eq(&name[1..]))
+            .filter(telegram_name.eq(name))
             .first::<Guardian>(connection)
             .optional()
     } else {
@@ -225,7 +225,7 @@ fn match_command(
                             // "593@AeglBot something something"
                             let x = x
                                 .trim_start_matches(&prefix)
-                                .trim_start_matches("@")
+                                .trim_start_matches('@')
                                 .trim_start_matches(bot_name)
                                 .trim_start();
                             // TODO: Prepend the ID stripped from the command previously
@@ -236,8 +236,7 @@ fn match_command(
                 ))
             })
     })
-    .or(Some((None, None)))
-    .unwrap()
+    .unwrap_or((None, None))
 }
 
 #[cfg(test)]

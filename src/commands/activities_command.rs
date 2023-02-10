@@ -429,38 +429,37 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
 
     log::trace!("{:?}", fragments);
 
-    if fragments.len() < 2 {
-        None
-    } else if fragments.len() == 2 {
-        // only single parameter
-        Some(final_collect(fragments))
-    } else {
-        // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
-        let subfrags = fragments[1..fragments.len() - 1]
-            .iter()
-            .map(|x: &&str| {
-                x.rsplitn(2, ' ')
-                    .collect::<Vec<&str>>()
-                    .into_iter()
-                    .rev()
-                    .collect::<Vec<&str>>()
-            })
-            .flatten()
-            .collect::<Vec<&str>>();
+    match fragments.len() {
+        x if x < 2 => None,
+        2 =>         // only single parameter
+            Some(final_collect(fragments)),
+        _ => {
+            // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
+            let subfrags = fragments[1..fragments.len() - 1]
+                .iter()
+                .flat_map(|x: &&str| {
+                    x.rsplitn(2, ' ')
+                        .collect::<Vec<&str>>()
+                        .into_iter()
+                        .rev()
+                        .collect::<Vec<&str>>()
+                })
+                .collect::<Vec<&str>>();
 
-        log::trace!("{:?}", subfrags);
+            log::trace!("{:?}", subfrags);
 
-        let mut final_ = vec![fragments[0]];
-        final_.extend(subfrags);
-        final_.extend(vec![fragments[fragments.len() - 1]]);
+            let mut final_ = vec![fragments[0]];
+            final_.extend(subfrags);
+            final_.extend(vec![fragments[fragments.len() - 1]]);
 
-        log::trace!("Final {:?}", final_);
+            log::trace!("Final {:?}", final_);
 
-        let the_map = final_collect(final_);
+            let the_map = final_collect(final_);
 
-        log::trace!(".. as map {:?}", the_map);
+            log::trace!(".. as map {:?}", the_map);
 
-        Some(the_map)
+            Some(the_map)
+        }
     }
 }
 

@@ -135,7 +135,7 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                     use crate::schema::guardians;
 
                     let guardian = NewGuardian {
-                        telegram_name: &username,
+                        telegram_name: username,
                         telegram_id: user_id,
                         psn_name: &name,
                     };

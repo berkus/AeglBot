@@ -26,7 +26,7 @@ impl CancelCommand {
 
     fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(
-            &message,
+            message,
             "To leave a fireteam provide fireteam id
 Fireteam IDs are available from output of /list command.",
         );

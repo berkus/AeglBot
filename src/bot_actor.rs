@@ -153,7 +153,7 @@ impl Actor for BotActor {
             .actor_of_args::<ReminderActor, _>(
                 "reminders",
                 (
-                    ctx.myself().clone(),
+                    ctx.myself(),
                     self.lfg_chat_id,
                     self.connection_pool.clone(),
                 ),

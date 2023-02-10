@@ -85,7 +85,7 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
                     return self.send_reply(&message, "You are not admin");
                 }
 
-                let guardian = guardian_lookup(&name, &connection);
+                let guardian = guardian_lookup(name, &connection);
                 let guardian = match guardian {
                     Ok(Some(guardian)) => Some(guardian),
                     Ok(None) => {
@@ -115,7 +115,7 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
                     email = if guardian.email.is_none() {
                         "<no email>".into()
                     } else {
-                        guardian.email.clone().unwrap().to_string()
+                        guardian.email.clone().unwrap()
                     },
                     admin = if guardian.is_superadmin {
                         "<superadmin>"

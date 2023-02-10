@@ -29,7 +29,7 @@ impl LfgCommand {
 
     fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(
-            &message,
+            message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
 For a list of activity codes: /activities
 Example: /lfg kf 2018-09-10 23:00

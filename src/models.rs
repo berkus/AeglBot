@@ -45,7 +45,6 @@ impl ActivityShortcut {
             .filter(name.eq(act_name))
             .get_result::<Self>(connection)
             .optional()
-            .map_err(|e| e)
     }
 }
 
@@ -82,10 +81,7 @@ impl Activity {
         format!(
             "{} {}",
             self.name,
-            match self.mode {
-                None => "",
-                Some(ref x) => &x,
-            }
+            self.mode.clone().unwrap_or(String::new())
         )
     }
 }
@@ -352,7 +348,7 @@ impl PlannedActivity {
     }
 
     pub fn format_details(&self) -> String {
-        self.details.clone().unwrap_or(String::new())
+        self.details.clone().map(|s| s+"\n").unwrap_or(String::new())
     }
 
     pub fn members_formatted(&self, connection: &DbConnection, joiner: &str) -> String {
@@ -387,6 +383,7 @@ impl PlannedActivity {
             .expect("Failed to run SQL")
     }
 
+    // Makes a telegram markdown formatted display.
     pub fn display(&self, connection: &DbConnection, g: Option<&Guardian>) -> String {
         format!(
             "<b>{id}</b>: <b>{name}</b>
@@ -399,15 +396,9 @@ impl PlannedActivity {
             members = self.members_formatted_column(connection),
             time = format_start_time(self.start, reference_date()),
             join = self.join_prompt(connection),
-            leave = if !g.is_none() {
-                if !self.find_member(connection, g.unwrap()).is_none() {
-                    format!("\nEnter `{}` to leave this group.", self.cancel_link())
-                } else {
-                    String::new()
-                }
-            } else {
-                String::new()
-            }
+            leave = g.and_then(|g| self.find_member(connection, g))
+                    .map(|_| format!("\nEnter `{}` to leave this group.", self.cancel_link()))
+                .unwrap_or(String::new())
         )
     }
 }
