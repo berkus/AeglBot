@@ -352,13 +352,7 @@ impl PlannedActivity {
     }
 
     pub fn format_details(&self) -> String {
-        match self.details {
-            None => String::new(),
-            Some(ref x) => match x.as_ref() {
-                "" => String::new(),
-                _ => format!("{}\n", x),
-            },
-        }
+        self.details.clone().unwrap_or(String::new())
     }
 
     pub fn members_formatted(&self, connection: &DbConnection, joiner: &str) -> String {
@@ -401,7 +395,7 @@ impl PlannedActivity {
 {join}{leave}",
             id = self.id,
             name = self.activity(connection).format_name(),
-            details = self.format_details(),
+            details = teloxide::utils::html::escape(&self.format_details()),
             members = self.members_formatted_column(connection),
             time = format_start_time(self.start, reference_date()),
             join = self.join_prompt(connection),
