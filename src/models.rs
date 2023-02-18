@@ -7,6 +7,7 @@ use {
     chrono::{prelude::*, Duration},
     diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
     diesel_derives_traits::Model,
+    serde::{Deserialize, Serialize},
     serde_json::Value,
     std::fmt,
 };
@@ -282,6 +283,20 @@ pub struct PlannedActivity {
     pub start: DateTime<Utc>,
 }
 
+// Output information
+#[derive(Serialize, Deserialize)]
+pub struct PlannedActivityTemplate {
+    pub id: i32,
+    pub name: String,
+    pub details: String,
+    pub members: Vec<ActivityMemberTemplate>,
+    pub time: String,
+    pub fireteam_full: bool,
+    pub join_link: String,
+    pub fireteam_joined: bool,
+    pub leave_link: String,
+}
+
 #[derive(Insertable, NewModel)]
 #[table_name = "plannedactivities"]
 #[model(PlannedActivity)]
@@ -292,6 +307,20 @@ pub struct NewPlannedActivity {
 }
 
 impl PlannedActivity {
+    // pub fn to_template(&self, activity: Activity, guardian: Guardian) -> PlannedActivityTemplate {
+    //     PlannedActivityTemplate {
+    //         id: self.id,
+    //         name: activity.format_name(),
+    //         details: self.format_details(),
+    //         members: self.members, // self.members_formatted_column(connection),
+    //         time: format_start_time(self.start, reference_date()),
+    //         fireteam_full: false, // @todo
+    //         join_link: self.join_prompt(connection),
+    //         fireteam_joined: guardian.and_then(|g| self.find_member(connection, g)).is_some(),
+    //         leave_link: self.cancel_link(),
+    //     }
+    // }
+
     pub fn author(&self, connection: &DbConnection) -> Option<Guardian> {
         Guardian::find_one(connection, &self.author_id)
             .expect("Failed to load PlannedActivity author")
@@ -326,17 +355,16 @@ impl PlannedActivity {
     }
 
     pub fn join_prompt(&self, connection: &DbConnection) -> String {
-        if self.is_full(connection) {
-            "This activity fireteam is full.".into()
-        } else {
-            let count = self.activity(connection).max_fireteam_size as usize
-                - self.members_count(connection);
-            format!(
-                "Enter `{joinLink}` to join this group. Up to {count} more can join.",
-                joinLink = self.join_link(),
-                count = count
-            )
-        }
+        // if self.is_full(connection) {
+        //     "This activity fireteam is full.".into()
+        // } else {
+        //     format!(
+        //         "Enter `{joinLink}` to join this group. Up to {count} more can join.",
+        //         joinLink = self.join_link(),
+        //         count = count
+        //     )
+        // }
+        format!("")
     }
 
     pub fn is_full(&self, connection: &DbConnection) -> bool {
@@ -348,7 +376,10 @@ impl PlannedActivity {
     }
 
     pub fn format_details(&self) -> String {
-        self.details.clone().map(|s| s+"\n").unwrap_or(String::new())
+        self.details
+            .clone()
+            .map(|s| s + "\n")
+            .unwrap_or(String::new())
     }
 
     pub fn members_formatted(&self, connection: &DbConnection, joiner: &str) -> String {
@@ -385,39 +416,11 @@ impl PlannedActivity {
 
     // Makes a telegram markdown formatted display.
     pub fn display(&self, connection: &DbConnection, g: Option<&Guardian>) -> String {
-        format!(
-            "<b>{id}</b>: <b>{name}</b>
-{details}{members}
-⏰ <b>{time}</b>
-{join}{leave}",
-            id = self.id,
-            name = self.activity(connection).format_name(),
-            details = teloxide::utils::html::escape(&self.format_details()),
-            members = self.members_formatted_column(connection),
-            time = format_start_time(self.start, reference_date()),
-            join = self.join_prompt(connection),
-            leave = g.and_then(|g| self.find_member(connection, g))
-                    .map(|_| format!("\nEnter `{}` to leave this group.", self.cancel_link()))
-                .unwrap_or(String::new())
-        )
+        // let activity = self.activity(connection);
+        // let template = self.to_template(activity, g);
+        format!("")
     }
 }
-
-// @todo when/if PlannedActivity stores all necessary state locally..
-// impl fmt::Display for PlannedActivity {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(
-//             f,
-//             "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
-//             id = self.id,
-//             name = self.activity().format_name(),
-//             details = self.format_details(),
-//             members = self.members_formatted_column(),
-//             time = format_start_time(Local.from_local_datetime(&self.start).unwrap()),
-//             join = self.join_prompt()
-//         )
-//     }
-// }
 
 //
 // PlannedActivityMember
@@ -432,6 +435,12 @@ pub struct PlannedActivityMember {
     pub planned_activity_id: i32,
     pub user_id: i32,
     pub added: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ActivityMemberTemplate {
+    pub psn_name: String,
+    pub telegram_name: String,
 }
 
 #[derive(Insertable, NewModel)]
