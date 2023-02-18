@@ -8,7 +8,7 @@ use {
     diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
     diesel_derives_traits::Model,
     serde_json::Value,
-    std::fmt,
+    std::{fmt, sync::LazyLock},
 };
 
 //
@@ -191,12 +191,8 @@ impl Alert {
     }
 
     pub fn is_credits(&self) -> bool {
-        use regex::Regex;
-
-        lazy_static! {
-            static ref CREDITS: Regex = Regex::new(r#"^\d+cr "#).unwrap();
-        }
-
+        static CREDITS: LazyLock<regex::Regex> =
+            LazyLock::new(|| regex::Regex::new(r#"^\d+cr "#).unwrap());
         CREDITS.is_match(&self.title)
     }
 
