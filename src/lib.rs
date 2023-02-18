@@ -3,11 +3,10 @@
 // #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![warn(unused_imports)] // during development
 #![feature(type_ascription)]
+#![feature(lazy_cell)]
 
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate diesel_derives_extra;
 
