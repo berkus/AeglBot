@@ -1,7 +1,6 @@
-use crate::bot_actor::{Format, Notify};
 use {
     crate::{
-        bot_actor::{BotActorMsg, SendMessage},
+        bot_actor::{BotActorMsg, Format, Notify, SendMessage},
         datetime::{reference_date, BotDateTime},
     },
     chrono::{DateTime, Duration, TimeZone, Utc},
