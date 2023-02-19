@@ -1,10 +1,6 @@
 use {
     crate::{
-        commands::*,
-        services::reminder_actor::{
-            ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
-        },
-        BotCommand, DbConnPool, NamedActor,
+        commands::*, services::reminder_actor::ReminderActor, BotCommand, DbConnPool, NamedActor,
     },
     dotenv::dotenv,
     riker::actors::{
@@ -37,7 +33,7 @@ impl std::fmt::Debug for BotActor {
     }
 }
 
-pub type UpdateMessage = UpdateWithCx<Bot, Message>;
+// pub type UpdateMessage = UpdateWithCx<Bot, Message>;
 pub type ActorUpdateMessage = ActorUpdateWithCx<Bot, Message>;
 
 // Manually derived version of UpdateWithCx<_, _>
@@ -152,17 +148,9 @@ impl Actor for BotActor {
         let reminders = ctx
             .actor_of_args::<ReminderActor, _>(
                 "reminders",
-                (
-                    ctx.myself(),
-                    self.lfg_chat_id,
-                    self.connection_pool.clone(),
-                ),
+                (ctx.myself(), self.lfg_chat_id, self.connection_pool.clone()),
             )
             .unwrap();
-        // Schedule first run, the actor handler will reschedule.
-        reminders.tell(ScheduleNextMinute, None);
-        reminders.tell(ScheduleNextDay, None);
-        reminders.tell(ScheduleNextWeek, None);
     }
 
     fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {

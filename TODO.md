@@ -2,7 +2,7 @@ More features:
 
 - [ ] Add waiting-list for activities.
 
-- [ ] Mark past WF events with "(ended) " prefix.
+- [x] Mark past WF events with "(ended) " prefix.
 - [ ] Handle diesel in async using blocking() handoff
    - https://docs.rs/tokio-threadpool/0.1/tokio_threadpool/fn.blocking.html
    - tokio_diesel

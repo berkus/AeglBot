@@ -1,10 +1,10 @@
-use crate::bot_actor::{Format, Notify};
 use {
     crate::{
-        bot_actor::{BotActorMsg, SendMessage},
+        bot_actor::{BotActorMsg, Format, Notify, SendMessage},
         datetime::{reference_date, BotDateTime},
     },
     chrono::{DateTime, Duration, TimeZone, Utc},
+    once_cell::sync::Lazy,
     riker::{actor::Tell, actors::ActorRef},
 };
 // use plurals::{Lang, Plural};
@@ -28,10 +28,7 @@ pub fn raid_cycle() -> String {
 }
 
 fn raid_week_number(now: BotDateTime) -> i64 {
-    // @TODO: once_cell
-    lazy_static! {
-        static ref START_WEEK: DateTime<Utc> = Utc.ymd(2019, 12, 31).and_hms(17, 0, 0);
-    }
+    static START_WEEK: Lazy<DateTime<Utc>> = Lazy::new(|| Utc.ymd(2019, 12, 31).and_hms(17, 0, 0));
     (now - *START_WEEK).num_weeks() % 4
 }
 
@@ -129,18 +126,12 @@ pub fn this_week_in_d2() -> String {
 }
 
 fn dc_week_number(now: BotDateTime) -> i64 {
-    // @TODO: once_cell
-    lazy_static! {
-        static ref START_WEEK: DateTime<Utc> = Utc.ymd(2018, 9, 11).and_hms(17, 0, 0);
-    }
+    static START_WEEK: Lazy<DateTime<Utc>> = Lazy::new(|| Utc.ymd(2018, 9, 11).and_hms(17, 0, 0));
     (now - *START_WEEK).num_weeks() % 3
 }
 
 fn ascendant_challenge_week_number(now: BotDateTime) -> i64 {
-    // @TODO: once_cell
-    lazy_static! {
-        static ref START_WEEK: DateTime<Utc> = Utc.ymd(2021, 7, 6).and_hms(17, 0, 0);
-    }
+    static START_WEEK: Lazy<DateTime<Utc>> = Lazy::new(|| Utc.ymd(2021, 7, 6).and_hms(17, 0, 0));
     (now - *START_WEEK).num_weeks() % 6
 }
 

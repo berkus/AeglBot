@@ -21,6 +21,7 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 name = "aegl_bot"
 version = "0.2.0"
 dependencies = [
+ "async-trait",
  "chrono",
  "chrono-english",
  "chrono-tz 0.5.3",
@@ -34,12 +35,12 @@ dependencies = [
  "futures",
  "futures-retry",
  "itertools 0.10.5",
- "lazy_static",
  "log",
  "once_cell",
  "paste",
  "procfs",
  "r2d2",
+ "ractor",
  "regex",
  "riker",
  "serde 1.0.152",
@@ -179,6 +180,17 @@ name = "async-task"
 version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a40729d2133846d9ed0ea60a8b9541bccddab49cd30f0715a1da672fe9a2524"
+
+[[package]]
+name = "async-trait"
+version = "0.1.64"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cd7fce9ba8c3c042128ce72d8b2ddbf3a05747efb67ea0313c635e10bda47a2"
+dependencies = [
+ "proc-macro2 1.0.51",
+ "quote 1.0.23",
+ "syn 1.0.107",
+]
 
 [[package]]
 name = "async_io_stream"
@@ -656,6 +668,19 @@ dependencies = [
  "ahash",
  "cfg-if 0.1.10",
  "num_cpus",
+]
+
+[[package]]
+name = "dashmap"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "907076dfda823b0b36d2a1bb5f90c96660a5bbcd7729e10727f07858f22c4edc"
+dependencies = [
+ "cfg-if 1.0.0",
+ "hashbrown",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -2119,6 +2144,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ractor"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4935c6358d30f5f19af445ed2e7a52269f02543ea9119e3ece186cff462d4ef9"
+dependencies = [
+ "async-trait",
+ "dashmap 5.4.0",
+ "futures",
+ "log",
+ "once_cell",
+ "rand 0.8.5",
+ "tokio",
+]
+
+[[package]]
 name = "radium"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2292,7 +2332,7 @@ checksum = "abff93ece5a5d3d7f2c54dfba7550657a644c9dc0a871c7ddf8c31381971c41b"
 dependencies = [
  "chrono",
  "config",
- "dashmap",
+ "dashmap 3.11.10",
  "futures",
  "num_cpus",
  "pin-utils",

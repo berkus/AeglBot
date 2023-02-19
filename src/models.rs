@@ -7,6 +7,7 @@ use {
     chrono::{prelude::*, Duration},
     diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
     diesel_derives_traits::Model,
+    once_cell::sync::Lazy,
     serde::{Deserialize, Serialize},
     serde_json::Value,
     std::fmt,
@@ -192,12 +193,7 @@ impl Alert {
     }
 
     pub fn is_credits(&self) -> bool {
-        use regex::Regex;
-
-        lazy_static! {
-            static ref CREDITS: Regex = Regex::new(r#"^\d+cr "#).unwrap();
-        }
-
+        static CREDITS: Lazy<regex::Regex> = Lazy::new(|| regex::Regex::new(r#"^\d+cr "#).unwrap());
         CREDITS.is_match(&self.title)
     }
 
