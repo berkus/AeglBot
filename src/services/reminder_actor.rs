@@ -6,7 +6,7 @@ use {
         BotConnection, DbConnPool,
     },
     chrono::Timelike,
-    ractor::{cast, Actor, ActorProcessingErr, ActorRef},
+    ractor::{cast, concurrency::Duration, Actor, ActorProcessingErr, ActorRef},
     teloxide::types::ChatId,
 };
 
@@ -77,30 +77,22 @@ impl Actor for ReminderActor {
                 cast!(myself, ReminderActorMsg::ScheduleNextWeek);
             }
             ReminderActorMsg::ScheduleNextMinute => {
-                ctx.schedule_at_time(
-                    (reference_date() + chrono::Duration::minutes(1))
-                        .with_second(0)
-                        .unwrap(),
-                    ctx.myself(),
-                    None,
-                    ReminderActorMsg::Reminders,
-                );
+                let next_minute = (reference_date() + chrono::Duration::minutes(1))
+                    .with_second(0)
+                    .unwrap();
+                let duration = Duration::milliseconds(next_minute - now());
+                myself.send_after(duration, ReminderActorMsg::Reminders);
             }
             ReminderActorMsg::ScheduleNextDay => {
-                ctx.schedule_at_time(
-                    start_at_time(reference_date(), d2_reset_time()),
-                    ctx.myself(),
-                    None,
-                    ReminderActorMsg::DailyReset,
-                );
+                let next_day = start_at_time(reference_date(), d2_reset_time());
+                let duration = Duration::milliseconds(next_day - now());
+                myself.send_after(duration, ReminderActorMsg::DailyReset);
             }
             ReminderActorMsg::ScheduleNextWeek => {
-                ctx.schedule_at_time(
-                    start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time()),
-                    ctx.myself(),
-                    None,
-                    ReminderActorMsg::WeeklyReset,
-                );
+                let next_week =
+                    start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time());
+                let duration = Duration::milliseconds(next_week - now());
+                myself.send_after(duration, ReminderActorMsg::WeeklyReset);
             }
         }
         Ok(())
