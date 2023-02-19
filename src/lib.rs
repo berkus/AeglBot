@@ -26,7 +26,8 @@ static TERA: Lazy<Tera> = Lazy::new(|| {
     tera.add_raw_templates(vec![(
         "activity_list",
         include_str!("./outputs/activity_list.tera"),
-    )]);
+    )])
+    .unwrap();
     tera
 });
 
