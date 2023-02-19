@@ -38,7 +38,7 @@ impl ActiveModel {
 
 - [ ] Add waiting-list for activities.
 
-- [ ] Mark past WF events with "(ended) " prefix.
+- [x] Mark past WF events with "(ended) " prefix.
 - [ ] HANDLE ERRORS
 - [x] match guardian- and telegram-names case-insensitive (use filter(`.ilike`(match))) @done (19-05-21 22:09)
    - [ ] GUARDIAN_ID could be int, telegram name or psn name
