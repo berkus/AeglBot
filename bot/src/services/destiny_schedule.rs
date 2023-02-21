@@ -1,13 +1,11 @@
 use {
     crate::{
-        bot_actor::{Format, Notify, SendMessage},
+        bot_actor::{BotActor, BotActorMsg, Format, Notify},
         datetime::{reference_date, BotDateTime},
     },
     chrono::{DateTime, Duration, TimeZone, Utc},
-    culpa::throws,
-    kameo::prelude::*,
-    std::sync::LazyLock,
-    teloxide::types::ChatId,
+    once_cell::sync::Lazy,
+    ractor::{cast, ActorRef},
 };
 // use plurals::{Lang, Plural};
 
@@ -30,8 +28,7 @@ pub fn raid_cycle() -> String {
 }
 
 fn raid_week_number(now: BotDateTime) -> i64 {
-    static START_WEEK: LazyLock<DateTime<Utc>> =
-        LazyLock::new(|| Utc.with_ymd_and_hms(2019, 12, 31, 17, 0, 0).unwrap());
+    static START_WEEK: Lazy<DateTime<Utc>> = Lazy::new(|| Utc.ymd(2019, 12, 31).and_hms(17, 0, 0));
     (now - *START_WEEK).num_weeks() % 4
 }
 
@@ -43,15 +40,12 @@ fn raid_week_number(now: BotDateTime) -> i64 {
 // };
 
 // 1. Daily resets at 20:00 MSK (17:00 UTC) every day
-#[throws(kameo::error::SendError<crate::bot_actor::SendMessage>)]
-pub async fn daily_reset(bot: ActorRef<crate::bot_actor::BotActor>, lfg_chat: ChatId) {
-    bot.tell(SendMessage(
-        "⚡️ Daily reset".into(),
-        lfg_chat,
-        Format::Plain,
-        Notify::Off,
-    ))
-    .await?;
+
+pub fn daily_reset(bot: ActorRef<BotActor>, chat_id: teloxide::types::ChatId) {
+    cast!(
+        bot,
+        BotActorMsg::SendMessage("⚡️ Daily reset".into(), chat_id, Format::Plain, Notify::Off)
+    );
 }
 
 pub fn dreaming_city_cycle() -> String {
@@ -63,9 +57,9 @@ pub fn dreaming_city_cycle() -> String {
     ];
     let dc_week = dc_week_number(reference_date()) as usize;
     format!(
-        "💫 Dreaming City: {} \\- [Ascendant Chests]({})\n\\(Shattered Throne is always available\\)",
-        curses[dc_week], urls[dc_week]
-    )
+         "💫 Dreaming City: {} \\- [Ascendant Chests]({})\n\\(Shattered Throne is always available\\)",
+         curses[dc_week], urls[dc_week]
+     )
 }
 
 pub fn ascendant_challenge_cycle() -> String {
@@ -96,11 +90,11 @@ pub fn ascendant_challenge_cycle() -> String {
 
     let ac_week = ascendant_challenge_week_number(reference_date()) as usize;
     format!(
-        "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): [{name}]({url}) in the {loc}",
-        name = challenges[ac_week],
-        loc = locations[ac_week],
-        url = urls[ac_week],
-    )
+         "[Ascendant Challenge](https://www.shacknews.com/article/109219/ascendant-challenge-schedule-and-location-destiny-2): [{name}]({url}) in the {loc}",
+         name = challenges[ac_week],
+         loc = locations[ac_week],
+         url = urls[ac_week],
+     )
 }
 
 // 2. Weekly (main) resets at 20:00 msk every Tue
@@ -108,15 +102,18 @@ pub fn ascendant_challenge_cycle() -> String {
 //    dreaming city on 3-week schedule
 // 7. On main reset: change in Dreaming City Ascendant Challenges
 //    dreaming city challenges on 6-week schedule
-#[throws(kameo::error::SendError<crate::bot_actor::SendMessage>)]
-pub async fn major_weekly_reset(bot: ActorRef<crate::bot_actor::BotActor>, lfg_chat: ChatId) {
+
+pub fn major_weekly_reset(bot: ActorRef<BotActor>, chat_id: teloxide::types::ChatId) {
     let msg = format!(
         "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
         d1week = this_week_in_d1(),
         d2week = this_week_in_d2(),
     );
-    bot.tell(SendMessage(msg, lfg_chat, Format::Markdown, Notify::Off))
-        .await?;
+
+    cast!(
+        bot,
+        BotActorMsg::SendMessage(msg, chat_id, Format::Markdown, Notify::Off)
+    );
 }
 
 pub fn this_week_in_d1() -> String {
@@ -132,14 +129,12 @@ pub fn this_week_in_d2() -> String {
 }
 
 fn dc_week_number(now: BotDateTime) -> i64 {
-    static START_WEEK: LazyLock<DateTime<Utc>> =
-        LazyLock::new(|| Utc.with_ymd_and_hms(2018, 9, 11, 17, 0, 0).unwrap());
+    static START_WEEK: Lazy<DateTime<Utc>> = Lazy::new(|| Utc.ymd(2018, 9, 11).and_hms(17, 0, 0));
     (now - *START_WEEK).num_weeks() % 3
 }
 
 fn ascendant_challenge_week_number(now: BotDateTime) -> i64 {
-    static START_WEEK: LazyLock<DateTime<Utc>> =
-        LazyLock::new(|| Utc.with_ymd_and_hms(2021, 7, 6, 17, 0, 0).unwrap());
+    static START_WEEK: Lazy<DateTime<Utc>> = Lazy::new(|| Utc.ymd(2021, 7, 6).and_hms(17, 0, 0));
     (now - *START_WEEK).num_weeks() % 6
 }
 
@@ -150,31 +145,16 @@ mod tests {
     #[test]
     fn test_dc_weeks() {
         // Week Oct 16-22 - Strongest Curse (2)
-        assert_eq!(
-            dc_week_number(Utc.with_ymd_and_hms(2018, 10, 20, 12, 0, 0).unwrap()),
-            2
-        );
+        assert_eq!(dc_week_number(Utc.ymd(2018, 10, 20).and_hms(12, 0, 0)), 2);
         // Week Oct 23-29 - Weak Curse (0)
-        assert_eq!(
-            dc_week_number(Utc.with_ymd_and_hms(2018, 10, 24, 12, 0, 0).unwrap()),
-            0
-        );
+        assert_eq!(dc_week_number(Utc.ymd(2018, 10, 24).and_hms(12, 0, 0)), 0);
         // Week Oct 30-Nov 5 - Growing Curse (1)
-        assert_eq!(
-            dc_week_number(Utc.with_ymd_and_hms(2018, 11, 1, 12, 0, 0).unwrap()),
-            1
-        );
+        assert_eq!(dc_week_number(Utc.ymd(2018, 11, 1).and_hms(12, 0, 0)), 1);
     }
 
     #[test]
     fn test_raid_weeks() {
-        assert_eq!(
-            raid_week_number(Utc.with_ymd_and_hms(2020, 1, 28, 21, 0, 0).unwrap()),
-            0
-        );
-        assert_eq!(
-            raid_week_number(Utc.with_ymd_and_hms(2020, 1, 27, 12, 0, 0).unwrap()),
-            3
-        );
+        assert_eq!(raid_week_number(Utc.ymd(2020, 1, 28).and_hms(21, 0, 0)), 0);
+        assert_eq!(raid_week_number(Utc.ymd(2020, 1, 27).and_hms(12, 0, 0)), 3);
     }
 }

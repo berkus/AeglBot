@@ -1,55 +1,74 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::{admin_check, match_command},
+        bot_actor::{ActorUpdateMessage, Format, Notify},
+        commands::{admin_check, match_command, BotActorMsg},
+        models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
         BotCommand,
     },
-    entity::{activities, activityshortcuts},
+    diesel::{self, prelude::*},
+    diesel_derives_traits::{Model, NewModel},
     itertools::Itertools,
-    kameo::message::Context,
-    sea_orm::{
-        ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set,
-    },
+    ractor::{cast, Actor, ActorProcessingErr},
     std::collections::HashMap,
 };
 
 command_actor!(ActivitiesCommand, [ActorUpdateMessage]);
 
 impl ActivitiesCommand {
-    async fn activities_usage(&self, message: &ActorUpdateMessage) {
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
+    where
+        S: Into<String>,
+    {
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
+        );
+        Ok(())
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+        // @todo TERA
         self.send_reply(
             message,
             "Activities command help:
 
-/activities
-    Lists all available activities shortcuts.
+ /activities
+     Lists all available activities shortcuts.
 
-Admin-only mode:
+ Admin-only mode:
 
-/activities ids
-    Lists IDs of all activities.
-/activities add KV
-    Create new activity from KV pairs (see below).
-/activities edit ID KV
-    Modify activity with given ID by updating all given KVs.
-/activities addsc ID shortcut <Game Name>
-    Add activity shortcut for activity ID.
-/activities delete ID
-    Remove activity if it doesn't have any activities planned.
+ /activities ids
+     Lists IDs of all activities.
+ /activities add KV
+     Create new activity from KV pairs (see below).
+ /activities edit ID KV
+     Modify activity with given ID by updating all given KVs.
+ /activities addsc ID shortcut <Game Name>
+     Add activity shortcut for activity ID.
+ /activities delete ID
+     Remove activity if it doesn't have any activities planned.
 
-KV pairs are space-separated pairs of key=value elements
-String arguments may be in quotes, but this is optional.
+ KV pairs are space-separated pairs of key=value elements
+ String arguments may be in quotes, but this is optional.
 
-Supported KV pairs for add/edit commands:
+ Supported KV pairs for add/edit commands:
 
-name=activity name (e.g. Crucible)    <mandatory>
-mode=activity mode (e.g. Iron Banner) <optional>
-min_fireteam_size=n                   <mandatory>
-max_fireteam_size=n                   <mandatory>
-min_light=n                           <optional>
-min_level=n                           <optional>",
+ name=activity name (e.g. Crucible)    <mandatory>
+ mode=activity mode (e.g. Iron Banner) <optional>
+ min_fireteam_size=n                   <mandatory>
+ max_fireteam_size=n                   <mandatory>
+ min_light=n                           <optional>
+ min_level=n                           <optional>",
         )
-        .await;
     }
 }
 
@@ -76,162 +95,153 @@ impl BotCommand for ActivitiesCommand {
 //     }
 // }
 
-impl Message<ActorUpdateMessage> for ActivitiesCommand {
-    type Reply = ();
+#[async_trait::async_trait]
+impl Actor for ActivitiesCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
-        self.handle_message(message).await;
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
     }
-}
 
-impl ActivitiesCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
-        let connection = self.connection();
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
+            let connection = self.connection();
+
             if args.is_none() {
+                use crate::schema::{
+                    activities::dsl::{activities, id},
+                    activityshortcuts::dsl::{activityshortcuts, game, name},
+                };
+
                 // Just /activities
-                let games = activityshortcuts::Entity::find()
-                    .select_only()
-                    .column(activityshortcuts::Column::Game)
+                let games = activityshortcuts
+                    .select(game)
                     .distinct()
-                    .order_by_asc(activityshortcuts::Column::Game)
-                    .all(connection)
-                    .await
+                    .order(game.asc())
+                    .load::<String>(&connection)
                     .expect("Failed to load activity shortcuts");
 
                 let mut text = "Activities: use a short name:\n".to_owned();
 
-                for game_row in games {
-                    let game_name = game_row.game;
+                for game_name in games {
                     text += &format!("*** <b>{0}</b>:\n", game_name);
-                    let shortcuts = activityshortcuts::Entity::find()
-                        .filter(activityshortcuts::Column::Game.eq(&game_name))
-                        .order_by_asc(activityshortcuts::Column::Name)
-                        .all(connection)
-                        .await
+                    let shortcuts = activityshortcuts
+                        .filter(game.eq(game_name))
+                        .order(name.asc())
+                        .load::<ActivityShortcut>(&connection)
                         .expect("TEMP loading @FIXME");
-
                     for shortcut in shortcuts {
-                        let link_activity = activities::Entity::find_by_id(shortcut.link)
-                            .one(connection)
-                            .await
-                            .expect("Failed to load activity")
-                            .expect("Activity not found");
+                        let link_name = activities
+                            .filter(id.eq(shortcut.link))
+                            .first::<Activity>(&connection)
+                            .expect("Failed to load activity");
 
                         text += &format!(
                             "<b>{name}</b>\t{link}\n",
                             name = shortcut.name,
-                            link = link_activity.format_name(),
+                            link = link_name.format_name(),
                         );
                     }
                     text += "\n";
                 }
 
-                let _ = self
-                    .bot_ref
-                    .tell(SendMessageReply(text, message, Format::Html, Notify::Off))
-                    .await;
-                return;
+                cast!(
+                    self.bot_ref,
+                    BotActorMsg::SendMessageReply(text, message, Format::Html, Notify::Off)
+                );
+                return Ok(());
             }
 
             // some args - pass to a subcommand
+
             let args = args.unwrap();
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
             if args.is_empty() {
-                self.activities_usage(&message).await;
-                return;
+                return self.usage(&message);
             }
 
-            let admin = admin_check(&self.bot_ref, &message, connection).await;
+            let admin = admin_check(&self.bot_ref, &message, &connection);
             if admin.is_none() {
-                self.send_reply(&message, "You are not admin").await;
-                return;
+                return self.send_reply(&message, "You are not admin");
             }
 
             // split into subcommands:
             match args[0] {
                 "ids" => {
-                    let games = activities::Entity::find()
-                        .all(connection)
-                        .await
+                    use crate::schema::activities::dsl::{activities, id, mode, name};
+
+                    let games = activities
+                        .select((id, name, mode))
+                        .order(id.asc())
+                        .load::<(i32, String, Option<String>)>(&connection)
                         .expect("Failed to load activities");
 
                     let mut text = "Activities:\n\n".to_string();
-                    for activity in games {
-                        text += &format!(
-                            "{}. {} {}\n",
-                            activity.id,
-                            activity.name,
-                            activity.mode.unwrap_or("".into())
-                        );
+                    for (id_, name_, mode_) in games {
+                        text += &format!("{}. {} {}\n", id_, name_, mode_.unwrap_or("".into()));
                     }
-                    self.send_reply(&message, text).await;
+                    self.send_reply(&message, text);
                 }
                 "add" => {
                     if args.len() < 2 {
-                        self.send_reply(&message, "Syntax: /activities add KV")
-                            .await;
-                        return self.activities_usage(&message).await;
+                        self.send_reply(&message, "Syntax: /activities add KV");
+                        return self.usage(&message);
                     }
 
                     let argmap = parse_kv_args(args[1]);
                     if argmap.is_none() {
                         return self
-                            .send_reply(&message, "Invalid activity specification, see help.")
-                            .await;
+                            .send_reply(&message, "Invalid activity specification, see help.");
                     }
                     let mut argmap = argmap.unwrap();
                     let name = argmap.remove("name");
                     if name.is_none() {
-                        return self
-                            .send_reply(&message, "Must specify activity name, see help.")
-                            .await;
+                        return self.send_reply(&message, "Must specify activity name, see help.");
                     }
 
                     let min_fireteam_size = argmap.remove("min_fireteam_size");
                     if min_fireteam_size.is_none() {
                         return self
-                            .send_reply(&message, "Must specify min_fireteam_size, see help.")
-                            .await;
+                            .send_reply(&message, "Must specify min_fireteam_size, see help.");
                     }
                     let min_fireteam_size = min_fireteam_size.unwrap().parse::<i32>();
                     if min_fireteam_size.is_err() {
-                        return self
-                            .send_reply(&message, "min_fireteam_size must be a number")
-                            .await;
+                        return self.send_reply(&message, "min_fireteam_size must be a number");
                     }
                     let min_fireteam_size = min_fireteam_size.unwrap();
 
                     let max_fireteam_size = argmap.remove("max_fireteam_size");
                     if max_fireteam_size.is_none() {
                         return self
-                            .send_reply(&message, "Must specify max_fireteam_size, see help.")
-                            .await;
+                            .send_reply(&message, "Must specify max_fireteam_size, see help.");
                     }
                     let max_fireteam_size = max_fireteam_size.unwrap().parse::<i32>();
                     if max_fireteam_size.is_err() {
-                        return self
-                            .send_reply(&message, "max_fireteam_size must be a number")
-                            .await;
+                        return self.send_reply(&message, "max_fireteam_size must be a number");
                     }
                     let max_fireteam_size = max_fireteam_size.unwrap();
 
                     // check no duplicates -- ?
-                    let mut act = activities::ActiveModel {
-                        name: Set(name.unwrap().to_string()),
-                        mode: Set(None),
-                        min_fireteam_size: Set(min_fireteam_size),
-                        max_fireteam_size: Set(max_fireteam_size),
-                        min_level: Set(None),
-                        min_light: Set(None),
-                        ..Default::default()
+                    let mut act = NewActivity {
+                        name: name.unwrap().into(),
+                        mode: None,
+                        min_fireteam_size,
+                        max_fireteam_size,
+                        min_level: None,
+                        min_light: None,
                     };
 
                     for (key, val) in argmap {
@@ -239,251 +249,207 @@ impl ActivitiesCommand {
                             "min_light" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
-                                    return self
-                                        .send_reply(&message, "min_light must be a number")
-                                        .await;
+                                    return self.send_reply(&message, "min_light must be a number");
                                 }
-                                act.min_light = Set(Some(val.unwrap()));
+                                act.min_light = Some(val.unwrap())
                             }
                             "min_level" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
-                                    return self
-                                        .send_reply(&message, "min_level must be a number")
-                                        .await;
+                                    return self.send_reply(&message, "min_level must be a number");
                                 }
-                                act.min_level = Set(Some(val.unwrap()));
+                                act.min_level = Some(val.unwrap())
                             }
-                            "mode" => act.mode = Set(Some(val.to_string())),
+                            "mode" => act.mode = Some(val.into()),
                             _ => {
                                 return self
-                                    .send_reply(&message, format!("Unknown field name {}", key))
-                                    .await;
+                                    .send_reply(&message, format!("Unknown field name {}", key));
                             }
                         }
                     }
 
-                    match act.insert(connection).await {
+                    match act.save(&connection) {
                         Ok(act) => {
                             self.send_reply(
                                 &message,
                                 format!("Activity {} added.", act.format_name()),
-                            )
-                            .await
+                            )?;
                         }
                         Err(e) => {
-                            self.send_reply(&message, format!("Error creating activity. {:?}", e))
-                                .await
+                            self.send_reply(&message, format!("Error creating activity. {:?}", e))?;
                         }
                     }
                 }
                 "addsc" => {
                     if args.len() < 2 {
-                        return self
-                            .send_reply(
-                                &message,
-                                "Syntax: /activities addsc ActivityID ShortcutName Game name",
-                            )
-                            .await;
+                        return self.send_reply(
+                            &message,
+                            "Syntax: /activities addsc ActivityID ShortcutName Game name",
+                        );
                     }
 
                     let args: Vec<&str> = args[1].splitn(3, ' ').collect();
                     if args.len() != 3 {
                         return self.send_reply(
-                            &message,
-                            "To add a shortcut specify activity ID, shortcut name and then the game name",
-                        ).await;
+                             &message,
+                             "To add a shortcut specify activity ID, shortcut name and then the game name",
+                         );
                     }
 
                     let link = args[0].parse::<i32>();
                     if link.is_err() {
-                        return self
-                            .send_reply(&message, "ActivityID must be a number")
-                            .await;
+                        return self.send_reply(&message, "ActivityID must be a number");
                     }
                     let link = link.unwrap();
                     let name = args[1].to_string();
                     let game = args[2].to_string();
 
-                    let act = activities::Entity::find_by_id(link)
-                        .one(connection)
-                        .await
-                        .expect("Failed to run SQL");
+                    let act = Activity::find_one(&connection, &link).expect("Failed to run SQL");
 
                     if act.is_none() {
                         return self
-                            .send_reply(&message, format!("Activity {} was not found.", link))
-                            .await;
+                            .send_reply(&message, format!("Activity {} was not found.", link));
                     }
 
-                    let shortcut = activityshortcuts::ActiveModel {
-                        name: Set(name),
-                        game: Set(game),
-                        link: Set(link),
-                        ..Default::default()
-                    };
+                    let shortcut = NewActivityShortcut { name, game, link };
 
-                    if shortcut.insert(connection).await.is_err() {
-                        return self.send_reply(&message, "Error creating shortcut").await;
+                    if shortcut.save(&connection).is_err() {
+                        return self.send_reply(&message, "Error creating shortcut");
                     }
 
-                    self.send_reply(&message, "Shortcut added").await;
+                    self.send_reply(&message, "Shortcut added");
                 }
                 "edit" => {
                     if args.len() < 2 {
-                        self.send_reply(&message, "Syntax: /activities edit ID KV")
-                            .await;
-                        return self.activities_usage(&message).await;
+                        self.send_reply(&message, "Syntax: /activities edit ID KV");
+                        return self.usage(&message);
                     }
 
                     let args: Vec<&str> = args[1].splitn(2, ' ').collect();
                     if args.len() != 2 {
-                        return self
-                            .send_reply(
-                                &message,
-                                "To edit first specify Activity ID and then key=value pairs",
-                            )
-                            .await;
+                        return self.send_reply(
+                            &message,
+                            "To edit first specify Activity ID and then key=value pairs",
+                        );
                     }
 
                     let id = args[0].parse::<i32>();
                     if id.is_err() {
-                        return self
-                            .send_reply(&message, "ActivityID must be a number")
-                            .await;
+                        return self.send_reply(&message, "ActivityID must be a number");
                     }
                     let id = id.unwrap();
 
-                    let act = activities::Entity::find_by_id(id)
-                        .one(connection)
-                        .await
-                        .expect("Failed to run SQL");
+                    let act = Activity::find_one(&connection, &id).expect("Failed to run SQL");
 
                     if act.is_none() {
                         return self
-                            .send_reply(&message, format!("Activity {} was not found.", id))
-                            .await;
+                            .send_reply(&message, format!("Activity {} was not found.", id));
                     }
-                    let act = act.unwrap();
-                    let mut act: activities::ActiveModel = act.into();
+                    let mut act = act.unwrap();
 
                     let argmap = parse_kv_args(args[1]);
                     if argmap.is_none() {
                         return self
-                            .send_reply(&message, "Invalid activity specification, see help.")
-                            .await;
+                            .send_reply(&message, "Invalid activity specification, see help.");
                     }
                     let argmap = argmap.unwrap();
 
                     for (key, val) in argmap {
                         match key {
-                            "name" => act.name = Set(val.to_string()),
+                            "name" => act.name = val.into(),
                             "min_fireteam_size" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
-                                    return self
-                                        .send_reply(&message, "min_fireteam_size must be a number")
-                                        .await;
+                                    return self.send_reply(
+                                        &message,
+                                        "min_fireteam_size must be a number",
+                                    );
                                 }
-                                act.min_fireteam_size = Set(val.unwrap())
+                                act.min_fireteam_size = val.unwrap()
                             }
                             "max_fireteam_size" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
-                                    return self
-                                        .send_reply(&message, "max_fireteam_size must be a number")
-                                        .await;
+                                    return self.send_reply(
+                                        &message,
+                                        "max_fireteam_size must be a number",
+                                    );
                                 }
-                                act.max_fireteam_size = Set(val.unwrap())
+                                act.max_fireteam_size = val.unwrap()
                             }
                             "min_light" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
-                                    return self
-                                        .send_reply(&message, "min_light must be a number")
-                                        .await;
+                                    return self.send_reply(&message, "min_light must be a number");
                                 }
-                                act.min_light = Set(Some(val.unwrap()))
+                                act.min_light = Some(val.unwrap())
                             }
                             "min_level" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
-                                    return self
-                                        .send_reply(&message, "min_level must be a number")
-                                        .await;
+                                    return self.send_reply(&message, "min_level must be a number");
                                 }
-                                act.min_level = Set(Some(val.unwrap()))
+                                act.min_level = Some(val.unwrap())
                             }
-                            "mode" => act.mode = Set(Some(val.to_string())),
+                            "mode" => act.mode = Some(val.into()),
                             _ => {
                                 return self
-                                    .send_reply(&message, format!("Unknown field name {}", key))
-                                    .await;
+                                    .send_reply(&message, format!("Unknown field name {}", key));
                             }
                         }
                     }
 
-                    match act.update(connection).await {
+                    match act.save(&connection) {
                         Ok(act) => {
                             self.send_reply(
                                 &message,
                                 format!("Activity {} updated.", act.format_name()),
-                            )
-                            .await
+                            )?;
                         }
                         Err(e) => {
-                            self.send_reply(&message, format!("Error updating activity. {:?}", e))
-                                .await
+                            self.send_reply(&message, format!("Error updating activity. {:?}", e))?;
                         }
-                    }
+                    };
                 }
                 "delete" => {
                     if args.len() < 2 {
-                        self.send_reply(&message, "Syntax: /activities delete ID")
-                            .await;
-                        return self.activities_usage(&message).await;
+                        self.send_reply(&message, "Syntax: /activities delete ID")?;
+                        return self.usage(&message);
                     }
 
                     let id = args[1].parse::<i32>();
                     if id.is_err() {
-                        return self
-                            .send_reply(&message, "ActivityID must be a number")
-                            .await;
+                        return self.send_reply(&message, "ActivityID must be a number");
                     }
                     let id = id.unwrap();
 
-                    let act = activities::Entity::find_by_id(id)
-                        .one(connection)
-                        .await
-                        .expect("Failed to run SQL");
+                    let act = Activity::find_one(&connection, &id).expect("Failed to run SQL");
 
                     if act.is_none() {
                         return self
-                            .send_reply(&message, format!("Activity {} was not found.", id))
-                            .await;
+                            .send_reply(&message, format!("Activity {} was not found.", id));
                     }
+
                     let act = act.unwrap();
 
                     let name = act.format_name();
 
-                    match activities::Entity::delete_by_id(id).exec(connection).await {
+                    match act.destroy(&connection) {
                         Ok(_) => {
-                            self.send_reply(&message, format!("Activity {} deleted.", name))
-                                .await
+                            self.send_reply(&message, format!("Activity {} deleted.", name))?
                         }
                         Err(e) => {
-                            self.send_reply(&message, format!("Error deleting activity. {:?}", e))
-                                .await
+                            self.send_reply(&message, format!("Error deleting activity. {:?}", e))?
                         }
-                    }
+                    };
                 }
                 _ => {
-                    self.send_reply(&message, "Unknown activities operation")
-                        .await;
-                    self.activities_usage(&message).await;
+                    self.send_reply(&message, "Unknown activities operation");
+                    self.usage(&message)?;
                 }
             }
         }
+        Ok(())
     }
 }
 

@@ -1,40 +1,38 @@
 use {
     crate::{
-        bot_actor::{Format, Notify, SendMessage},
-        datetime::reference_date,
+        bot_actor::{BotActor, BotActorMsg, Format, Notify},
+        datetime::{nowtz, reference_date},
+        models::PlannedActivity,
         BotConnection,
     },
-    entity::plannedactivities,
-    kameo::prelude::*,
-    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
+    diesel::{self, dsl::IntervalDsl, prelude::*},
+    ractor::{cast, ActorRef},
     teloxide::types::ChatId,
 };
 
-pub async fn check(
-    bot: ActorRef<crate::bot_actor::BotActor>,
-    connection: BotConnection,
-    chat_id: ChatId,
-) {
+pub fn check(bot: ActorRef<BotActor>, connection: BotConnection, chat_id: ChatId) {
+    use crate::schema::plannedactivities::dsl::*;
+
     // log::info!("reminder check at {}", reference_date());
 
     let reference = reference_date();
 
-    let upcoming_events = plannedactivities::Entity::find()
-        .filter(plannedactivities::Column::Start.gt(reference))
-        .all(&connection)
-        .await
-        .unwrap_or_default()
-        .into_iter()
+    let upcoming_events = plannedactivities
+        .filter(start.ge(nowtz() - 60_i32.minutes()))
+        .order(start.asc())
+        .load::<PlannedActivity>(&connection)
+        .expect("TEMP loading @FIXME");
+
+    let upcoming_events: Vec<&PlannedActivity> = upcoming_events
+        .iter()
         .filter(|event| {
-            let event_start: chrono::DateTime<chrono::Utc> = event.start.into();
-            if event_start > reference {
-                let diff = event_start - reference;
-                matches!(diff.num_minutes(), 60 | 15 | 0)
+            if event.start > reference {
+                matches!((event.start - reference).num_minutes(), 60 | 15 | 0)
             } else {
                 false
             }
         })
-        .collect::<Vec<_>>();
+        .collect();
 
     if upcoming_events.is_empty() {
         return;
@@ -43,10 +41,11 @@ pub async fn check(
     let text = upcoming_events
         .into_iter()
         .fold("Activities starting soon:\n\n".to_owned(), |acc, event| {
-            acc + &format!("Activity {} starting soon\n\n", event.id)
+            acc + &format!("{}\n\n", event.display(&connection, None))
         });
 
-    let _ = bot
-        .tell(SendMessage(text, chat_id, Format::Html, Notify::On))
-        .await;
+    cast!(
+        bot,
+        BotActorMsg::SendMessage(text, chat_id, Format::Html, Notify::On)
+    );
 }

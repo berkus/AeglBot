@@ -1,15 +1,35 @@
 use {
     crate::{
-        bot_actor::ActorUpdateMessage,
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{guardian_lookup, match_command, validate_username},
         BotCommand,
     },
-    kameo::message::Context,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(WhoisCommand, [ActorUpdateMessage]);
 
-impl WhoisCommand {}
+impl WhoisCommand {
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
+    where
+        S: Into<String>,
+    {
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
+        );
+        Ok(())
+    }
+}
 
 impl BotCommand for WhoisCommand {
     fn prefix() -> &'static str {
@@ -21,45 +41,43 @@ impl BotCommand for WhoisCommand {
     }
 }
 
-impl Message<ActorUpdateMessage> for WhoisCommand {
-    type Reply = ();
+#[async_trait::async_trait]
+impl Actor for WhoisCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
-        self.handle_message(message).await;
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
     }
-}
 
-impl WhoisCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
-        let connection = self.connection();
-
-        if let (Some(_), name) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), name) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             if name.is_none() {
-                // usage()
-                return self
-                    .send_reply(
-                        &message,
-                        "To query user provide his @TelegramId (starting with @) or PsnId",
-                    )
-                    .await;
+                return self.send_reply(
+                    &message,
+                    "To query user provide his @TelegramId (starting with @) or PsnId",
+                );
             }
 
             let name = name.unwrap();
+            let connection = self.connection();
 
-            if validate_username(&self.bot_ref, &message, connection)
-                .await
-                .is_none()
-            {
-                return; // TODO: say something?
+            if validate_username(&self.bot_ref, &message, &connection).is_none() {
+                return Ok(()); // TODO: say something?
             }
 
-            let guardian = guardian_lookup(&name, connection).await;
+            let guardian = guardian_lookup(&name, &connection);
 
             match guardian {
                 Ok(Some(guardian)) => {
@@ -70,18 +88,16 @@ impl WhoisCommand {
                             telegram_name = guardian.telegram_name,
                             psn_name = guardian.psn_name
                         ),
-                    )
-                    .await;
+                    )?;
                 }
                 Ok(None) => {
-                    self.send_reply(&message, format!("Guardian {} was not found.", name))
-                        .await;
+                    self.send_reply(&message, format!("Guardian {} was not found.", name));
                 }
                 Err(_) => {
-                    self.send_reply(&message, "Error querying guardian name.")
-                        .await;
+                    self.send_reply(&message, "Error querying guardian name.");
                 }
             }
         }
+        Ok(())
     }
 }

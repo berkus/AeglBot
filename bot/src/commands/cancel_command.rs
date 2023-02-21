@@ -1,25 +1,45 @@
 use {
     crate::{
-        bot_actor::ActorUpdateMessage,
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
+        models::PlannedActivity,
         BotCommand,
     },
     chrono::Duration,
-    entity::{plannedactivities, plannedactivitymembers},
-    kameo::message::Context,
-    sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter},
+    diesel_derives_traits::Model,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(CancelCommand, [ActorUpdateMessage]);
 
 impl CancelCommand {
-    async fn cancel_usage(&self, message: &ActorUpdateMessage) {
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
+    where
+        S: Into<String>,
+    {
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
+        );
+        Ok(())
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
-            "Cancel command help:\n\n/cancel ActivityID\n    Leave planned activity by its number.",
+            "To leave a fireteam provide fireteam id
+ Fireteam IDs are available from output of /list command.",
         )
-        .await;
     }
 }
 
@@ -33,128 +53,99 @@ impl BotCommand for CancelCommand {
     }
 }
 
-impl Message<ActorUpdateMessage> for CancelCommand {
-    type Reply = ();
+#[async_trait::async_trait]
+impl Actor for CancelCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
-        self.handle_message(message).await;
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
     }
-}
 
-impl CancelCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
-        let connection = self.connection();
-
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
         if let (Some(_), activity_id) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
+            match_command(message.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
-                return self.cancel_usage(&message).await;
+                return self.usage(&message);
             }
 
             let activity_id = activity_id.unwrap().parse::<i32>();
             if activity_id.is_err() {
-                return self.cancel_usage(&message).await;
+                return self.usage(&message);
             }
 
             let activity_id = activity_id.unwrap();
+            let connection = self.connection();
 
-            if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
-                let planned = plannedactivities::Entity::find_by_id(activity_id)
-                    .one(connection)
-                    .await
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                let planned = PlannedActivity::find_one(&connection, &activity_id)
                     .expect("Failed to run SQL");
 
                 if planned.is_none() {
                     return self
-                        .send_reply(&message, format!("Activity {} was not found.", activity_id))
-                        .await;
+                        .send_reply(&message, format!("Activity {} was not found.", activity_id));
                 }
 
                 let planned = planned.unwrap();
 
-                let member = plannedactivitymembers::Entity::find()
-                    .filter(plannedactivitymembers::Column::PlannedActivityId.eq(activity_id))
-                    .filter(plannedactivitymembers::Column::UserId.eq(guardian.id))
-                    .one(connection)
-                    .await
-                    .expect("Failed to find member");
+                let member = planned.find_member(&connection, Some(&guardian));
 
                 if member.is_none() {
-                    return self
-                        .send_reply(&message, "You are not part of this group.".to_string())
-                        .await;
+                    return self.send_reply(&message, "You are not part of this group.");
                 }
 
-                if chrono::DateTime::<chrono::Utc>::from(planned.start)
-                    < reference_date() + Duration::hours(1)
-                {
-                    return self
-                        .send_reply(&message, "You can not leave past activities.".to_string())
-                        .await;
+                if planned.start < reference_date() - Duration::hours(1) {
+                    return self.send_reply(&message, "You can not leave past activities.");
                 }
 
                 let member = member.unwrap();
 
-                // Delete the member
-                if plannedactivitymembers::Entity::delete_by_id(member.id)
-                    .exec(connection)
-                    .await
-                    .is_err()
-                {
-                    return self
-                        .send_reply(&message, "Failed to remove group member".to_string())
-                        .await;
+                if member.destroy(&connection).is_err() {
+                    return self.send_reply(&message, "Failed to remove group member");
                 }
 
-                // Get activity name - simplified for now
-                let act_name = format!("Activity {}", planned.activity_id);
-                let act_time = decapitalize(&format_start_time(
-                    chrono::DateTime::<chrono::Utc>::from(planned.start),
-                    reference_date(),
-                ));
+                let act_name = planned.activity(&connection).format_name();
+                let act_time = decapitalize(&format_start_time(planned.start, reference_date()));
 
-                // Check if any members remain
-                let remaining_members = plannedactivitymembers::Entity::find()
-                    .filter(plannedactivitymembers::Column::PlannedActivityId.eq(activity_id))
-                    .count(connection)
-                    .await
-                    .expect("Failed to count members");
-
-                let suffix = if remaining_members == 0 {
-                    if plannedactivities::Entity::delete_by_id(activity_id)
-                        .exec(connection)
-                        .await
-                        .is_err()
-                    {
-                        return self
-                            .send_reply(&message, "Failed to remove planned activity".to_string())
-                            .await;
+                let suffix = if planned.members(&connection).is_empty() {
+                    if planned.destroy(&connection).is_err() {
+                        return self.send_reply(&message, "Failed to remove planned activity");
                     }
                     "This fireteam is disbanded and can no longer be joined.".into()
                 } else {
                     format!(
-                        "{} members remaining\nJoin with /join{}",
-                        remaining_members, activity_id
+                        "{} are going
+ {}",
+                        planned.members_formatted_list(&connection),
+                        planned.join_prompt(&connection)
                     )
                 };
 
                 self.send_reply(
                     &message,
                     format!(
-                        "{guarName} has left {actName} group {actTime}\n{suffix}",
-                        guarName = guardian.telegram_name,
+                        "{guarName} has left {actName} group {actTime}
+ {suffix}",
+                        guarName = guardian.format_name(),
                         actName = act_name,
                         actTime = act_time,
                         suffix = suffix
                     ),
-                )
-                .await;
+                );
             }
         }
+        Ok(())
     }
 }

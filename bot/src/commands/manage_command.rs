@@ -1,11 +1,10 @@
 use {
     crate::{
-        bot_actor::ActorUpdateMessage,
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{admin_check, guardian_lookup, match_command},
         BotCommand,
     },
-    entity::guardians,
-    sea_orm::{ActiveModelTrait, Set},
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 // #[derive(Clone)]
@@ -19,6 +18,41 @@ use {
 
 command_actor!(ManageCommand, [ActorUpdateMessage]);
 
+impl ManageCommand {
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
+    where
+        S: Into<String>,
+    {
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
+        );
+        Ok(())
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+        self.send_reply(
+            message,
+            "Manage admins:
+ /manage list-admins
+     List existing admins
+ /manage add-admin <id|@telegram|PSN>
+     Add existing guardian as an admin
+ /manage remove-admin <id|@telegram|PSN>
+     Remove admin rights from guardian",
+        )
+    }
+}
+
 impl BotCommand for ManageCommand {
     fn prefix() -> &'static str {
         "/manage"
@@ -29,29 +63,39 @@ impl BotCommand for ManageCommand {
     }
 }
 
-impl Message<ActorUpdateMessage> for ManageCommand {
-    type Reply = ();
+#[async_trait::async_trait]
+impl Actor for ManageCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
     async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
-        let connection = self.connection();
-
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
-            let admin = admin_check(&self.bot_ref, &message, connection).await;
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
+            let connection = self.connection();
+            let admin = admin_check(&self.bot_ref, &message, &connection);
 
             if admin.is_none() {
-                return self.send_reply(&message, "You are not admin").await;
+                return self.send_reply(&message, "You are not admin");
             }
 
             // let _admin = admin.unwrap();
 
             if args.is_none() {
-                return self.manage_usage(&message).await;
+                return self.usage(&message);
             }
 
             // Split args in two:
@@ -61,7 +105,7 @@ impl Message<ActorUpdateMessage> for ManageCommand {
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
             if args.is_empty() {
-                return self.manage_usage(&message).await;
+                return self.usage(&message);
             }
 
             let subcommand = args[0];
@@ -73,15 +117,12 @@ impl Message<ActorUpdateMessage> for ManageCommand {
 
             log::info!("{:?}", args);
 
-            match subcommand {
-                "list-admins" => self.list_admins_subcommand(&message).await,
-                "add-admin" => self.add_admin_subcommand(&message, args).await,
-                "remove-admin" => self.remove_admin_subcommand(&message, args).await,
-                &_ => {
-                    self.send_reply(&message, "Unknown management command")
-                        .await;
-                }
-            }
+            return match subcommand {
+                "list-admins" => self.list_admins_subcommand(&message),
+                "add-admin" => self.add_admin_subcommand(&message, args),
+                "remove-admin" => self.remove_admin_subcommand(&message, args),
+                &_ => self.send_reply(&message, "Unknown management command"),
+            };
 
             // Need to invent some sort of match string format for matching subcommands
             // Some are `/command subcommand [args]`, some are `/command arg subcommand args` etc.
@@ -93,23 +134,7 @@ impl Message<ActorUpdateMessage> for ManageCommand {
             //            return AddAdminSubcommand::execute();
             //        }
         }
-    }
-}
-
-impl ManageCommand {
-    async fn manage_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "Manage command help:
-
-/manage list-admins
-    List currently registered admins.
-/manage add-admin <id|@telegram|PSN>
-    Grant admin rights to guardian.
-/manage remove-admin <id|@telegram|PSN>
-    Remove admin rights from guardian",
-        )
-        .await;
+        Ok(())
     }
 }
 
@@ -124,20 +149,25 @@ impl ManageCommand {
 //         "List bot admins (admin-only)"
 //     }
 impl ManageCommand {
-    async fn list_admins_subcommand(&self, message: &ActorUpdateMessage) {
-        use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
+    fn list_admins_subcommand(
+        &self,
+        message: &ActorUpdateMessage,
+    ) -> Result<(), ActorProcessingErr> {
+        use {
+            crate::{models::Guardian, schema::guardians::dsl::*},
+            diesel::prelude::*,
+        };
 
         let connection = self.connection();
 
-        let admins = guardians::Entity::find()
-            .filter(guardians::Column::IsAdmin.eq(true))
-            .order_by_asc(guardians::Column::TelegramName)
-            .all(connection)
-            .await
+        let admins = guardians
+            .filter(is_admin.eq(true))
+            .order(telegram_name.asc())
+            .load::<Guardian>(&connection)
             .expect("Cannot execute SQL query");
 
         if admins.is_empty() {
-            return self.send_reply(message, "No admins found").await;
+            return self.send_reply(message, "No admins found");
         }
 
         let text = admins
@@ -146,7 +176,7 @@ impl ManageCommand {
                 acc + &format!("{}\n", admin)
             });
 
-        self.send_reply(message, text).await;
+        self.send_reply(message, text)
     }
 }
 
@@ -161,58 +191,51 @@ impl ManageCommand {
 //         "Add bot admin (admin-only)"
 //     }
 impl ManageCommand {
-    async fn add_admin_subcommand(&self, message: &ActorUpdateMessage, args: Option<String>) {
+    fn add_admin_subcommand(
+        &self,
+        message: &ActorUpdateMessage,
+        args: Option<String>,
+    ) -> Result<(), ActorProcessingErr> {
         let connection = self.connection();
-        let admin = admin_check(&self.bot_ref, message, connection).await;
+        let admin = admin_check(&self.bot_ref, message, &connection);
 
         if admin.is_none() {
-            return self.send_reply(message, "You are not admin").await;
+            return self.send_reply(message, "You are not admin");
         }
 
         let admin = admin.unwrap();
 
         if !admin.is_superadmin {
-            return self.send_reply(message, "You are not superadmin").await;
+            return self.send_reply(message, "You are not superadmin");
         }
 
         if args.is_none() {
-            return self
-                .send_reply(message, "Specify a guardian to promote to admin")
-                .await;
+            return self.send_reply(message, "Specify a guardian to promote to admin");
         }
 
         let name = args.unwrap();
 
-        let guardian = guardian_lookup(&name, connection).await;
+        let guardian = guardian_lookup(&name, &connection);
 
         match guardian {
-            Ok(Some(guardian)) => {
+            Ok(Some(mut guardian)) => {
                 let tg_name = guardian.telegram_name.clone();
 
                 if guardian.is_admin {
-                    return self
-                        .send_reply(message, format!("@{} is already an admin", &tg_name))
-                        .await;
+                    return self.send_reply(message, format!("@{} is already an admin", &tg_name));
                 }
 
-                let mut guardian: guardians::ActiveModel = guardian.into();
-                guardian.is_admin = Set(true);
+                use diesel_derives_traits::Model;
 
-                if guardian.update(connection).await.is_err() {
-                    return self.send_reply(message, "Error updating guardian").await;
-                }
+                guardian.is_admin = true;
+                guardian
+                    .save(&connection) // @todo handle DbError
+                    .expect("Cannot execute SQL query");
 
                 self.send_reply(message, format!("@{} is now an admin!", &tg_name))
-                    .await;
             }
-            Ok(None) => {
-                self.send_reply(message, format!("Guardian {} was not found.", &name))
-                    .await;
-            }
-            Err(_) => {
-                self.send_reply(message, "Error querying guardian name.")
-                    .await;
-            }
+            Ok(None) => self.send_reply(message, format!("Guardian {} was not found.", &name)),
+            Err(_) => self.send_reply(message, "Error querying guardian name."),
         }
     }
 }
@@ -229,67 +252,59 @@ impl ManageCommand {
 //     }
 
 impl ManageCommand {
-    async fn remove_admin_subcommand(&self, message: &ActorUpdateMessage, args: Option<String>) {
+    fn remove_admin_subcommand(
+        &self,
+        message: &ActorUpdateMessage,
+        args: Option<String>,
+    ) -> Result<(), ActorProcessingErr> {
         let connection = self.connection();
-        let admin = admin_check(&self.bot_ref, message, connection).await;
+        let admin = admin_check(&self.bot_ref, message, &connection);
 
         if admin.is_none() {
-            return self.send_reply(message, "You are not admin").await;
+            return self.send_reply(message, "You are not admin");
         }
 
         let admin = admin.unwrap();
 
         if !admin.is_superadmin {
-            return self.send_reply(message, "You are not superadmin").await;
+            return self.send_reply(message, "You are not superadmin");
         }
 
         if args.is_none() {
-            return self
-                .send_reply(message, "Specify a guardian to demote from admins")
-                .await;
+            return self.send_reply(message, "Specify a guardian to demote from admins");
         }
 
         let name = args.unwrap();
 
-        let guardian = guardian_lookup(&name, connection).await;
+        let guardian = guardian_lookup(&name, &connection);
 
         match guardian {
-            Ok(Some(guardian)) => {
+            Ok(Some(mut guardian)) => {
                 let tg_name = guardian.telegram_name.clone();
 
                 if !guardian.is_admin {
                     return self
-                        .send_reply(message, format!("@{} is already not an admin", &tg_name))
-                        .await;
+                        .send_reply(message, format!("@{} is already not an admin", &tg_name));
                 }
 
                 if guardian.is_superadmin {
-                    return self
-                        .send_reply(
-                            message,
-                            format!("@{} is a superadmin, you can not demote.", &tg_name),
-                        )
-                        .await;
+                    return self.send_reply(
+                        message,
+                        format!("@{} is a superadmin, you can not demote.", &tg_name),
+                    );
                 }
 
-                let mut guardian: guardians::ActiveModel = guardian.into();
-                guardian.is_admin = Set(false);
+                use diesel_derives_traits::Model;
 
-                if guardian.update(connection).await.is_err() {
-                    return self.send_reply(message, "Error updating guardian").await;
-                }
+                guardian.is_admin = false;
+                guardian
+                    .save(&connection) // @todo handle DbError
+                    .expect("Cannot execute SQL query");
 
                 self.send_reply(message, format!("@{} is not an admin anymore!", &tg_name))
-                    .await;
             }
-            Ok(None) => {
-                self.send_reply(message, format!("Guardian {} was not found.", &name))
-                    .await;
-            }
-            Err(_) => {
-                self.send_reply(message, "Error querying guardian name.")
-                    .await;
-            }
+            Ok(None) => self.send_reply(message, format!("Guardian {} was not found.", &name)),
+            Err(_) => self.send_reply(message, "Error querying guardian name."),
         }
     }
 }

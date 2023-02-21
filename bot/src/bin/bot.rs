@@ -1,19 +1,14 @@
 // Async Rust implementation of the bot
 //
 // To make it usable it misses natty parsing lib implementation in rust
-// Use https://lib.rs/crates/two_timer
+// (There are now several rust impls including https://lib.rs/crates/two_timer and https://lib.rs/crates/intervalle)
 
 use {
-    aegl_bot::{
-        bot_actor::{ActorUpdateMessage, BotActor},
-        establish_db_connection,
-    },
+    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg},
     dotenv::dotenv,
-    kameo::Actor,
-    migration::{Migrator, MigratorTrait},
+    ractor::{cast, Actor, ActorProcessingErr},
     std::env,
-    teloxide::{prelude::*, requests::ResponseResult, types::Message as TelegramMessage},
-    tokio::sync::broadcast,
+    teloxide::{prelude::*, types::MessageId},
 };
 
 fn setup_logging() -> Result<(), fern::InitError> {
@@ -76,44 +71,40 @@ fn setup_logging() -> Result<(), fern::InitError> {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
     aegl_bot::datetime::bot_start_time(); // Mark start timestamp
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
+    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
     let lfg_chat = env::var("BOT_LFG_CHAT_ID")
         .expect("BOT_LFG_CHAT_ID must be set")
         .parse::<i64>()
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
 
-    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+    let tgbot = Bot::new(token); // Bot::from_env?
 
-    let connection = establish_db_connection().await?;
-    Migrator::up(&connection, None).await?;
+    let bot_actor = BotActor::new(&bot_name, tgbot.clone(), lfg_chat);
 
-    let tgbot = Bot::new(token);
+    let (actor, _handle) = Actor::spawn(
+        None,
+        bot_actor,
+        (), //?
+    )
+    .await
+    .expect("Couldn't start the bot");
 
-    let (update_sender, _) = broadcast::channel::<ActorUpdateMessage>(1000);
+    // handle.await.unwrap(); // runs until the end
 
-    let bot_actor =
-        BotActor::create(bot_name, tgbot.clone(), update_sender.clone(), lfg_chat).await;
-    let _bot_ref = BotActor::spawn(bot_actor);
-
-    teloxide::repl(tgbot.clone(), move |bot: Bot, message: TelegramMessage| {
-        let update_sender = update_sender.clone();
-        async move {
-            log::debug!("Processing message {}", message.id);
-            let _ = update_sender.send(ActorUpdateMessage {
-                requester: bot,
-                update: message,
-            });
-            ResponseResult::<()>::Ok(())
-        }
+    // how to prevent moving stuff _out_ of the lambda closure?
+    teloxide::repl(tgbot, |bot: Bot, message: Message| async move {
+        let MessageId(id) = message.id;
+        log::trace!("Processing message {}", id);
+        // actor.send_message(BotActorMsg::RawCommand(message));
+        ResponseResult::<()>::Ok(())
     })
     .await;
-
-    Ok(())
 }

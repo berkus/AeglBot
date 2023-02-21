@@ -1,28 +1,45 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
-        render_template, BotCommand,
+        models::{NewPlannedActivityMember, PlannedActivity},
+        BotCommand,
     },
     chrono::Duration,
-    entity::{plannedactivities, plannedactivitymembers},
-    kameo::message::Context,
-    sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
+    diesel_derives_traits::{Model, NewModel},
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(JoinCommand, [ActorUpdateMessage]);
 
 impl JoinCommand {
-    async fn join_usage(&self, message: &ActorUpdateMessage) {
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
+    where
+        S: Into<String>,
+    {
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
+        );
+        Ok(())
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
-            "Join command help:
-
-/join ActivityID
-    Join planned activity by its number.",
+            "To join a fireteam provide fireteam id
+ Fireteam IDs are available from output of /list command.",
         )
-        .await;
     }
 }
 
@@ -36,120 +53,91 @@ impl BotCommand for JoinCommand {
     }
 }
 
-impl Message<ActorUpdateMessage> for JoinCommand {
-    type Reply = ();
+#[async_trait::async_trait]
+impl Actor for JoinCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
-        self.handle_message(message).await;
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
     }
-}
 
-impl JoinCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
-        let connection = self.connection();
-
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
         if let (Some(_), activity_id) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
+            match_command(message.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
-                return self.join_usage(&message).await;
+                return self.usage(&message);
             }
 
             let activity_id = activity_id.unwrap().parse::<i32>();
             if activity_id.is_err() {
-                return self.join_usage(&message).await;
+                return self.usage(&message);
             }
 
             let activity_id = activity_id.unwrap();
+            let connection = self.connection();
 
-            if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
-                let planned = plannedactivities::Entity::find_by_id(activity_id)
-                    .one(connection)
-                    .await
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                let planned = PlannedActivity::find_one(&connection, &activity_id)
                     .expect("Failed to run SQL");
 
                 if planned.is_none() {
                     return self
-                        .send_reply(&message, format!("Activity {} was not found.", activity_id))
-                        .await;
+                        .send_reply(&message, format!("Activity {} was not found.", activity_id));
                 }
 
                 let planned = planned.unwrap();
 
-                let member = plannedactivitymembers::Entity::find()
-                    .filter(plannedactivitymembers::Column::PlannedActivityId.eq(activity_id))
-                    .filter(plannedactivitymembers::Column::UserId.eq(guardian.id))
-                    .one(connection)
-                    .await
-                    .expect("Failed to find member");
+                let member = planned.find_member(&connection, &guardian);
 
                 if member.is_some() {
-                    return self
-                        .send_reply(&message, "You are already part of this group.")
-                        .await;
+                    return self.send_reply(&message, "You are already part of this group.");
                 }
 
-                // Note: planned.is_full() method needs to be implemented for SeaORM
-                // For now, we'll skip this check or implement a simple version
-                // if planned.is_full(&connection) {
-                //     bot_ref.tell(
-                //         SendMessageReply(
-                //             "This activity group is full.".into(),
-                //             message,
-                //             Format::Plain,
-                //             Notify::Off,
-                //         ),
-                //         None,
-                //     );
-                //     return;
-                // }
+                if planned.is_full(&connection) {
+                    return self.send_reply(&message, "This activity group is full.");
+                }
 
                 if planned.start < reference_date() - Duration::hours(1) {
-                    return self
-                        .send_reply(&message, "You can not join past activities.")
-                        .await;
+                    return self.send_reply(&message, "You can not join past activities.");
                 }
 
-                let planned_activity_member = plannedactivitymembers::ActiveModel {
-                    user_id: Set(guardian.id),
-                    planned_activity_id: Set(planned.id),
-                    added: Set(reference_date().into()),
-                    ..Default::default()
+                let planned_activity_member = NewPlannedActivityMember {
+                    user_id: guardian.id,
+                    planned_activity_id: planned.id,
+                    added: reference_date(),
                 };
 
-                if planned_activity_member.insert(connection).await.is_err() {
-                    return self
-                        .send_reply(&message, "Unexpected error saving group joiner")
-                        .await;
-                }
+                planned_activity_member
+                    .save(&connection)
+                    .expect("Unexpected error saving group joiner");
 
-                // join/joined template
-                let guar_name = guardian.telegram_name.clone();
-                let act_name = format!("Activity {}", planned.activity_id); // Simplified for now
-                let act_time =
-                    decapitalize(&format_start_time(planned.start.into(), reference_date()));
-                let other_guars = "Other members"; // Simplified for now
-                let join_prompt = format!("/join {}", planned.id);
+                let text = format!(
+                    "{guarName} has joined {actName} group {actTime}
+ {otherGuars} are going
+ {joinPrompt}",
+                    guarName = guardian,
+                    actName = planned.activity(&connection).format_name(),
+                    actTime = decapitalize(&format_start_time(planned.start, reference_date())),
+                    otherGuars = planned.members_formatted_list(&connection),
+                    joinPrompt = planned.join_prompt(&connection)
+                );
 
-                let text = render_template!(
-                    "join/joined",
-                    ("guarName", &guar_name),
-                    ("actName", &act_name),
-                    ("actTime", &act_time),
-                    ("otherGuars", &other_guars),
-                    ("joinPrompt", &join_prompt)
-                )
-                .expect("Failed to render join joined template");
-
-                let _ = self
-                    .bot_ref
-                    .tell(SendMessageReply(text, message, Format::Plain, Notify::Off))
-                    .await;
+                self.send_reply(&message, text);
             }
         }
+        Ok(())
     }
 }

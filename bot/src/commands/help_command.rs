@@ -1,10 +1,10 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, ListCommands},
+        bot_actor::{ActorUpdateMessage, BotActorMsg},
         commands::match_command,
         BotCommand,
     },
-    kameo::message::Context,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(HelpCommand, [ActorUpdateMessage]);
@@ -19,16 +19,30 @@ impl BotCommand for HelpCommand {
     }
 }
 
-impl Message<ActorUpdateMessage> for HelpCommand {
-    type Reply = ();
+#[async_trait::async_trait]
+impl Actor for HelpCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
     async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
-        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            let _ = self.bot_ref.tell(ListCommands(message)).await;
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), _) = match_command(message.text(), Self::prefix(), &self.bot_name) {
+            cast!(self.bot_ref, BotActorMsg::ListCommands(message));
         }
+        Ok(())
     }
 }
