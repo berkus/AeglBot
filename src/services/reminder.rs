@@ -1,16 +1,16 @@
 use {
     crate::{
-        bot_actor::{BotActorMsg, Format, Notify, SendMessage},
+        bot_actor::{BotActor, BotActorMsg, Format, Notify},
         datetime::{nowtz, reference_date},
         models::PlannedActivity,
         BotConnection,
     },
     diesel::{self, dsl::IntervalDsl, prelude::*},
-    riker::{actor::Tell, actors::ActorRef},
+    ractor::{cast, ActorRef},
     teloxide::types::ChatId,
 };
 
-pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) {
+pub fn check(bot: ActorRef<BotActor>, connection: BotConnection, chat_id: ChatId) {
     use crate::schema::plannedactivities::dsl::*;
 
     // log::info!("reminder check at {}", reference_date());
@@ -44,5 +44,8 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
             acc + &format!("{}\n\n", event.display(&connection, None))
         });
 
-    bot.tell(SendMessage(text, chat_id, Format::Html, Notify::On), None);
+    cast!(
+        bot,
+        BotActorMsg::SendMessage(text, chat_id, Format::Html, Notify::On)
+    );
 }

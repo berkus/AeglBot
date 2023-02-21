@@ -1,31 +1,42 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::{admin_check, match_command},
+        bot_actor::{ActorUpdateMessage, Format, Notify},
+        commands::{admin_check, match_command, BotActorMsg},
         models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
         BotCommand,
     },
     diesel::{self, prelude::*},
     diesel_derives_traits::{Model, NewModel},
     itertools::Itertools,
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
     std::collections::HashMap,
 };
 
 command_actor!(ActivitiesCommand, [ActorUpdateMessage]);
 
 impl ActivitiesCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
         );
+        Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) {
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+        // @todo TERA
         self.send_reply(
             message,
             "Activities command help:
@@ -57,7 +68,7 @@ min_fireteam_size=n                   <mandatory>
 max_fireteam_size=n                   <mandatory>
 min_light=n                           <optional>
 min_level=n                           <optional>",
-        );
+        )
     }
 }
 
@@ -84,13 +95,28 @@ impl BotCommand for ActivitiesCommand {
 //     }
 // }
 
-impl Receive<ActorUpdateMessage> for ActivitiesCommand {
-    type Msg = ActivitiesCommandMsg;
+#[async_trait::async_trait]
+impl Actor for ActivitiesCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
 
             if args.is_none() {
@@ -131,10 +157,11 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     text += "\n";
                 }
 
-                return self.bot_ref.tell(
-                    SendMessageReply(text, message, Format::Html, Notify::Off),
-                    None,
+                cast!(
+                    self.bot_ref,
+                    BotActorMsg::SendMessageReply(text, message, Format::Html, Notify::Off)
                 );
+                return Ok(());
             }
 
             // some args - pass to a subcommand
@@ -242,10 +269,14 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     }
 
                     match act.save(&connection) {
-                        Ok(act) => self
-                            .send_reply(&message, format!("Activity {} added.", act.format_name())),
+                        Ok(act) => {
+                            self.send_reply(
+                                &message,
+                                format!("Activity {} added.", act.format_name()),
+                            )?;
+                        }
                         Err(e) => {
-                            self.send_reply(&message, format!("Error creating activity. {:?}", e))
+                            self.send_reply(&message, format!("Error creating activity. {:?}", e))?;
                         }
                     }
                 }
@@ -369,18 +400,20 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     }
 
                     match act.save(&connection) {
-                        Ok(act) => self.send_reply(
-                            &message,
-                            format!("Activity {} updated.", act.format_name()),
-                        ),
-                        Err(e) => {
-                            self.send_reply(&message, format!("Error updating activity. {:?}", e))
+                        Ok(act) => {
+                            self.send_reply(
+                                &message,
+                                format!("Activity {} updated.", act.format_name()),
+                            )?;
                         }
-                    }
+                        Err(e) => {
+                            self.send_reply(&message, format!("Error updating activity. {:?}", e))?;
+                        }
+                    };
                 }
                 "delete" => {
                     if args.len() < 2 {
-                        self.send_reply(&message, "Syntax: /activities delete ID");
+                        self.send_reply(&message, "Syntax: /activities delete ID")?;
                         return self.usage(&message);
                     }
 
@@ -402,18 +435,21 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     let name = act.format_name();
 
                     match act.destroy(&connection) {
-                        Ok(_) => self.send_reply(&message, format!("Activity {} deleted.", name)),
-                        Err(e) => {
-                            self.send_reply(&message, format!("Error deleting activity. {:?}", e))
+                        Ok(_) => {
+                            self.send_reply(&message, format!("Activity {} deleted.", name))?
                         }
-                    }
+                        Err(e) => {
+                            self.send_reply(&message, format!("Error deleting activity. {:?}", e))?
+                        }
+                    };
                 }
                 _ => {
                     self.send_reply(&message, "Unknown activities operation");
-                    self.usage(&message);
+                    self.usage(&message)?;
                 }
             }
         }
+        Ok(())
     }
 }
 
@@ -431,8 +467,11 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
 
     match fragments.len() {
         x if x < 2 => None,
-        2 =>         // only single parameter
-            Some(final_collect(fragments)),
+        2 =>
+        // only single parameter
+        {
+            Some(final_collect(fragments))
+        }
         _ => {
             // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
             let subfrags = fragments[1..fragments.len() - 1]

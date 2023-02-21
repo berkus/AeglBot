@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{match_command, validate_username},
         datetime::{format_start_time, reference_date},
         models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
@@ -11,23 +11,29 @@ use {
     chrono_tz::Europe::Moscow,
     diesel::{self, prelude::*},
     diesel_derives_traits::{Model, NewModel},
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(LfgCommand, [ActorUpdateMessage]);
 
 impl LfgCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+        format: Format,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(reply.into(), message.clone(), format, Notify::Off)
         );
+        Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) {
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
@@ -35,7 +41,7 @@ For a list of activity codes: /activities
 Example: /lfg kf 2018-09-10 23:00
 Times are in Moscow (MSK) timezone.",
             Format::Html,
-        );
+        )
     }
 }
 
@@ -49,13 +55,28 @@ impl BotCommand for LfgCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for LfgCommand {
-    type Msg = LfgCommandMsg;
+#[async_trait::async_trait]
+impl Actor for LfgCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             log::info!("args are {:?}", args);
 
             if args.is_none() {
@@ -136,6 +157,7 @@ impl Receive<ActorUpdateMessage> for LfgCommand {
                             .save(&connection)
                             .expect("Unexpected error saving LFG group creator");
 
+                        // @todo Duh refactor error handling here.
                         let activity = Activity::find_one(&connection, &act.link)
                             .expect("Couldn't find linked activity")
                             .unwrap();
@@ -153,12 +175,14 @@ Enter `/edit{actId} details <free form description text>` to specify more detail
                                 actId = planned_activity.id
                             ),
                             Format::Plain,
-                        );
+                        )
+                        .unwrap();
 
                         Ok(())
                     })
                     .expect("never happens, but please implement error handling");
             }
         }
+        Ok(())
     }
 }

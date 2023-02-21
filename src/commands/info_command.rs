@@ -2,11 +2,11 @@
 use procfs::process::Process;
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::match_command,
         BotCommand,
     },
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(InfoCommand, [ActorUpdateMessage]);
@@ -40,15 +40,38 @@ impl BotCommand for InfoCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for InfoCommand {
-    type Msg = InfoCommandMsg;
+#[async_trait::async_trait]
+impl Actor for InfoCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(
-                SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
-                None,
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), _) = match_command(message.text(), Self::prefix(), &self.bot_name) {
+            cast!(
+                self.bot_ref,
+                BotActorMsg::SendMessageReply(
+                    get_process_info(),
+                    message,
+                    Format::Html,
+                    Notify::Off
+                )
             );
         }
+        Ok(())
     }
 }

@@ -1,26 +1,36 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{admin_check, guardian_lookup, match_command, validate_username},
         BotCommand,
     },
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(EditGuardianCommand, [ActorUpdateMessage]);
 
 impl EditGuardianCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
         );
+        Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) {
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "Edit guardian information:
@@ -32,7 +42,7 @@ impl EditGuardianCommand {
     Change guardian's clan
 /editguar <id|@telegram|PSN|'my'> email <NewEmail>
     Change guardian's email",
-        );
+        )
     }
 }
 
@@ -46,13 +56,28 @@ impl BotCommand for EditGuardianCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for EditGuardianCommand {
-    type Msg = EditGuardianCommandMsg;
+#[async_trait::async_trait]
+impl Actor for EditGuardianCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
 
             if args.is_none() {
@@ -75,7 +100,7 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
             let guardian = if name == "my" {
                 let guardian = validate_username(&self.bot_ref, &message, &connection);
                 if guardian.is_none() {
-                    return;
+                    return Ok(());
                 }
                 guardian.unwrap()
             } else {
@@ -89,16 +114,16 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
                 let guardian = match guardian {
                     Ok(Some(guardian)) => Some(guardian),
                     Ok(None) => {
-                        self.send_reply(&message, format!("Guardian {} was not found.", &name));
+                        self.send_reply(&message, format!("Guardian {} was not found.", &name))?;
                         None
                     }
                     Err(_) => {
-                        self.send_reply(&message, "Error querying guardian by name.");
+                        self.send_reply(&message, "Error querying guardian by name.")?;
                         None
                     }
                 };
                 if guardian.is_none() {
-                    return;
+                    return Ok(());
                 }
                 guardian.unwrap()
             };
@@ -106,7 +131,11 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
             if args.len() == 1 {
                 let info = format!(
                     "{clan}{name} {email} {admin}",
-                    clan = guardian.psn_clan.clone().map(|s| format!("[{}] ",s)).unwrap_or("".into()),
+                    clan = guardian
+                        .psn_clan
+                        .clone()
+                        .map(|s| format!("[{}] ", s))
+                        .unwrap_or("".into()),
                     name = guardian.format_name(),
                     email = guardian.email.clone().unwrap_or("<no email>".into()),
                     admin = if guardian.is_superadmin {
@@ -158,5 +187,6 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
                 }
             }
         }
+        Ok(())
     }
 }

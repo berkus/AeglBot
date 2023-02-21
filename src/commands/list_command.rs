@@ -1,28 +1,16 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{match_command, validate_username},
         datetime::nowtz,
         models::PlannedActivity,
         BotCommand, TERA,
     },
     diesel::{self, dsl::IntervalDsl, prelude::*},
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(ListCommand, [ActorUpdateMessage]);
-
-impl ListCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
-            None,
-        );
-    }
-}
 
 impl BotCommand for ListCommand {
     fn prefix() -> &'static str {
@@ -34,11 +22,28 @@ impl BotCommand for ListCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for ListCommand {
-    type Msg = ListCommandMsg;
+#[async_trait::async_trait]
+impl Actor for ListCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), _) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
 
             if let Some(_guardian) = validate_username(&self.bot_ref, &message, &connection) {
@@ -57,13 +62,14 @@ impl Receive<ActorUpdateMessage> for ListCommand {
                 // let mut cx = tera::Context::new();
                 // cx.insert("events", &upcoming_events);
                 // let output = TERA.render("activity_list", &cx).expect("to render nicely");
-                //
-                //  self.send_reply(
-                //     &message,
-                //     &output,
-                //     Format::Html,
-                // );
+                let output = "booo".into();
+
+                cast!(
+                    self.bot_ref,
+                    BotActorMsg::SendMessageReply(output, message, Format::Html, Notify::Off)
+                );
             }
         }
+        Ok(())
     }
 }

@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
         models::PlannedActivity,
@@ -8,28 +8,38 @@ use {
     },
     chrono::Duration,
     diesel_derives_traits::Model,
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(CancelCommand, [ActorUpdateMessage]);
 
 impl CancelCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
         );
+        Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) {
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "To leave a fireteam provide fireteam id
 Fireteam IDs are available from output of /list command.",
-        );
+        )
     }
 }
 
@@ -43,12 +53,29 @@ impl BotCommand for CancelCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for CancelCommand {
-    type Msg = CancelCommandMsg;
+#[async_trait::async_trait]
+impl Actor for CancelCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
         if let (Some(_), activity_id) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
+            match_command(message.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
                 return self.usage(&message);
@@ -119,5 +146,6 @@ impl Receive<ActorUpdateMessage> for CancelCommand {
                 );
             }
         }
+        Ok(())
     }
 }

@@ -1,10 +1,10 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{admin_check, guardian_lookup, match_command},
         BotCommand,
     },
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 // #[derive(Clone)]
@@ -19,17 +19,27 @@ use {
 command_actor!(ManageCommand, [ActorUpdateMessage]);
 
 impl ManageCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
         );
+        Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) {
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "Manage admins:
@@ -39,7 +49,7 @@ impl ManageCommand {
     Add existing guardian as an admin
 /manage remove-admin <id|@telegram|PSN>
     Remove admin rights from guardian",
-        );
+        )
     }
 }
 
@@ -53,13 +63,28 @@ impl BotCommand for ManageCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for ManageCommand {
-    type Msg = ManageCommandMsg;
+#[async_trait::async_trait]
+impl Actor for ManageCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
             let admin = admin_check(&self.bot_ref, &message, &connection);
 
@@ -92,14 +117,12 @@ impl Receive<ActorUpdateMessage> for ManageCommand {
 
             log::info!("{:?}", args);
 
-            match subcommand {
+            return match subcommand {
                 "list-admins" => self.list_admins_subcommand(&message),
                 "add-admin" => self.add_admin_subcommand(&message, args),
                 "remove-admin" => self.remove_admin_subcommand(&message, args),
-                &_ => {
-                    self.send_reply(&message, "Unknown management command");
-                }
-            }
+                &_ => self.send_reply(&message, "Unknown management command"),
+            };
 
             // Need to invent some sort of match string format for matching subcommands
             // Some are `/command subcommand [args]`, some are `/command arg subcommand args` etc.
@@ -111,6 +134,7 @@ impl Receive<ActorUpdateMessage> for ManageCommand {
             //            return AddAdminSubcommand::execute();
             //        }
         }
+        Ok(())
     }
 }
 
@@ -125,9 +149,14 @@ impl Receive<ActorUpdateMessage> for ManageCommand {
 //         "List bot admins (admin-only)"
 //     }
 impl ManageCommand {
-    fn list_admins_subcommand(&self, message: &ActorUpdateMessage) {
-        use crate::{models::Guardian, schema::guardians::dsl::*};
-        use diesel::prelude::*;
+    fn list_admins_subcommand(
+        &self,
+        message: &ActorUpdateMessage,
+    ) -> Result<(), ActorProcessingErr> {
+        use {
+            crate::{models::Guardian, schema::guardians::dsl::*},
+            diesel::prelude::*,
+        };
 
         let connection = self.connection();
 
@@ -147,7 +176,7 @@ impl ManageCommand {
                 acc + &format!("{}\n", admin)
             });
 
-        self.send_reply(message, text);
+        self.send_reply(message, text)
     }
 }
 
@@ -162,7 +191,11 @@ impl ManageCommand {
 //         "Add bot admin (admin-only)"
 //     }
 impl ManageCommand {
-    fn add_admin_subcommand(&self, message: &ActorUpdateMessage, args: Option<String>) {
+    fn add_admin_subcommand(
+        &self,
+        message: &ActorUpdateMessage,
+        args: Option<String>,
+    ) -> Result<(), ActorProcessingErr> {
         let connection = self.connection();
         let admin = admin_check(&self.bot_ref, message, &connection);
 
@@ -199,14 +232,10 @@ impl ManageCommand {
                     .save(&connection) // @todo handle DbError
                     .expect("Cannot execute SQL query");
 
-                self.send_reply(message, format!("@{} is now an admin!", &tg_name));
+                self.send_reply(message, format!("@{} is now an admin!", &tg_name))
             }
-            Ok(None) => {
-                self.send_reply(message, format!("Guardian {} was not found.", &name));
-            }
-            Err(_) => {
-                self.send_reply(message, "Error querying guardian name.");
-            }
+            Ok(None) => self.send_reply(message, format!("Guardian {} was not found.", &name)),
+            Err(_) => self.send_reply(message, "Error querying guardian name."),
         }
     }
 }
@@ -223,7 +252,11 @@ impl ManageCommand {
 //     }
 
 impl ManageCommand {
-    fn remove_admin_subcommand(&self, message: &ActorUpdateMessage, args: Option<String>) {
+    fn remove_admin_subcommand(
+        &self,
+        message: &ActorUpdateMessage,
+        args: Option<String>,
+    ) -> Result<(), ActorProcessingErr> {
         let connection = self.connection();
         let admin = admin_check(&self.bot_ref, message, &connection);
 
@@ -268,14 +301,10 @@ impl ManageCommand {
                     .save(&connection) // @todo handle DbError
                     .expect("Cannot execute SQL query");
 
-                self.send_reply(message, format!("@{} is not an admin anymore!", &tg_name));
+                self.send_reply(message, format!("@{} is not an admin anymore!", &tg_name))
             }
-            Ok(None) => {
-                self.send_reply(message, format!("Guardian {} was not found.", &name));
-            }
-            Err(_) => {
-                self.send_reply(message, "Error querying guardian name.");
-            }
+            Ok(None) => self.send_reply(message, format!("Guardian {} was not found.", &name)),
+            Err(_) => self.send_reply(message, "Error querying guardian name."),
         }
     }
 }

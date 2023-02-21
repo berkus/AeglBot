@@ -7,12 +7,11 @@
 #![feature(associated_type_bounds)]
 
 use {
-    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
+    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg},
     dotenv::dotenv,
-    // riker::prelude::*, doesn't work here!
-    riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
+    ractor::{cast, Actor, ActorProcessingErr},
     std::env,
-    teloxide::{prelude::*, requests::ResponseResult},
+    teloxide::{prelude::*, types::MessageId},
 };
 
 fn setup_logging() -> Result<(), fern::InitError> {
@@ -80,36 +79,33 @@ async fn main() {
     setup_logging().expect("failed to initialize logging");
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
+    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
     let lfg_chat = env::var("BOT_LFG_CHAT_ID")
         .expect("BOT_LFG_CHAT_ID must be set")
         .parse::<i64>()
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
 
-    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
-    let sys = ActorSystem::new().unwrap();
+    let tgbot = Bot::new(token); // Bot::from_env?
 
-    let tgbot = Bot::new(token);
+    let bot_actor = BotActor::new(&bot_name, tgbot.clone(), lfg_chat);
 
-    let chan: ChannelRef<ActorUpdateMessage> = channel("commands", &sys).unwrap();
+    let (actor, _handle) = Actor::spawn(
+        None,
+        bot_actor,
+        (), //?
+    )
+    .await
+    .expect("Couldn't start the bot");
 
-    let _bot_ref = sys
-        .actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone(), lfg_chat))
-        .expect("Couldn't start the bot");
+    // handle.await.unwrap(); // runs until the end
 
-    teloxide::repl(tgbot.clone(), move |message: UpdateMessage| {
-        let chan = chan.clone();
-        async move {
-            log::debug!("Processing message {}", message.update.id);
-            chan.tell(
-                Publish {
-                    msg: message.into(),
-                    topic: "raw-commands".into(),
-                },
-                None,
-            );
-            ResponseResult::<()>::Ok(())
-        }
+    // how to prevent moving stuff _out_ of the lambda closure?
+    teloxide::repl(tgbot, |bot: Bot, message: Message| async move {
+        let MessageId(id) = message.id;
+        log::trace!("Processing message {}", id);
+        // actor.send_message(BotActorMsg::RawCommand(message));
+        ResponseResult::<()>::Ok(())
     })
     .await;
 }

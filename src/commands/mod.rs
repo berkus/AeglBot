@@ -1,51 +1,49 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg, Format, Notify},
+        models::Guardian,
+        schema::guardians::dsl::*,
         DbConnection,
-        {models::Guardian, schema::guardians::dsl::*},
     },
     diesel::prelude::*,
-    riker::actors::{ActorRef, Tell},
+    ractor::{cast, ActorRef},
 };
 
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use $crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
-        use riker::actors::{
-            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
+        use {
+            ractor::ActorRef,
+            $crate::{bot_actor::BotActor, BotConnection, DbConnPool, NamedActor},
         };
-        use paste::paste;
 
-        #[derive(Clone)]
-        #[actor($($msgs)*)]
         pub struct $name {
-            bot_ref: ActorRef<BotActorMsg>,
+            bot_ref: ActorRef<BotActor>,
             bot_name: String,
             connection_pool: DbConnPool,
         }
 
         impl $name {
+            pub fn new(
+                bot_ref: ActorRef<BotActor>,
+                bot_name: String,
+                connection_pool: DbConnPool,
+            ) -> Self {
+                Self {
+                    bot_ref,
+                    bot_name,
+                    connection_pool,
+                }
+            }
+
             pub fn connection(&self) -> BotConnection {
                 self.connection_pool.get().unwrap()
             }
         }
 
         impl NamedActor for $name {
-            fn actor_name() -> String { std::stringify!($name).into() }
-        }
-
-        impl Actor for $name {
-            type Msg = paste! { [<$name Msg>] };
-
-            fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
-                self.receive(ctx, msg, sender);
-            }
-        }
-
-        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String, DbConnPool)> for $name {
-            fn create_args((bot_ref, bot_name, connection_pool): (ActorRef<BotActorMsg>, String, DbConnPool)) -> Self {
-                Self { bot_ref, bot_name, connection_pool }
+            fn actor_name() -> String {
+                std::stringify!($name).into()
             }
         }
     };
@@ -91,20 +89,20 @@ pub fn decapitalize(s: &str) -> String {
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub fn validate_username(
-    bot: &ActorRef<BotActorMsg>,
+    bot: &ActorRef<BotActor>,
     message: &ActorUpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {
-    let username = match message.update.from().as_ref().unwrap().username {
+    let username = match message.from().as_ref().unwrap().username {
         None => {
-            bot.tell(
-                SendMessageReply(
+            cast!(
+                bot,
+                BotActorMsg::SendMessageReply(
                     "You have no telegram username, register your telegram account first.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
+                )
             );
             return None;
         }
@@ -119,26 +117,26 @@ pub fn validate_username(
     match db_user {
         Ok(Some(user)) => Some(user),
         Ok(None) => {
-            bot.tell(
-                SendMessageReply(
+            cast!(
+                bot,
+                BotActorMsg::SendMessageReply(
                     "You need to link your PSN account first: use /psn command".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
+                )
             );
             None
         }
         Err(_) => {
-            bot.tell(
-                SendMessageReply(
+            cast!(
+                bot,
+                BotActorMsg::SendMessageReply(
                     "Error querying guardian info.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
+                )
             );
             None
         }
@@ -147,7 +145,7 @@ pub fn validate_username(
 
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub fn admin_check(
-    bot: &ActorRef<BotActorMsg>,
+    bot: &ActorRef<BotActor>,
     message: &ActorUpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {

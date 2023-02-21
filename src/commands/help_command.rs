@@ -1,10 +1,10 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, ListCommands},
+        bot_actor::{ActorUpdateMessage, BotActorMsg},
         commands::match_command,
         BotCommand,
     },
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(HelpCommand, [ActorUpdateMessage]);
@@ -19,12 +19,30 @@ impl BotCommand for HelpCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for HelpCommand {
-    type Msg = HelpCommandMsg;
+#[async_trait::async_trait]
+impl Actor for HelpCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(ListCommands(message), None);
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), _) = match_command(message.text(), Self::prefix(), &self.bot_name) {
+            cast!(self.bot_ref, BotActorMsg::ListCommands(message));
         }
+        Ok(())
     }
 }

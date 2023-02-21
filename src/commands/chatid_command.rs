@@ -1,10 +1,10 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::match_command,
         BotCommand,
     },
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(ChatidCommand, [ActorUpdateMessage]);
@@ -19,20 +19,38 @@ impl BotCommand for ChatidCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for ChatidCommand {
-    type Msg = ChatidCommandMsg;
+#[async_trait::async_trait]
+impl Actor for ChatidCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(
-                SendMessageReply(
-                    format!("ChatId: {}", msg.update.chat_id()),
-                    msg,
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), _) = match_command(message.text(), Self::prefix(), &self.bot_name) {
+            cast!(
+                self.bot_ref,
+                BotActorMsg::SendMessageReply(
+                    format!("ChatId: {}", message.chat.id),
+                    message,
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
+                )
             );
         }
+        Ok(())
     }
 }

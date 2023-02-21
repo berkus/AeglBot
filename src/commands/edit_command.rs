@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{match_command, validate_username},
         datetime::reference_date,
         models::{ActivityShortcut, PlannedActivity},
@@ -10,23 +10,33 @@ use {
     chrono_english::{parse_date_string, Dialect},
     chrono_tz::Europe::Moscow,
     diesel_derives_traits::Model,
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(EditCommand, [ActorUpdateMessage]);
 
 impl EditCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
         );
+        Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) {
+    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "Usage:
@@ -45,7 +55,7 @@ ActivityIDs are available from output of /list command.
 /edit ActivityID activity <new activity shortcut>
     Change type of activity, list of shortcuts
     is available from output of /activities command",
-        );
+        )
     }
 }
 
@@ -59,13 +69,28 @@ impl BotCommand for EditCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for EditCommand {
-    type Msg = EditCommandMsg;
+#[async_trait::async_trait]
+impl Actor for EditCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), args) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), args) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
 
             if args.is_none() {
@@ -179,5 +204,6 @@ impl Receive<ActorUpdateMessage> for EditCommand {
                 }
             }
         }
+        Ok(())
     }
 }

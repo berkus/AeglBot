@@ -1,23 +1,33 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::{guardian_lookup, match_command, validate_username},
         BotCommand,
     },
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
 };
 
 command_actor!(WhoisCommand, [ActorUpdateMessage]);
 
 impl WhoisCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(
+                reply.into(),
+                message.clone(),
+                Format::Plain,
+                Notify::Off
+            )
         );
+        Ok(())
     }
 }
 
@@ -31,13 +41,28 @@ impl BotCommand for WhoisCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for WhoisCommand {
-    type Msg = WhoisCommandMsg;
+#[async_trait::async_trait]
+impl Actor for WhoisCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), name) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), name) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             if name.is_none() {
                 return self.send_reply(
                     &message,
@@ -49,7 +74,7 @@ impl Receive<ActorUpdateMessage> for WhoisCommand {
             let connection = self.connection();
 
             if validate_username(&self.bot_ref, &message, &connection).is_none() {
-                return; // TODO: say something?
+                return Ok(()); // TODO: say something?
             }
 
             let guardian = guardian_lookup(&name, &connection);
@@ -63,7 +88,7 @@ impl Receive<ActorUpdateMessage> for WhoisCommand {
                             telegram_name = guardian.telegram_name,
                             psn_name = guardian.psn_name
                         ),
-                    );
+                    )?;
                 }
                 Ok(None) => {
                     self.send_reply(&message, format!("Guardian {} was not found.", name));
@@ -73,5 +98,6 @@ impl Receive<ActorUpdateMessage> for WhoisCommand {
                 }
             }
         }
+        Ok(())
     }
 }

@@ -1,30 +1,31 @@
-use surrealdb::engine::remote::ws::Client;
 /// Convert from PostgreSQL/Diesel format to SurrealDB
 use {
-    diesel::pg::PgConnection,
-    diesel::prelude::*,
+    aegl_bot::models::Guardian,
+    anyhow::Result,
+    diesel::{pg::PgConnection, prelude::*},
+    diesel_derives_traits::Model,
     diesel_logger::LoggingConnection,
     serde::{Deserialize, Serialize},
-};
-
-use surrealdb::{
-    engine::remote::ws::{Client, Ws},
-    opt::auth::Root,
-    Surreal,
+    std::env,
+    surrealdb::{
+        engine::remote::ws::{Client, Ws},
+        opt::auth::Root,
+        Surreal,
+    },
 };
 
 pub type DbConnection = LoggingConnection<PgConnection>;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     // Postgres
     let postgres: DbConnection = DbConnection::new(PgConnection::establish(
         &env::var("POSTGRES_DATABASE_URL").expect("POSTGRES_DATABASE_URL must be set"),
-    ));
+    )?);
 
     // Surreal (localhost:8000)
     let surreal = Surreal::new::<Ws>(
-        &env::var("SURREAL_DATABASE_URL").expect("SURREAL_DATABASE_URL must be set"),
+        env::var("SURREAL_DATABASE_URL").expect("SURREAL_DATABASE_URL must be set"),
     )
     .await?;
     surreal
@@ -37,11 +38,12 @@ async fn main() {
 
     // Do NOT copy Warframe events
     // Copy guardians
-    let guardians: Vec<Guardian> =
-        Guardian::find_all(connection).expect("Failed to load Guardians");
+    let guardians: Vec<Guardian> = Guardian::find_all(&postgres).expect("Failed to load Guardians");
     // select all guardians, iterate, upsert to surreal
     // Copy Destiny activities catalog
     // Copy planned activities and fireteams
+
+    Ok(())
 }
 
 /* POSTGRES SCHEMA:

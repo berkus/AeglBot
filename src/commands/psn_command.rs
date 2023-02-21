@@ -1,26 +1,33 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
         commands::match_command,
         models::{Guardian, NewGuardian},
         schema::guardians::dsl::*,
         BotCommand,
     },
     diesel::{self, prelude::*},
-    riker::actors::Tell,
+    ractor::{cast, Actor, ActorProcessingErr},
+    teloxide::prelude::UserId,
 };
 
 command_actor!(PsnCommand, [ActorUpdateMessage]);
 
 impl PsnCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
+    fn send_reply<S>(
+        &self,
+        message: &ActorUpdateMessage,
+        reply: S,
+        format: Format,
+    ) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
-            None,
+        cast!(
+            self.bot_ref,
+            BotActorMsg::SendMessageReply(reply.into(), message.clone(), format, Notify::Off)
         );
+        Ok(())
     }
 }
 
@@ -34,13 +41,28 @@ impl BotCommand for PsnCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for PsnCommand {
-    type Msg = PsnCommandMsg;
+#[async_trait::async_trait]
+impl Actor for PsnCommand {
+    type Msg = ActorUpdateMessage;
+    type State = ();
+    type Arguments = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), name) =
-            match_command(message.update.text(), Self::prefix(), &self.bot_name)
-        {
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+
+    // fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &self,
+        myself: ActorRef<Self>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
+        if let (Some(_), name) = match_command(message.text(), Self::prefix(), &self.bot_name) {
             log::info!("PSN command");
 
             if name.is_none() {
@@ -53,7 +75,7 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
 
             let name = name.unwrap();
 
-            let from = match message.update.from() {
+            let from = match message.from() {
                 None => {
                     return self.send_reply(&message, "Message has no sender info.", Format::Plain);
                 }
@@ -72,10 +94,11 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
             };
 
             let connection = self.connection();
-            let user_id = from.id;
+            let UserId(user_id) = from.id;
+            let user_id: i64 = user_id.try_into()?;
 
             let db_user = guardians
-                .filter(telegram_id.eq(&user_id))
+                .filter(telegram_id.eq(user_id))
                 .first::<Guardian>(&connection)
                 .optional();
 
@@ -96,7 +119,7 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                                     psn = name
                                 ),
                                 Format::Plain,
-                            );
+                            )?;
                         }
                         Ok(None) => {
                             use diesel_derives_traits::Model;
@@ -109,7 +132,7 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                                     &message,
                                     "Failed to update telegram and PSN names.",
                                     Format::Plain,
-                                );
+                                )?;
                             } else {
                                 self.send_reply(
                                     &message,
@@ -119,7 +142,7 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                                         psn = name
                                     ),
                                     Format::Plain,
-                                );
+                                )?;
                             }
                         }
                         Err(_) => {
@@ -127,7 +150,7 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                                 &message,
                                 "Error querying guardian PSN.",
                                 Format::Plain,
-                            );
+                            )?;
                         }
                     }
                 }
@@ -153,12 +176,13 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                             psn = name
                         ),
                         Format::Plain,
-                    );
+                    )?;
                 }
                 Err(_) => {
-                    self.send_reply(&message, "Error querying guardian name.", Format::Plain);
+                    self.send_reply(&message, "Error querying guardian name.", Format::Plain)?;
                 }
             };
         }
+        Ok(())
     }
 }
