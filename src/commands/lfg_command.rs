@@ -51,7 +51,7 @@ impl BotCommand for LfgCommand {
     }
 
     fn description() -> &'static str {
-        "Create a new Looking For Group event"
+        ""
     }
 }
 

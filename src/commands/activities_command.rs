@@ -74,7 +74,7 @@ impl BotCommand for ActivitiesCommand {
     }
 
     fn description() -> &'static str {
-        "List available activity shortcuts"
+        ""
     }
 }
 

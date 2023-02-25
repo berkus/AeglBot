@@ -15,7 +15,7 @@ impl BotCommand for HelpCommand {
     }
 
     fn description() -> &'static str {
-        "List available commands"
+        ""
     }
 }
 

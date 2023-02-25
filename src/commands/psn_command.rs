@@ -37,7 +37,7 @@ impl BotCommand for PsnCommand {
     }
 
     fn description() -> &'static str {
-        "Link your telegram user to PSN"
+        ""
     }
 }
 

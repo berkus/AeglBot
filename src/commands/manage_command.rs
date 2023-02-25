@@ -55,7 +55,7 @@ impl BotCommand for ManageCommand {
     }
 
     fn description() -> &'static str {
-        "Manage bot users (admin-only)"
+        ""
     }
 }
 

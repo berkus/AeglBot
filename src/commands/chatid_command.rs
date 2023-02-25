@@ -15,7 +15,7 @@ impl BotCommand for ChatidCommand {
     }
 
     fn description() -> &'static str {
-        "Figure out the numeric chat ID"
+        ""
     }
 }
 

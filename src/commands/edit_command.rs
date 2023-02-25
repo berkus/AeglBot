@@ -61,7 +61,7 @@ impl BotCommand for EditCommand {
     }
 
     fn description() -> &'static str {
-        "Edit existing activity"
+        ""
     }
 }
 

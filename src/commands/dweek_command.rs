@@ -16,7 +16,7 @@ impl BotCommand for D1weekCommand {
     }
 
     fn description() -> &'static str {
-        "Show current Destiny 1 week"
+        ""
     }
 }
 
