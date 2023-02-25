@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::match_command,
         models::{Guardian, NewGuardian},
         schema::guardians::dsl::*,
@@ -16,7 +16,7 @@ command_actor!(PsnCommand, [ActorUpdateMessage]);
 impl PsnCommand {
     fn send_reply<S>(
         &self,
-        message: &ActorUpdateMessage,
+        message: &CommandMsg,
         reply: S,
         format: Format,
     ) -> Result<(), ActorProcessingErr>
@@ -43,7 +43,7 @@ impl BotCommand for PsnCommand {
 
 #[async_trait::async_trait]
 impl Actor for PsnCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

@@ -35,6 +35,8 @@ tera = "1.17"
 surrealdb = { version = "1.0.0-beta.8", git = "https://github.com/surrealdb/surrealdb" }
 async-trait = "0.1"
 anyhow = "1.0"
+closure = "0.3.0"
+closure-pass = "0.1.0"
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.14"

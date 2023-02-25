@@ -7,11 +7,16 @@
 #![feature(associated_type_bounds)]
 
 use {
-    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg},
+    aegl_bot::bot_actor::{BotActor, BotActorMsg, CommandMsg},
     dotenv::dotenv,
-    ractor::{cast, Actor, ActorProcessingErr},
+    ractor::{cast, Actor, ActorProcessingErr, ActorRef},
     std::env,
-    teloxide::{prelude::*, types::MessageId},
+    teloxide::{
+        dispatching::{dialogue, dialogue::InMemStorage, UpdateHandler},
+        prelude::*,
+        types::MessageId,
+        utils::command::BotCommands,
+    },
 };
 
 fn setup_logging() -> Result<(), fern::InitError> {
@@ -73,6 +78,28 @@ fn setup_logging() -> Result<(), fern::InitError> {
     Ok(())
 }
 
+#[derive(BotCommands, PartialEq, Debug, Clone)]
+#[command(rename_rule = "lowercase")]
+enum Command {
+    Start,
+    // Activities,
+    Cancel,
+    // ChatId,
+    // D2Week,
+    // DWeek,
+    // Edit,
+    // EditGuar,
+    Help,
+    // Info,
+    // Join,
+    // LFG,
+    #[command(description = "List current events")]
+    List,
+    // Manage,
+    // PSN,
+    // WhoIs,
+}
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -98,14 +125,81 @@ async fn main() {
     .await
     .expect("Couldn't start the bot");
 
-    // handle.await.unwrap(); // runs until the end
+    Dispatcher::builder(tgbot, build_handler())
+        // .dependencies(dptree::deps![InMemStorage::<State>::new()])
+        .dependencies(dptree::deps![actor]) // no more capture, pass by argument
+        .enable_ctrlc_handler()
+        .build()
+        .dispatch()
+        .await;
+}
 
-    // how to prevent moving stuff _out_ of the lambda closure?
-    teloxide::repl(tgbot, |bot: Bot, message: Message| async move {
-        let MessageId(id) = message.id;
-        log::trace!("Processing message {}", id);
-        // actor.send_message(BotActorMsg::RawCommand(message));
-        ResponseResult::<()>::Ok(())
-    })
-    .await;
+#[derive(Clone, Default)]
+pub enum State {
+    #[default]
+    Start,
+    // ReceiveFullName,
+    // ReceiveProductChoice {
+    //     full_name: String,
+    // },
+}
+
+fn build_handler() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+    use dptree::case;
+
+    let command_handler =
+        teloxide::filter_command::<Command, _>().branch(case![State::Start].endpoint(handler));
+
+    // .branch(
+    //     case![State::Start]
+    //         .branch(case![Command::Help].endpoint(help))
+    //         .branch(case![Command::Start].endpoint(start)),
+    // )
+    // .branch(case![Command::Cancel].endpoint(cancel));
+
+    let message_handler = Update::filter_message()
+        .branch(command_handler)
+        // .branch(case![State::ReceiveFullName].endpoint(receive_full_name))
+        .branch(dptree::endpoint(invalid_state));
+
+    // let callback_query_handler = Update::filter_callback_query().branch(
+    //     case![State::ReceiveProductChoice { full_name }].endpoint(receive_product_selection),
+    // );
+
+    dialogue::enter::<Update, InMemStorage<State>, State, _>().branch(message_handler)
+    // .branch(callback_query_handler)
+}
+
+type MyDialogue = Dialogue<State, InMemStorage<State>>;
+type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
+
+async fn start(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+    todo!()
+}
+async fn help(bot: Bot, msg: Message) -> HandlerResult {
+    todo!()
+}
+async fn cancel(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+    todo!()
+}
+async fn invalid_state(bot: Bot, msg: Message) -> HandlerResult {
+    todo!()
+}
+async fn receive_full_name(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+    todo!()
+}
+async fn receive_product_selection(
+    bot: Bot,
+    dialogue: MyDialogue,
+    full_name: String, // Available from `State::ReceiveProductChoice`.
+    q: CallbackQuery,
+) -> HandlerResult {
+    todo!()
+}
+
+async fn handler(bot: Bot, message: Message, actor: ActorRef<BotActor>) -> HandlerResult {
+    let MessageId(id) = message.id;
+    log::trace!("Processing message {}", id);
+    actor.send_message(BotActorMsg::RawCommand(message))?;
+    Ok(())
 }

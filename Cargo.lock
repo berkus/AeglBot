@@ -26,6 +26,8 @@ dependencies = [
  "chrono",
  "chrono-english",
  "chrono-tz 0.5.3",
+ "closure",
+ "closure-pass",
  "diesel",
  "diesel_derives_extra",
  "diesel_derives_traits",
@@ -418,6 +420,22 @@ checksum = "d1873270f8f7942c191139cb8a40fd228da6c3fd2fc376d7e92d47aa14aeb59e"
 dependencies = [
  "crypto-common",
  "inout",
+]
+
+[[package]]
+name = "closure"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6173fd61b610d15a7566dd7b7620775627441c4ab9dac8906e17cb93a24b782"
+
+[[package]]
+name = "closure-pass"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6e8042d56257f78a5de719231b46099338e83dd0414fec84f017c440ed8cfa0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify},
+        bot_actor::{CommandMsg, Format, Notify},
         commands::{admin_check, match_command, BotActorMsg},
         models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
         BotCommand,
@@ -15,11 +15,7 @@ use {
 command_actor!(ActivitiesCommand, [ActorUpdateMessage]);
 
 impl ActivitiesCommand {
-    fn send_reply<S>(
-        &self,
-        message: &ActorUpdateMessage,
-        reply: S,
-    ) -> Result<(), ActorProcessingErr>
+    fn send_reply<S>(&self, message: &CommandMsg, reply: S) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
@@ -35,7 +31,7 @@ impl ActivitiesCommand {
         Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+    fn usage(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         // @todo TERA
         self.send_reply(
             message,
@@ -97,7 +93,7 @@ impl BotCommand for ActivitiesCommand {
 
 #[async_trait::async_trait]
 impl Actor for ActivitiesCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

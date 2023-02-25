@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
         models::PlannedActivity,
@@ -14,11 +14,7 @@ use {
 command_actor!(CancelCommand, [ActorUpdateMessage]);
 
 impl CancelCommand {
-    fn send_reply<S>(
-        &self,
-        message: &ActorUpdateMessage,
-        reply: S,
-    ) -> Result<(), ActorProcessingErr>
+    fn send_reply<S>(&self, message: &CommandMsg, reply: S) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
@@ -34,7 +30,7 @@ impl CancelCommand {
         Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+    fn usage(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "To leave a fireteam provide fireteam id
@@ -55,7 +51,7 @@ impl BotCommand for CancelCommand {
 
 #[async_trait::async_trait]
 impl Actor for CancelCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

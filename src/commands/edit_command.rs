@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::{match_command, validate_username},
         datetime::reference_date,
         models::{ActivityShortcut, PlannedActivity},
@@ -16,11 +16,7 @@ use {
 command_actor!(EditCommand, [ActorUpdateMessage]);
 
 impl EditCommand {
-    fn send_reply<S>(
-        &self,
-        message: &ActorUpdateMessage,
-        reply: S,
-    ) -> Result<(), ActorProcessingErr>
+    fn send_reply<S>(&self, message: &CommandMsg, reply: S) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
@@ -36,7 +32,7 @@ impl EditCommand {
         Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+    fn usage(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "Usage:
@@ -71,7 +67,7 @@ impl BotCommand for EditCommand {
 
 #[async_trait::async_trait]
 impl Actor for EditCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

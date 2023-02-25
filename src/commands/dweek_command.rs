@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::match_command,
         services::this_week_in_d1,
         BotCommand,
@@ -22,7 +22,7 @@ impl BotCommand for D1weekCommand {
 
 #[async_trait::async_trait]
 impl Actor for D1weekCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 
