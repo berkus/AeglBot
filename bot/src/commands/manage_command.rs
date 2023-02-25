@@ -55,7 +55,7 @@ impl BotCommand for ManageCommand {
     }
 
     fn description() -> &'static str {
-        "Manage bot users (admin-only)"
+        ""
     }
 }
 
@@ -186,7 +186,6 @@ impl ManageCommand {
 impl ManageCommand {
     fn add_admin_subcommand(
         &self,
-
         message: &CommandMsg,
         args: Option<String>,
     ) -> Result<(), ActorProcessingErr> {
@@ -248,7 +247,6 @@ impl ManageCommand {
 impl ManageCommand {
     fn remove_admin_subcommand(
         &self,
-
         message: &CommandMsg,
         args: Option<String>,
     ) -> Result<(), ActorProcessingErr> {

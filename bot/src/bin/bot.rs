@@ -78,23 +78,40 @@ fn setup_logging() -> Result<(), fern::InitError> {
 #[derive(BotCommands, PartialEq, Debug, Clone)]
 #[command(rename_rule = "lowercase")]
 enum Command {
-    Start,
-    // Activities,
+    // Start,
+    #[command(description = "List available activity shortcuts")]
+    Activities,
+    #[command(description = "Leave joined activity")]
     Cancel,
-    // ChatId,
-    // D2Week,
-    // DWeek,
-    // Edit,
-    // EditGuar,
+
+    #[command(description = "Figure out the numeric chat ID")]
+    ChatId,
+    #[command(description = "Show current Destiny 2 week")]
+    D2Week,
+    #[command(description = "Show current Destiny 1 week")]
+    DWeek,
+    #[command(description = "Edit existing activity")]
+    Edit,
+    #[command(description = "Edit information about registered guardians")]
+    EditGuar,
+    #[command(description = "List available commands")]
     Help,
-    // Info,
-    // Join,
-    // LFG,
+
+    #[command(description = "Show bot info and statistics")]
+    Info,
+    #[command(description = "Join existing activity from the list")]
+    Join,
+    #[command(description = "Create a new Looking For Group event")]
+    LFG,
     #[command(description = "List current events")]
     List,
-    // Manage,
-    // PSN,
-    // WhoIs,
+
+    #[command(description = "Manage bot users (admin-only)")]
+    Manage,
+    #[command(description = "Link your telegram user to PSN")]
+    PSN,
+    #[command(description = "Query telegram or PSN id")]
+    WhoIs,
 }
 
 #[tokio::main]

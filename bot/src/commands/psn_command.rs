@@ -16,7 +16,6 @@ command_actor!(PsnCommand, [ActorUpdateMessage]);
 impl PsnCommand {
     fn send_reply<S>(
         &self,
-
         message: &CommandMsg,
         reply: S,
         format: Format,
@@ -38,7 +37,7 @@ impl BotCommand for PsnCommand {
     }
 
     fn description() -> &'static str {
-        "Link your telegram user to PSN"
+        ""
     }
 }
 

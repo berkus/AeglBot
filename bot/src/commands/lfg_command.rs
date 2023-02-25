@@ -19,7 +19,6 @@ command_actor!(LfgCommand, [ActorUpdateMessage]);
 impl LfgCommand {
     fn send_reply<S>(
         &self,
-
         message: &CommandMsg,
         reply: S,
         format: Format,
@@ -52,7 +51,7 @@ impl BotCommand for LfgCommand {
     }
 
     fn description() -> &'static str {
-        "Create a new Looking For Group event"
+        ""
     }
 }
 

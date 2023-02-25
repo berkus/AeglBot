@@ -36,7 +36,7 @@ impl BotCommand for InfoCommand {
     }
 
     fn description() -> &'static str {
-        "Show bot info"
+        ""
     }
 }
 

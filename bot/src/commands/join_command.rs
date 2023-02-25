@@ -45,7 +45,7 @@ impl BotCommand for JoinCommand {
     }
 
     fn description() -> &'static str {
-        "Join existing activity from the list"
+        ""
     }
 }
 

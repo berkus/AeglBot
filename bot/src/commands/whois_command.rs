@@ -33,7 +33,7 @@ impl BotCommand for WhoisCommand {
     }
 
     fn description() -> &'static str {
-        "Query telegram or PSN id"
+        ""
     }
 }
 
