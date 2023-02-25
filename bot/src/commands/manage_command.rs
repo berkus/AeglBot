@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::{admin_check, guardian_lookup, match_command},
         BotCommand,
     },
@@ -19,11 +19,7 @@ use {
 command_actor!(ManageCommand, [ActorUpdateMessage]);
 
 impl ManageCommand {
-    fn send_reply<S>(
-        &self,
-        message: &ActorUpdateMessage,
-        reply: S,
-    ) -> Result<(), ActorProcessingErr>
+    fn send_reply<S>(&self, message: &CommandMsg, reply: S) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
@@ -39,7 +35,7 @@ impl ManageCommand {
         Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+    fn usage(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "Manage admins:
@@ -65,7 +61,7 @@ impl BotCommand for ManageCommand {
 
 #[async_trait::async_trait]
 impl Actor for ManageCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 
@@ -149,10 +145,7 @@ impl Actor for ManageCommand {
 //         "List bot admins (admin-only)"
 //     }
 impl ManageCommand {
-    fn list_admins_subcommand(
-        &self,
-        message: &ActorUpdateMessage,
-    ) -> Result<(), ActorProcessingErr> {
+    fn list_admins_subcommand(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         use {
             crate::{models::Guardian, schema::guardians::dsl::*},
             diesel::prelude::*,
@@ -193,7 +186,8 @@ impl ManageCommand {
 impl ManageCommand {
     fn add_admin_subcommand(
         &self,
-        message: &ActorUpdateMessage,
+
+        message: &CommandMsg,
         args: Option<String>,
     ) -> Result<(), ActorProcessingErr> {
         let connection = self.connection();
@@ -254,7 +248,8 @@ impl ManageCommand {
 impl ManageCommand {
     fn remove_admin_subcommand(
         &self,
-        message: &ActorUpdateMessage,
+
+        message: &CommandMsg,
         args: Option<String>,
     ) -> Result<(), ActorProcessingErr> {
         let connection = self.connection();

@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::{admin_check, guardian_lookup, match_command, validate_username},
         BotCommand,
     },
@@ -10,11 +10,7 @@ use {
 command_actor!(EditGuardianCommand, [ActorUpdateMessage]);
 
 impl EditGuardianCommand {
-    fn send_reply<S>(
-        &self,
-        message: &ActorUpdateMessage,
-        reply: S,
-    ) -> Result<(), ActorProcessingErr>
+    fn send_reply<S>(&self, message: &CommandMsg, reply: S) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
@@ -30,7 +26,7 @@ impl EditGuardianCommand {
         Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+    fn usage(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "Edit guardian information:
@@ -58,7 +54,7 @@ impl BotCommand for EditGuardianCommand {
 
 #[async_trait::async_trait]
 impl Actor for EditGuardianCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

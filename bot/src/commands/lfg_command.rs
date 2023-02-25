@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::{match_command, validate_username},
         datetime::{format_start_time, reference_date},
         models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
@@ -19,7 +19,8 @@ command_actor!(LfgCommand, [ActorUpdateMessage]);
 impl LfgCommand {
     fn send_reply<S>(
         &self,
-        message: &ActorUpdateMessage,
+
+        message: &CommandMsg,
         reply: S,
         format: Format,
     ) -> Result<(), ActorProcessingErr>
@@ -33,13 +34,13 @@ impl LfgCommand {
         Ok(())
     }
 
-    fn usage(&self, message: &ActorUpdateMessage) -> Result<(), ActorProcessingErr> {
+    fn usage(&self, message: &CommandMsg) -> Result<(), ActorProcessingErr> {
         self.send_reply(
             message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
-For a list of activity codes: /activities
-Example: /lfg kf 2018-09-10 23:00
-Times are in Moscow (MSK) timezone.",
+ For a list of activity codes: /activities
+ Example: /lfg kf 2018-09-10 23:00
+ Times are in Moscow (MSK) timezone.",
             Format::Html,
         )
     }
@@ -57,7 +58,7 @@ impl BotCommand for LfgCommand {
 
 #[async_trait::async_trait]
 impl Actor for LfgCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 
@@ -157,7 +158,7 @@ impl Actor for LfgCommand {
                              .save(&connection)
                              .expect("Unexpected error saving LFG group creator");
 
-                        // @todo Duh refactor error handling here.
+                         // @todo Duh refactor error handling here.
                          let activity = Activity::find_one(&connection, &act.link)
                              .expect("Couldn't find linked activity")
                              .unwrap();
@@ -175,8 +176,8 @@ impl Actor for LfgCommand {
                                  actId = planned_activity.id
                              ),
                              Format::Plain,
-                        )
-                        .unwrap();
+                         )
+                         .unwrap();
 
                          Ok(())
                      })

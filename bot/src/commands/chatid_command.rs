@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::match_command,
         BotCommand,
     },
@@ -21,7 +21,7 @@ impl BotCommand for ChatidCommand {
 
 #[async_trait::async_trait]
 impl Actor for ChatidCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

@@ -2,7 +2,7 @@
 use procfs::process::Process;
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::match_command,
         BotCommand,
     },
@@ -42,7 +42,7 @@ impl BotCommand for InfoCommand {
 
 #[async_trait::async_trait]
 impl Actor for InfoCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

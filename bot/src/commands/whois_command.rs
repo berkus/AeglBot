@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify},
+        bot_actor::{BotActorMsg, CommandMsg, Format, Notify},
         commands::{guardian_lookup, match_command, validate_username},
         BotCommand,
     },
@@ -10,11 +10,7 @@ use {
 command_actor!(WhoisCommand, [ActorUpdateMessage]);
 
 impl WhoisCommand {
-    fn send_reply<S>(
-        &self,
-        message: &ActorUpdateMessage,
-        reply: S,
-    ) -> Result<(), ActorProcessingErr>
+    fn send_reply<S>(&self, message: &CommandMsg, reply: S) -> Result<(), ActorProcessingErr>
     where
         S: Into<String>,
     {
@@ -43,7 +39,7 @@ impl BotCommand for WhoisCommand {
 
 #[async_trait::async_trait]
 impl Actor for WhoisCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

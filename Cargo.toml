@@ -38,6 +38,9 @@ two_timer = "2.2" # doesn't parse "in 3 hours"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 tera = "1"
+async-trait = "0.1"
+closure = "0.3.0"
+closure-pass = "0.1.0"
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.14"

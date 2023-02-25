@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg},
+        bot_actor::{BotActorMsg, CommandMsg},
         commands::match_command,
         BotCommand,
     },
@@ -21,7 +21,7 @@ impl BotCommand for HelpCommand {
 
 #[async_trait::async_trait]
 impl Actor for HelpCommand {
-    type Msg = ActorUpdateMessage;
+    type Msg = CommandMsg;
     type State = ();
     type Arguments = ();
 

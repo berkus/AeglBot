@@ -26,9 +26,9 @@ pub enum Notify {
 
 pub enum BotActorMsg {
     SendMessage(String, ChatId, Format, Notify),
-    SendMessageReply(String, ActorUpdateMessage, Format, Notify),
-    ListCommands(ActorUpdateMessage),
-    RawCommand(ActorUpdateMessage), // Delivered to registered commands.
+    SendMessageReply(String, CommandMsg, Format, Notify),
+    ListCommands(CommandMsg),
+    RawCommand(CommandMsg), // Delivered to registered commands.
 }
 
 // #[derive(Clone)]
@@ -47,7 +47,8 @@ pub struct BotActor {
 //     }
 // }
 
-pub type ActorUpdateMessage = Message;
+/// A message delivered to command actor from telegram bot.
+pub struct CommandMsg(Message);
 
 impl BotActor {
     // Public API
@@ -210,8 +211,8 @@ impl Actor for BotActor {
 
                 let fut = self
                     .bot
-                    .send_message(source.chat.id, message)
-                    .reply_to_message_id(source.id)
+                    .send_message(source.0.chat.id, message)
+                    .reply_to_message_id(source.0.id)
                     .disable_notification(match notify {
                         Notify::On => false,
                         Notify::Off => true,
@@ -245,7 +246,10 @@ impl Actor for BotActor {
                 Ok(())
             }
             BotActorMsg::RawCommand(message) => {
-                todo!(); // deliver to raw-commands pg
+                for actor in ractor::pg::get_members(&String::from("raw-commands")).iter() {
+                    actor.send_message(message)?;
+                }
+                Ok(())
             }
         }
     }

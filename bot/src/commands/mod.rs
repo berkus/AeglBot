@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActor, BotActorMsg, Format, Notify},
+        bot_actor::{BotActor, BotActorMsg, CommandMsg, Format, Notify},
         models::Guardian,
         schema::guardians::dsl::*,
         DbConnection,
@@ -90,7 +90,8 @@ pub fn decapitalize(s: &str) -> String {
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub fn validate_username(
     bot: &ActorRef<BotActor>,
-    message: &ActorUpdateMessage,
+
+    message: &CommandMsg,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     let username = match message.from().as_ref().unwrap().username {
@@ -146,7 +147,8 @@ pub fn validate_username(
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub fn admin_check(
     bot: &ActorRef<BotActor>,
-    message: &ActorUpdateMessage,
+
+    message: &CommandMsg,
     connection: &DbConnection,
 ) -> Option<Guardian> {
     validate_username(bot, message, connection).filter(|g| g.is_admin)
