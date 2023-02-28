@@ -1,12 +1,12 @@
 use {
     crate::{
-        bot_actor::{BotActor, BotActorMsg, CommandMsg, Format, Notify},
+        // bot_actor::{BotActor, BotActorMsg, CommandMsg, Format, Notify},
         models::Guardian,
         schema::guardians::dsl::*,
         DbConnection,
     },
     diesel::prelude::*,
-    ractor::{cast, ActorRef},
+    // ractor::{cast, ActorRef},
 };
 
 #[macro_export]
@@ -35,10 +35,6 @@ macro_rules! command_actor {
                     connection_pool,
                 }
             }
-
-            pub fn connection(&self) -> BotConnection {
-                self.connection_pool.get().unwrap()
-            }
         }
 
         impl NamedActor for $name {
@@ -49,36 +45,37 @@ macro_rules! command_actor {
     };
 }
 
-mod activities_command;
-pub use self::activities_command::*;
+// mod activities_command;
+// pub use self::activities_command::*;
 mod cancel_command;
 pub use self::cancel_command::*;
-mod chatid_command;
-pub use self::chatid_command::*;
-mod d2week_command;
-pub use self::d2week_command::*;
-mod dweek_command;
-pub use self::dweek_command::*;
-mod edit_command;
-pub use self::edit_command::*;
-mod editguar_command;
-pub use self::editguar_command::*;
-mod help_command;
-pub use self::help_command::*;
-mod uptime_command;
-pub use self::uptime_command::*;
-mod join_command;
-pub use self::join_command::*;
-mod lfg_command;
-pub use self::lfg_command::*;
-mod list_command;
-pub use self::list_command::*;
-mod manage_command;
-pub use self::manage_command::*;
-mod psn_command;
-pub use self::psn_command::*;
-mod whois_command;
-pub use self::whois_command::*;
+
+// mod chatid_command;
+// pub use self::chatid_command::*;
+// mod d2week_command;
+// pub use self::d2week_command::*;
+// mod dweek_command;
+// pub use self::dweek_command::*;
+// mod edit_command;
+// pub use self::edit_command::*;
+// mod editguar_command;
+// pub use self::editguar_command::*;
+// mod help_command;
+// pub use self::help_command::*;
+// mod info_command;
+// pub use self::info_command::*;
+// mod join_command;
+// pub use self::join_command::*;
+// mod lfg_command;
+// pub use self::lfg_command::*;
+// mod list_command;
+// pub use self::list_command::*;
+// mod manage_command;
+// pub use self::manage_command::*;
+// mod psn_command;
+// pub use self::psn_command::*;
+// mod whois_command;
+// pub use self::whois_command::*;
 
 pub fn decapitalize(s: &str) -> String {
     s.chars()
@@ -88,9 +85,9 @@ pub fn decapitalize(s: &str) -> String {
 }
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
-pub fn validate_username(
-    bot: &ActorRef<BotActor>,
 
+pub fn validate_guardian(
+    bot: &ActorRef<BotActor>,
     message: &CommandMsg,
     connection: &DbConnection,
 ) -> Option<Guardian> {
@@ -147,11 +144,10 @@ pub fn validate_username(
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub fn admin_check(
     bot: &ActorRef<BotActor>,
-
     message: &CommandMsg,
     connection: &DbConnection,
 ) -> Option<Guardian> {
-    validate_username(bot, message, connection).filter(|g| g.is_admin)
+    validate_guardian(bot, message, connection).filter(|g| g.is_admin)
 }
 
 pub fn guardian_lookup(

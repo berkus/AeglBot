@@ -79,39 +79,37 @@ fn setup_logging() -> Result<(), fern::InitError> {
 #[command(rename_rule = "lowercase")]
 enum Command {
     // Start,
-    #[command(description = "List available activity shortcuts")]
-    Activities,
+
+    // #[command(description = "List available activity shortcuts")]
+    // Activities,
     #[command(description = "Leave joined activity")]
-    Cancel,
-
-    #[command(description = "Figure out the numeric chat ID")]
-    ChatId,
-    #[command(description = "Show current Destiny 2 week")]
-    D2Week,
-    #[command(description = "Show current Destiny 1 week")]
-    DWeek,
-    #[command(description = "Edit existing activity")]
-    Edit,
-    #[command(description = "Edit information about registered guardians")]
-    EditGuar,
-    #[command(description = "List available commands")]
-    Help,
-
-    #[command(description = "Show bot info and statistics")]
-    Info,
-    #[command(description = "Join existing activity from the list")]
-    Join,
-    #[command(description = "Create a new Looking For Group event")]
-    LFG,
-    #[command(description = "List current events")]
-    List,
-
-    #[command(description = "Manage bot users (admin-only)")]
-    Manage,
-    #[command(description = "Link your telegram user to PSN")]
-    PSN,
-    #[command(description = "Query telegram or PSN id")]
-    WhoIs,
+    Cancel(i32),
+    // #[command(description = "Figure out the numeric chat ID")]
+    // ChatId,
+    // #[command(description = "Show current Destiny 2 week")]
+    // D2Week,
+    // #[command(description = "Show current Destiny 1 week")]
+    // DWeek,
+    // #[command(description = "Edit existing activity")]
+    // Edit,
+    // #[command(description = "Edit information about registered guardians")]
+    // EditGuar,
+    // #[command(description = "List available commands")]
+    // Help,
+    // #[command(description = "Show bot info and statistics")]
+    // Info,
+    // #[command(description = "Join existing activity from the list")]
+    // Join,
+    // #[command(description = "Create a new Looking For Group event")]
+    // LFG,
+    // #[command(description = "List current events")]
+    // List,
+    // #[command(description = "Manage bot users (admin-only)")]
+    // Manage,
+    // #[command(description = "Link your telegram user to PSN")]
+    // PSN,
+    // #[command(description = "Query telegram or PSN id")]
+    // WhoIs,
 }
 
 #[tokio::main]
@@ -131,23 +129,35 @@ async fn main() {
 
     let tgbot = Bot::new(token); // Bot::from_env?
 
-    let bot_actor = BotActor::new(&bot_name, tgbot.clone(), lfg_chat);
-
-    let (actor, _handle) = Actor::spawn(
-        None,
-        bot_actor,
-        (), //?
-    )
-    .await
-    .expect("Couldn't start the bot");
+    let parameters = ConfigParameters {
+        bot_name: String,
+        lfg_chat_id: i64,
+        connection_pool: establish_connection(),
+        bot_maintainer: UserId(0), // Paste your ID to run this bot.
+        maintainer_username: None,
+    };
 
     Dispatcher::builder(tgbot, build_handler())
         // .dependencies(dptree::deps![InMemStorage::<State>::new()])
-        .dependencies(dptree::deps![actor]) // no more capture, pass by argument
+        .dependencies(dptree::deps![parameters]) // no more capture, pass by argument
+        .default_handler(|upd| async move {
+            log::warn!("Unhandled update: {:?}", upd);
+        })
+        .error_handler(LoggingErrorHandler::with_custom_text(
+            "An error has occurred in the dispatcher", // log to rollbar etc
+        ))
         .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;
+}
+
+struct ConfigParameters {}
+
+impl ConfigParameters {
+    pub fn connection(&self) -> BotConnection {
+        self.connection_pool.get().unwrap()
+    }
 }
 
 #[derive(Clone, Default)]
@@ -163,8 +173,8 @@ pub enum State {
 fn build_handler() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     use dptree::case;
 
-    let command_handler =
-        teloxide::filter_command::<Command, _>().branch(case![State::Start].endpoint(handler));
+    let command_handler = teloxide::filter_command::<Command, _>()
+        .branch(case![State::Start].endpoint(command_handler));
 
     // .branch(
     //     case![State::Start]
@@ -187,7 +197,8 @@ fn build_handler() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 's
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
-type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
+
+pub type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
 async fn start(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     todo!()
@@ -213,9 +224,31 @@ async fn receive_product_selection(
     todo!()
 }
 
-async fn handler(bot: Bot, message: Message, actor: ActorRef<BotActor>) -> HandlerResult {
+async fn command_handler(
+    config: ConfigParameters,
+    bot: Bot,
+    me: teloxide::types::Me,
+    message: Message,
+    command: Command,
+) -> HandlerResult {
+    let text = match command {
+        Command::Cancel(id) => cancel_command(),
+    };
     let MessageId(id) = message.id;
     log::trace!("Processing message {}", id);
-    actor.send_message(BotActorMsg::RawCommand(message))?;
+
     Ok(())
+}
+
+pub fn establish_connection() -> DbConnPool {
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
+
+    r2d2::Pool::builder()
+        .min_idle(Some(1))
+        .max_size(15)
+        .build(manager)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }

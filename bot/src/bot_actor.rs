@@ -31,76 +31,11 @@ pub enum BotActorMsg {
     RawCommand(CommandMsg), // Delivered to registered commands.
 }
 
-// #[derive(Clone)]
-// #[actor(SendMessage, SendMessageReply, ListCommands)]
-pub struct BotActor {
-    pub bot: Bot,
-    bot_name: String,
-    lfg_chat_id: i64,
-    // update_channel: ChannelRef<ActorUpdateMessage>,
-    connection_pool: DbConnPool,
-}
-
-// impl std::fmt::Debug for BotActor {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "BotActor")
-//     }
-// }
-
-/// A message delivered to command actor from telegram bot.
-pub struct CommandMsg(Message);
-
 impl BotActor {
     // Public API
 
-    pub fn new(
-        name: &str,
-        bot: Bot,
-        // chan: ChannelRef<ActorUpdateMessage>,
-        lfg_chat_id: i64,
-    ) -> Self {
-        BotActor {
-            bot,
-            bot_name: name.to_string(),
-            lfg_chat_id,
-            // update_channel: chan,
-            connection_pool: Self::establish_connection(),
-        }
-    }
-
     pub fn list_commands(&self, state: &mut <Self as Actor>::State) -> Vec<(String, String)> {
         state.commands_list.clone()
-    }
-
-    // Internal helpers
-
-    // fn handle_error(error: anyhow::Error) -> RetryPolicy<anyhow::Error> {
-    //     // count errors
-    //     log::error!("handle_error");
-    //     match error.downcast_ref::<anyhow::Error>() {
-    //         Some(te) => {
-    //             log::error!("Telegram error: {}, retrying connection.", te);
-    //             RetryPolicy::WaitRetry(Duration::from_secs(30))
-    //         }
-    //         None => {
-    //             log::error!("handle_error didn't match, real error {:?}", error);
-    //             //handle_error didnt match, real error Io(Custom { kind: Other, error: StringError("failed to lookup address information: nodename nor servname provided, or not known") })
-    //             RetryPolicy::ForwardError(error)
-    //         }
-    //     }
-    // }
-
-    pub fn establish_connection() -> DbConnPool {
-        dotenv().ok();
-
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
-
-        r2d2::Pool::builder()
-            .min_idle(Some(1))
-            .max_size(15)
-            .build(manager)
-            .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
     }
 }
 
@@ -148,7 +83,8 @@ impl Actor for BotActor {
         }
 
         new_command!(ActivitiesCommand);
-        new_command!(CancelCommand);
+
+        // new_command!(CancelCommand);
         new_command!(ChatidCommand);
         new_command!(D1weekCommand);
         new_command!(D2weekCommand);
@@ -163,6 +99,7 @@ impl Actor for BotActor {
         new_command!(PsnCommand);
         new_command!(WhoisCommand);
 
+        // @todo this should go to bot.rs, does teloxide have anything for scheduling? prolly not.
         // Create reminder tasks actor
         let (reminders, _handle) = Actor::spawn_linked(
             Some("reminders".into()),
@@ -243,12 +180,6 @@ impl Actor for BotActor {
                     myself,
                     BotActorMsg::SendMessageReply(reply, source, Format::Html, Notify::Off)
                 );
-                Ok(())
-            }
-            BotActorMsg::RawCommand(message) => {
-                for actor in ractor::pg::get_members(&String::from("raw-commands")).iter() {
-                    actor.send_message(message)?;
-                }
                 Ok(())
             }
         }

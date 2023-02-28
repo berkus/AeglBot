@@ -1,11 +1,7 @@
 use {
-    crate::{
-        bot_actor::{BotActor, BotActorMsg, Format, Notify},
-        datetime::{reference_date, BotDateTime},
-    },
+    crate::datetime::{reference_date, BotDateTime},
     chrono::{DateTime, Duration, TimeZone, Utc},
     once_cell::sync::Lazy,
-    ractor::{cast, ActorRef},
 };
 // use plurals::{Lang, Plural};
 
@@ -40,7 +36,6 @@ fn raid_week_number(now: BotDateTime) -> i64 {
 // };
 
 // 1. Daily resets at 20:00 MSK (17:00 UTC) every day
-
 pub fn daily_reset(bot: ActorRef<BotActor>, chat_id: teloxide::types::ChatId) {
     cast!(
         bot,
@@ -102,14 +97,12 @@ pub fn ascendant_challenge_cycle() -> String {
 //    dreaming city on 3-week schedule
 // 7. On main reset: change in Dreaming City Ascendant Challenges
 //    dreaming city challenges on 6-week schedule
-
 pub fn major_weekly_reset(bot: ActorRef<BotActor>, chat_id: teloxide::types::ChatId) {
     let msg = format!(
         "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
         d1week = this_week_in_d1(),
         d2week = this_week_in_d2(),
     );
-
     cast!(
         bot,
         BotActorMsg::SendMessage(msg, chat_id, Format::Markdown, Notify::Off)
