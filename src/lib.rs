@@ -14,7 +14,7 @@ use {
     tera::Tera,
 };
 
-pub mod bot_actor;
+// pub mod bot_actor;
 pub mod commands;
 pub mod datetime;
 pub mod models;

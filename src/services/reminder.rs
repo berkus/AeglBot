@@ -1,12 +1,10 @@
 use {
     crate::{
-        bot_actor::{BotActor, BotActorMsg, Format, Notify},
         datetime::{nowtz, reference_date},
         models::PlannedActivity,
         BotConnection,
     },
     diesel::{self, dsl::IntervalDsl, prelude::*},
-    ractor::{cast, ActorRef},
     teloxide::types::ChatId,
 };
 

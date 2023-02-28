@@ -1,6 +1,5 @@
 use {
     crate::{
-        bot_actor::{BotActor, BotActorMsg},
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
         services::{destiny_schedule, reminder},
         BotConnection, DbConnPool,

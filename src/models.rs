@@ -398,12 +398,12 @@ impl PlannedActivity {
     pub fn find_member(
         &self,
         connection: &DbConnection,
-        g: &Guardian,
+        guardian: &Guardian,
     ) -> Option<PlannedActivityMember> {
         use crate::schema::plannedactivitymembers::dsl::*;
 
         plannedactivitymembers
-            .filter(user_id.eq(g.id))
+            .filter(user_id.eq(guardian.id))
             .filter(planned_activity_id.eq(self.id))
             .first::<PlannedActivityMember>(connection)
             .optional()
