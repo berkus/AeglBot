@@ -3,11 +3,13 @@
 // To make it usable it misses natty parsing lib implementation in rust
 // (yeah, i'd prefer native, although there are ways to use natty through jlink
 // or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-#![feature(box_syntax)]
 #![feature(associated_type_bounds)]
 
 use {
-    aegl_bot::bot_actor::{BotActor, BotActorMsg, CommandMsg},
+    aegl_bot::{
+        bot_actor::{BotActor, BotActorMsg, CommandMsg},
+        commands::cancel_command::cancel_command,
+    },
     dotenv::dotenv,
     ractor::{cast, Actor, ActorProcessingErr, ActorRef},
     std::env,
@@ -230,8 +232,8 @@ async fn command_handler(
     message: Message,
     command: Command,
 ) -> HandlerResult {
-    let text = match command {
-        Command::Cancel(id) => cancel_command(),
+    match command {
+        Command::Cancel(id) => cancel_command(bot, config.connection(), message, id),
     };
     let MessageId(id) = message.id;
     log::trace!("Processing message {}", id);
