@@ -1,10 +1,16 @@
 // Async Rust implementation of the bot
 //
 // To make it usable it misses natty parsing lib implementation in rust
-// (There are now several rust impls including https://lib.rs/crates/two_timer and https://lib.rs/crates/intervalle)
+// (yeah, i'd prefer native, although there are ways to use natty through jlink
+// or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
+
+#![feature(associated_type_bounds)]
 
 use {
-    aegl_bot::bot_actor::{BotActor, BotActorMsg, CommandMsg},
+    aegl_bot::{
+        bot_actor::{BotActor, BotActorMsg, CommandMsg},
+        commands::cancel_command::cancel_command,
+    },
     dotenv::dotenv,
     ractor::{cast, Actor, ActorProcessingErr, ActorRef},
     std::env,
@@ -79,7 +85,6 @@ fn setup_logging() -> Result<(), fern::InitError> {
 #[command(rename_rule = "lowercase")]
 enum Command {
     // Start,
-
     // #[command(description = "List available activity shortcuts")]
     // Activities,
     #[command(description = "Leave joined activity")]
@@ -116,8 +121,6 @@ enum Command {
 async fn main() {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
-
-    aegl_bot::datetime::bot_start_time(); // Mark start timestamp
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
@@ -197,7 +200,6 @@ fn build_handler() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 's
 }
 
 type MyDialogue = Dialogue<State, InMemStorage<State>>;
-
 pub type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
 async fn start(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
@@ -231,12 +233,11 @@ async fn command_handler(
     message: Message,
     command: Command,
 ) -> HandlerResult {
-    let text = match command {
-        Command::Cancel(id) => cancel_command(),
+    match command {
+        Command::Cancel(id) => cancel_command(bot, config.connection(), message, id),
     };
     let MessageId(id) = message.id;
     log::trace!("Processing message {}", id);
-
     Ok(())
 }
 

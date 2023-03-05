@@ -47,9 +47,9 @@ macro_rules! command_actor {
 
 // mod activities_command;
 // pub use self::activities_command::*;
-mod cancel_command;
-pub use self::cancel_command::*;
 
+pub mod cancel_command;
+pub use self::cancel_command::*;
 // mod chatid_command;
 // pub use self::chatid_command::*;
 // mod d2week_command;
@@ -85,7 +85,6 @@ pub fn decapitalize(s: &str) -> String {
 }
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
-
 pub fn validate_guardian(
     bot: &ActorRef<BotActor>,
     message: &CommandMsg,
