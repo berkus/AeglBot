@@ -66,7 +66,7 @@ pub fn reference_date() -> BotDateTime {
 /// Destiny reset time in UTC.
 /// Resets are at 17:00 UTC.
 pub fn d2_reset_time() -> BotTime {
-    BotTime::from_hms(17, 0, 0)
+    BotTime::from_hms_opt(17, 0, 0).unwrap()
 }
 
 /// Display time in Moscow timezone (MSK)
@@ -132,9 +132,9 @@ pub fn start_at_weekday_time(now: BotDateTime, wd: chrono::Weekday, start: BotTi
 ///
 /// `"Today at 23:00 (starts in 3 hours)"`
 pub fn format_start_time(time: BotDateTime, reference: BotDateTime) -> String {
-    let ref_date = reference.date().and_hms(0, 0, 0);
+    let ref_date = reference.date_naive().and_hms_opt(0, 0, 0).unwrap(); // @todo don't unwrap here, date may be invalid
 
-    let prefix = if time.date() == ref_date.date() {
+    let prefix = if time.date_naive() == ref_date.date() {
         "Today".to_string()
     } else {
         format!("on {}", time.format("%a %b %e %Y"))
@@ -198,18 +198,18 @@ mod tests {
 
     #[test]
     fn test_start_at_time() {
-        let ref_time = Utc.ymd(2018, 10, 24).and_hms(17, 30, 0);
+        let ref_time = Utc.with_ymd_and_hms(2018, 10, 24, 17, 30, 0).unwrap();
 
         assert_eq!(
-            start_at_time_offset(ref_time, BotTime::from_hms(17, 0, 0)),
+            start_at_time_offset(ref_time, BotTime::from_hms_opt(17, 0, 0).unwrap()),
             Duration::hours(23) + Duration::minutes(30)
         );
         assert_eq!(
-            start_at_time_offset(ref_time, BotTime::from_hms(17, 30, 0)),
+            start_at_time_offset(ref_time, BotTime::from_hms_opt(17, 30, 0).unwrap()),
             Duration::seconds(0)
         );
         assert_eq!(
-            start_at_time_offset(ref_time, BotTime::from_hms(18, 30, 0)),
+            start_at_time_offset(ref_time, BotTime::from_hms_opt(18, 30, 0).unwrap()),
             Duration::hours(1)
         );
     }
@@ -217,46 +217,78 @@ mod tests {
     #[test]
     fn test_start_at_weekday() {
         // It's wednesday
-        let ref_date = Utc.ymd(2018, 10, 24).and_hms(17, 30, 0); // Wednesday
+        let ref_date = Utc.with_ymd_and_hms(2018, 10, 24, 17, 30, 0).unwrap(); // Wednesday
 
         // We schedule on wednesday later - wait just that
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Wed, BotTime::from_hms(18, 0, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Wed,
+                BotTime::from_hms_opt(18, 0, 0).unwrap()
+            ),
             Duration::minutes(30)
         );
         // We schedule on wednesday but before - wait almost 1 week
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Wed, BotTime::from_hms(17, 0, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Wed,
+                BotTime::from_hms_opt(17, 0, 0).unwrap()
+            ),
             Duration::days(6) + Duration::hours(23) + Duration::minutes(30)
         );
         // We schedule on friday, same time - wait till friday (2 days)
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Fri, BotTime::from_hms(17, 30, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Fri,
+                BotTime::from_hms_opt(17, 30, 0).unwrap()
+            ),
             Duration::days(2)
         );
         // We schedule on friday, earlier time - wait till friday (almost 2 days)
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Fri, BotTime::from_hms(17, 00, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Fri,
+                BotTime::from_hms_opt(17, 00, 0).unwrap()
+            ),
             Duration::days(1) + Duration::hours(23) + Duration::minutes(30)
         );
         // We schedule on friday, later time - wait till friday (over 2 days)
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Fri, BotTime::from_hms(18, 30, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Fri,
+                BotTime::from_hms_opt(18, 30, 0).unwrap()
+            ),
             Duration::days(2) + Duration::hours(1)
         );
         // We schedule on monday, same time - wait till monday (5 days)
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Mon, BotTime::from_hms(17, 30, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Mon,
+                BotTime::from_hms_opt(17, 30, 0).unwrap()
+            ),
             Duration::days(5)
         );
         // We schedule on monday, earlier time - wait till monday (almost 5 days)
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Mon, BotTime::from_hms(17, 00, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Mon,
+                BotTime::from_hms_opt(17, 00, 0).unwrap()
+            ),
             Duration::days(4) + Duration::hours(23) + Duration::minutes(30)
         );
         // We schedule on monday, later time - wait till monday (over 5 days)
         assert_eq!(
-            start_at_weekday_time_offset(ref_date, Weekday::Mon, BotTime::from_hms(18, 30, 0)),
+            start_at_weekday_time_offset(
+                ref_date,
+                Weekday::Mon,
+                BotTime::from_hms_opt(18, 30, 0).unwrap()
+            ),
             Duration::days(5) + Duration::hours(1)
         );
     }

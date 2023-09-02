@@ -29,7 +29,7 @@ pub fn raid_cycle() -> String {
 
 fn raid_week_number(now: BotDateTime) -> i64 {
     static START_WEEK: LazyLock<DateTime<Utc>> =
-        LazyLock::new(|| Utc.ymd(2019, 12, 31).and_hms(17, 0, 0));
+        LazyLock::new(|| Utc.with_ymd_and_hms(2019, 12, 31, 17, 0, 0).unwrap());
     (now - *START_WEEK).num_weeks() % 4
 }
 
@@ -128,13 +128,13 @@ pub fn this_week_in_d2() -> String {
 
 fn dc_week_number(now: BotDateTime) -> i64 {
     static START_WEEK: LazyLock<DateTime<Utc>> =
-        LazyLock::new(|| Utc.ymd(2018, 9, 11).and_hms(17, 0, 0));
+        LazyLock::new(|| Utc.with_ymd_and_hms(2018, 9, 11, 17, 0, 0).unwrap());
     (now - *START_WEEK).num_weeks() % 3
 }
 
 fn ascendant_challenge_week_number(now: BotDateTime) -> i64 {
     static START_WEEK: LazyLock<DateTime<Utc>> =
-        LazyLock::new(|| Utc.ymd(2021, 7, 6).and_hms(17, 0, 0));
+        LazyLock::new(|| Utc.with_ymd_and_hms(2021, 7, 6, 17, 0, 0).unwrap());
     (now - *START_WEEK).num_weeks() % 6
 }
 
@@ -145,16 +145,31 @@ mod tests {
     #[test]
     fn test_dc_weeks() {
         // Week Oct 16-22 - Strongest Curse (2)
-        assert_eq!(dc_week_number(Utc.ymd(2018, 10, 20).and_hms(12, 0, 0)), 2);
+        assert_eq!(
+            dc_week_number(Utc.with_ymd_and_hms(2018, 10, 20, 12, 0, 0).unwrap()),
+            2
+        );
         // Week Oct 23-29 - Weak Curse (0)
-        assert_eq!(dc_week_number(Utc.ymd(2018, 10, 24).and_hms(12, 0, 0)), 0);
+        assert_eq!(
+            dc_week_number(Utc.with_ymd_and_hms(2018, 10, 24, 12, 0, 0).unwrap()),
+            0
+        );
         // Week Oct 30-Nov 5 - Growing Curse (1)
-        assert_eq!(dc_week_number(Utc.ymd(2018, 11, 1).and_hms(12, 0, 0)), 1);
+        assert_eq!(
+            dc_week_number(Utc.with_ymd_and_hms(2018, 11, 1, 12, 0, 0).unwrap()),
+            1
+        );
     }
 
     #[test]
     fn test_raid_weeks() {
-        assert_eq!(raid_week_number(Utc.ymd(2020, 1, 28).and_hms(21, 0, 0)), 0);
-        assert_eq!(raid_week_number(Utc.ymd(2020, 1, 27).and_hms(12, 0, 0)), 3);
+        assert_eq!(
+            raid_week_number(Utc.with_ymd_and_hms(2020, 1, 28, 21, 0, 0).unwrap()),
+            0
+        );
+        assert_eq!(
+            raid_week_number(Utc.with_ymd_and_hms(2020, 1, 27, 12, 0, 0).unwrap()),
+            3
+        );
     }
 }
