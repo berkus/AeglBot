@@ -284,6 +284,19 @@ pub struct NewPlannedActivity {
 }
 
 impl PlannedActivity {
+    pub fn upcoming_activities(connection: &DbConnection) -> Vec<PlannedActivity> {
+        use {
+            crate::{datetime::nowtz, schema::plannedactivities::dsl::*},
+            diesel::dsl::IntervalDsl,
+        };
+
+        plannedactivities
+            .filter(start.ge(nowtz() - 60_i32.minutes()))
+            .order(start.asc())
+            .load::<PlannedActivity>(connection)
+            .expect("TEMP failed to load planned activities @FIXME")
+    }
+
     pub fn author(&self, connection: &DbConnection) -> Option<Guardian> {
         Guardian::find_one(connection, &self.author_id)
             .expect("Failed to load PlannedActivity author")
