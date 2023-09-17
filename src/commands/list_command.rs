@@ -41,28 +41,17 @@ impl Receive<ActorUpdateMessage> for ListCommand {
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
 
-            if let Some(_guardian) = validate_username(&self.bot_ref, &message, &connection) {
-                // let count = self.activity(connection).max_fireteam_size as usize
-                //     - self.members_count(connection);
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                let upcoming_events: Vec<_> = PlannedActivity::upcoming_activities(&connection)
+                    .iter()
+                    .map(|s| s.to_template(&guardian, &connection))
+                    .collect();
 
-                use crate::schema::plannedactivities::dsl::*;
-                let upcoming_events = plannedactivities
-                    .filter(start.ge(nowtz() - 60_i32.minutes()))
-                    .order(start.asc())
-                    .load::<PlannedActivity>(&connection)
-                    .expect("TEMP loading @FIXME");
-                // .iter()
-                // .map(|s| s.to_template(connection, _guardian));
+                let mut cx = tera::Context::new();
+                cx.insert("events", &upcoming_events);
+                let output = TERA.render("activity_list", &cx).expect("to render nicely");
 
-                // let mut cx = tera::Context::new();
-                // cx.insert("events", &upcoming_events);
-                // let output = TERA.render("activity_list", &cx).expect("to render nicely");
-                //
-                //  self.send_reply(
-                //     &message,
-                //     &output,
-                //     Format::Html,
-                // );
+                self.send_reply(&message, output, Format::Html);
             }
         }
     }

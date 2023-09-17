@@ -17,14 +17,8 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
 
     let reference = reference_date();
 
-    let upcoming_events = plannedactivities
-        .filter(start.ge(nowtz() - 60_i32.minutes()))
-        .order(start.asc())
-        .load::<PlannedActivity>(&connection)
-        .expect("TEMP loading @FIXME");
-
-    let upcoming_events: Vec<&PlannedActivity> = upcoming_events
-        .iter()
+    let upcoming_events: Vec<PlannedActivity> = PlannedActivity::upcoming_activities(&connection)
+        .into_iter()
         .filter(|event| {
             if event.start > reference {
                 matches!((event.start - reference).num_minutes(), 60 | 15 | 0)

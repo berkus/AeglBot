@@ -1,4 +1,4 @@
-Planned activities:
+📝 Planned activities:
 
 {% for event in events -%}
     <b>{{ id }}</b>: <b>{{ name }}</b>

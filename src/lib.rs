@@ -20,7 +20,7 @@ pub mod services;
 
 static TERA: LazyLock<Tera> = LazyLock::new(|| {
     let mut tera = Tera::default();
-    tera.add_raw_templates(vec![(
+    let _ = tera.add_raw_templates(vec![(
         "activity_list",
         include_str!("./outputs/activity_list.tera"),
     )]);
