@@ -2,19 +2,24 @@
 authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
 edition = "2021"
 name = "aegl_bot"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
-regex = "1.4"
+regex = "1"
 chrono = "0.4"
-chrono-tz = "0.5"
+chrono-tz = "0.10"
 chrono-english = "0.1"
 diesel_derives_extra = "0.2"
 diesel_derives_traits = "0.2"
 #diesel-derive-more = "1.1"
 diesel_logger = "0.1"
 diesel_migrations = "1.4" # -- retry with "extern crate" macros
-diesel = { version = "1.4", features = ["postgres", "chrono", "serde_json", "r2d2" ] }
+diesel = { version = "1.4", features = [
+    "postgres",
+    "chrono",
+    "serde_json",
+    "r2d2",
+] }
 r2d2 = "0.8"
 dotenv = "0.15"
 #anyhow = "1.0"
@@ -22,14 +27,15 @@ futures = "0.3"
 serde_json = "1.0"
 teloxide = { version = "0.5", features = ["macros"] }
 log = "0.4"
-fern = { version = "0.6", features = ["colored"] }
+fern = { version = "0.7", features = ["colored"] }
 futures-retry = "0.6"
-itertools = "0.10"
+itertools = "0.14"
 # plurals = "0.3"
+thousands = "0.2.0"
 tokio = { version = "1.12", features = ["macros", "rt-multi-thread"] }
-tokio-util = { version = "*", features = ["codec"] }
+tokio-util = { version = "0.6", features = ["codec"] }
 riker = "0.4"
-paste = "1.0"
+paste = "1"
 
 [target.'cfg(target_os="linux")'.dependencies]
-procfs = "0.9"
+procfs = "0.17"
