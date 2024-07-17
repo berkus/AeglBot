@@ -1,21 +1,21 @@
 use {
-    chrono::{prelude::*, DateTime, Duration, TimeZone, Utc},
-    chrono_tz::{Europe::Moscow, Tz},
     diesel::{helper_types::AsExprOf, sql_types::Timestamptz},
     std::fmt::Write,
+    time::{prelude::*, DateTime, Duration, TimeZone, Utc},
+    time_tz::{Europe::Moscow, Tz},
 };
 
-// Diesel farts, see issues/1752
+// Diesel farts, see issues/1752 (will never be fixed)
 pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {
     use diesel::{dsl::now, IntoSql};
     now.into_sql::<Timestamptz>()
 }
 
 // All internal date representation and storage is in UTC.
-// MSK time used only to parse input time and to display times.
+// MSK time zone is used only to parse input time and to display times.
 
-pub type BotDateTime = chrono::DateTime<chrono::Utc>;
-pub type BotTime = chrono::NaiveTime; // UTC
+pub type BotDateTime = time::DateTime<time_tz::Utc>;
+pub type BotTime = time::NaiveTime; // UTC
 
 fn time_diff_string(duration: Duration) -> String {
     let times = vec![
