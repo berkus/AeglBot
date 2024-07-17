@@ -14,11 +14,16 @@ command_actor!(UptimeCommand, [ActorUpdateMessage]);
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {
     if let Ok(process) = Process::myself() {
+        use thousands::Separable;
+        let stat = process.stat().unwrap();
+        let page_size = procfs::page_size();
         format!(
-            "{thn} threads, {vm} bytes virtual memory, {rm} bytes resident memory",
-            thn = process.stat.num_threads,
-            vm = process.stat.vsize,
-            rm = process.stat.rss_bytes(),
+            "🧵 {thn} threads\n📃 {vmb} bytes ({vmp} pages) virtual memory\n📃 {rmb} bytes ({rmp} pages) resident memory",
+            thn = stat.num_threads,
+            vmb = stat.vsize.separate_with_commas(),
+            vmp = (stat.vsize / page_size).separate_with_commas(),
+            rmp = stat.rss.separate_with_commas(),
+            rmb = (stat.rss * page_size).separate_with_commas(),
         )
     } else {
         "Couldn't access process information".to_string()
@@ -46,7 +51,7 @@ impl Receive<ActorUpdateMessage> for UptimeCommand {
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
             let uptime = crate::datetime::format_uptime();
-            let message = format!("- ⏰ Started {uptime}\n- 📦 {}", get_process_info());
+            let message = format!("- ⏰ Started {uptime}\n- {}", get_process_info());
             self.bot_ref.tell(
                 SendMessageReply(message, msg, Format::Plain, Notify::Off),
                 None,
