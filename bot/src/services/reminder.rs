@@ -15,6 +15,7 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
     let reference = reference_date();
 
     let upcoming_events: Vec<PlannedActivity> = PlannedActivity::upcoming_activities(&connection)
+        .await
         .into_iter()
         .filter(|event| {
             if event.start > reference {
