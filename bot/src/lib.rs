@@ -71,7 +71,7 @@ pub trait NamedActor {
 
 pub trait BotCommand {
     /// Print command usage instructions.
-    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<Bot>, Message>);
+    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);
     /// Return command prefix to match.
     /// To support sub-commands the prefix for root commands should start with '/'.
     fn prefix() -> &'static str;
@@ -113,15 +113,15 @@ pub fn establish_db_connection() -> DbConnPool {
 //         self.clone_box()
 //     }
 // }
-
+/*
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
 
     // Command is prefix of another command.
-    // struct PrefixCommand;
+    struct PrefixCommand;
 
-    // struct PrefixTwoCommand;
+    struct PrefixTwoCommand;
 
     // impl PrefixCommand {
     //     pub fn new() -> Box<Self> {
@@ -129,15 +129,15 @@ mod tests {
     //     }
     // }
 
-    // impl BotCommand for PrefixCommand {
-    //     fn prefix() -> &'static str {
-    //         "/prefix"
-    //     }
+    impl BotCommand for PrefixCommand {
+        fn prefix() -> &'static str {
+            "/prefix"
+        }
 
-    //     fn description() -> &'static str {
-    //         "Test"
-    //     }
-    // }
+        fn description() -> &'static str {
+            "Test"
+        }
+    }
 
     // impl PrefixTwoCommand {
     //     pub fn new() -> Box<Self> {
@@ -145,15 +145,15 @@ mod tests {
     //     }
     // }
 
-    // impl BotCommand for PrefixTwoCommand {
-    //     fn prefix() -> &'static str {
-    //         "/prefixtwo"
-    //     }
+    impl BotCommand for PrefixTwoCommand {
+        fn prefix() -> &'static str {
+            "/prefixtwo"
+        }
 
-    //     fn description() -> &'static str {
-    //         "Test two"
-    //     }
-    // }
+        fn description() -> &'static str {
+            "Test two"
+        }
+    }
 
     // #[test]
     // fn test_command_insertion_order1() {
@@ -209,3 +209,4 @@ mod tests {
     //        tokio::run(retry);
     //    }
 }
+*/

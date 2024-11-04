@@ -127,12 +127,12 @@ impl Actor for BotActor {
         new_command!(EditCommand);
         new_command!(EditGuardianCommand);
         new_command!(HelpCommand);
+        new_command!(InfoCommand);
         new_command!(JoinCommand);
         new_command!(LfgCommand);
         new_command!(ListCommand);
         new_command!(ManageCommand);
         new_command!(PsnCommand);
-        new_command!(UptimeCommand);
         new_command!(WhoisCommand);
 
         // Create reminder tasks actor
