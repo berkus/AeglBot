@@ -4,7 +4,10 @@
 // (There are now several rust impls including https://lib.rs/crates/two_timer and https://lib.rs/crates/intervalle)
 
 use {
-    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
+    aegl_bot::{
+        actors::bot_actor::{ActorUpdateMessage, BotActor},
+        establish_db_connection,
+    },
     dotenv::dotenv,
     // riker::prelude::*, doesn't work here!
     riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
@@ -76,7 +79,7 @@ async fn main() {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
-    aegl_bot::datetime::bot_start_time(); // Mark start timestamp
+    libbot::datetime::bot_start_time(); // Mark start timestamp
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");

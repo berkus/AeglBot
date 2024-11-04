@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
+        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         models::Guardian,
         schema::guardians::dsl::*,
         DbConnection,
@@ -21,19 +21,71 @@ macro_rules! command_actor {
         #[derive(Clone)]
         #[actor($($msgs)*)]
         pub struct $name {
-            bot_ref: ActorRef<BotActorMsg>,
+            bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
             bot_name: String,
             connection_pool: DbConnPool,
+        }
+
+        impl NamedActor for $name {
+            fn actor_name() -> String { std::stringify!($name).into() }
         }
 
         impl $name {
             pub fn connection(&self) -> BotConnection {
                 self.connection_pool.get().unwrap()
             }
-        }
 
-        impl NamedActor for $name {
-            fn actor_name() -> String { std::stringify!($name).into() }
+            pub fn new(
+                bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
+                bot_name: String,
+                connection_pool: BotConnection,
+            ) -> Self {
+                Self {
+                    bot_ref,
+                    bot_name,
+                    connection_pool,
+                }
+            }
+
+            pub fn connection(&self) -> &BotConnection {
+                &self.connection_pool
+            }
+
+            #[allow(dead_code, reason = "help_command doesn't use those")]
+            async fn send_reply_with_format<S>(
+                &self,
+                message: &$crate::actors::bot_actor::ActorUpdateMessage,
+                reply: S,
+                format: $crate::actors::bot_actor::Format,
+            ) where
+                S: Into<String>,
+            {
+                let _ = self
+                    .bot_ref
+                    .tell($crate::actors::bot_actor::SendMessageReply(
+                        reply.into(),
+                        message.clone(),
+                        format,
+                        $crate::actors::bot_actor::Notify::Off,
+                    ))
+                    .await;
+            }
+
+            #[allow(dead_code, reason = "help_command doesn't use those")]
+            async fn send_reply<S>(
+                &self,
+                message: &$crate::actors::bot_actor::ActorUpdateMessage,
+                reply: S,
+            ) where
+                S: Into<String>,
+            {
+                self.send_reply_with_format(
+                    message,
+                    reply,
+                    $crate::actors::bot_actor::Format::Plain,
+                )
+                .await;
+            }
         }
 
         impl Actor for $name {
@@ -91,8 +143,8 @@ pub fn decapitalize(s: &str) -> String {
 }
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
-pub fn validate_username(
-    bot: &ActorRef<BotActorMsg>,
+pub async fn validate_username(
+    bot: &ActorRef<crate::actors::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {
@@ -147,8 +199,8 @@ pub fn validate_username(
 }
 
 /// Return a guardian record if message author is an admin user, `None` otherwise.
-pub fn admin_check(
-    bot: &ActorRef<BotActorMsg>,
+pub async fn admin_check(
+    bot: &ActorRef<crate::actors::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
     connection: &DbConnection,
 ) -> Option<Guardian> {

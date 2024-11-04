@@ -1,19 +1,19 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        actors::bot_actor::ActorUpdateMessage,
         commands::{decapitalize, match_command, validate_username},
-        datetime::{format_start_time, reference_date},
-        models::{NewPlannedActivityMember, PlannedActivity},
-        render_template, BotCommand,
+        models::PlannedActivity,
+        BotCommand,
     },
     chrono::Duration,
-    diesel_derives_traits::{Model, NewModel},
+    diesel_derives_traits::Model,
+    libbot::datetime::{format_start_time, reference_date},
     riker::actors::Tell,
 };
 
-command_actor!(JoinCommand, [ActorUpdateMessage]);
+command_actor!(CancelCommand, [ActorUpdateMessage]);
 
-impl JoinCommand {
+impl CancelCommand {
     fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
     where
         S: Into<String>,
@@ -27,23 +27,24 @@ impl JoinCommand {
     fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(
             message,
-            render_template!("join/usage").expect("Failed to render join usage template"),
+            "To leave a fireteam provide fireteam id
+Fireteam IDs are available from output of /list command.",
         );
     }
 }
 
-impl BotCommand for JoinCommand {
+impl BotCommand for CancelCommand {
     fn prefix() -> &'static str {
-        "/join"
+        "/cancel"
     }
 
     fn description() -> &'static str {
-        "Join existing activity from the list"
+        "Leave joined activity"
     }
 }
 
-impl Receive<ActorUpdateMessage> for JoinCommand {
-    type Msg = JoinCommandMsg;
+impl Receive<ActorUpdateMessage> for CancelCommand {
+    type Msg = CancelCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
         if let (Some(_), activity_id) =
@@ -74,47 +75,48 @@ impl Receive<ActorUpdateMessage> for JoinCommand {
 
                 let member = planned.find_member(&connection, Some(&guardian));
 
-                if member.is_some() {
-                    return self.send_reply(&message, "You are already part of this group.");
-                }
-
-                if planned.is_full(&connection) {
-                    return self.send_reply(&message, "This activity group is full.");
+                if member.is_none() {
+                    return self.send_reply(&message, "You are not part of this group.");
                 }
 
                 if planned.start < reference_date() - Duration::hours(1) {
-                    return self.send_reply(&message, "You can not join past activities.");
+                    return self.send_reply(&message, "You can not leave past activities.");
                 }
 
-                let planned_activity_member = NewPlannedActivityMember {
-                    user_id: guardian.id,
-                    planned_activity_id: planned.id,
-                    added: reference_date(),
-                };
+                let member = member.unwrap();
 
-                planned_activity_member
-                    .save(&connection)
-                    .expect("Unexpected error saving group joiner");
+                if member.destroy(&connection).is_err() {
+                    return self.send_reply(&message, "Failed to remove group member");
+                }
 
-                // join/joined template
-
-                let guar_name = guardian.to_string();
                 let act_name = planned.activity(&connection).format_name();
                 let act_time = decapitalize(&format_start_time(planned.start, reference_date()));
-                let other_guars = planned.members_formatted_list(&connection);
-                let join_prompt = planned.join_prompt(&connection);
 
-                let text = render_template!(
-                    "join/joined",
-                    ("guarName", &guar_name),
-                    ("actName", &act_name),
-                    ("actTime", &act_time),
-                    ("otherGuars", &other_guars),
-                    ("joinPrompt", &join_prompt)
-                )
-                .expect("Failed to render join joined template");
+                let suffix = if planned.members(&connection).is_empty() {
+                    if planned.destroy(&connection).is_err() {
+                        return self.send_reply(&message, "Failed to remove planned activity");
+                    }
+                    "This fireteam is disbanded and can no longer be joined.".into()
+                } else {
+                    format!(
+                        "{} are going
+{}",
+                        planned.members_formatted_list(&connection),
+                        planned.join_prompt(&connection)
+                    )
+                };
 
-                self.send_reply(&message, text);
+                self.send_reply(
+                    &message,
+                    format!(
+                        "{guarName} has left {actName} group {actTime}
+{suffix}",
+                        guarName = guardian.format_name(),
+                        actName = act_name,
+                        actTime = act_time,
+                        suffix = suffix
+                    ),
+                );
             }
         }
     }

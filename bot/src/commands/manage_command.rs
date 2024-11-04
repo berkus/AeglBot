@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{admin_check, guardian_lookup, match_command},
         BotCommand,
     },
@@ -126,8 +126,10 @@ impl Receive<ActorUpdateMessage> for ManageCommand {
 //     }
 impl ManageCommand {
     fn list_admins_subcommand(&self, message: &ActorUpdateMessage) {
-        use crate::{models::Guardian, schema::guardians::dsl::*};
-        use diesel::prelude::*;
+        use {
+            crate::{models::Guardian, schema::guardians::dsl::*},
+            diesel::prelude::*,
+        };
 
         let connection = self.connection();
 

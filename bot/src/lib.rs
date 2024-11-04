@@ -1,64 +1,17 @@
-// #![feature(nll)] // features from edition-2018
-// #![feature(type_alias_enum_variants)]
 // #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![warn(unused_imports)] // during development
 #![feature(type_ascription)]
 #![expect(non_local_definitions)] // Old diesel macros
 
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_derives_extra;
+use {
+    diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool,
+    sea_orm::DatabaseConnection,
+};
 
-use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool};
-
-pub mod bot_actor;
+pub mod actors;
 pub mod commands;
-pub mod datetime;
 pub mod models;
 pub mod schema;
-pub mod services;
-
-static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
-    std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates"));
-
-pub(crate) static TEMPLATES: std::sync::LazyLock<tera::Tera> = std::sync::LazyLock::new(|| {
-    let mut tera = tera::Tera::default();
-    for file in TEMPLATE_FILES.find("**/*.tera").unwrap() {
-        if let Some(template) = file.as_file() {
-            tera.add_raw_template(
-                template.path().with_extension("").to_str().unwrap(), // drop .tera extension
-                template.contents_utf8().unwrap(),
-            )
-            .unwrap();
-        }
-    }
-    tera
-});
-
-#[allow(
-    clippy::crate_in_macro_def,
-    reason = "We refer to this specific TEMPLATES instance in this specific crate"
-)]
-#[macro_export]
-macro_rules! render_template {
-    ($template:expr) => {
-        {
-            crate::TEMPLATES.render($template, &tera::Context::new())
-                .map_err(|e| format!("Failed to render template '{}': {}", $template, e))
-        }
-    };
-    ($template:expr, $(($key:expr,$value:expr)),+) => {
-        {
-            let mut context = tera::Context::new();
-            $(
-                context.insert($key, $value);
-            )*
-            crate::TEMPLATES.render($template, &context)
-                .map_err(|e| format!("Failed to render template '{}': {}", $template, e))
-        }
-    };
-}
 
 // TODO: only BotConnection should be public
 pub type DbConnection = LoggingConnection<PgConnection>;
@@ -71,7 +24,7 @@ pub trait NamedActor {
 
 pub trait BotCommand {
     /// Print command usage instructions.
-    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<Bot>, Message>);
+    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);
     /// Return command prefix to match.
     /// To support sub-commands the prefix for root commands should start with '/'.
     fn prefix() -> &'static str;
@@ -113,15 +66,15 @@ pub fn establish_db_connection() -> DbConnPool {
 //         self.clone_box()
 //     }
 // }
-
+/*
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
 
     // Command is prefix of another command.
-    // struct PrefixCommand;
+    struct PrefixCommand;
 
-    // struct PrefixTwoCommand;
+    struct PrefixTwoCommand;
 
     // impl PrefixCommand {
     //     pub fn new() -> Box<Self> {
@@ -129,15 +82,15 @@ mod tests {
     //     }
     // }
 
-    // impl BotCommand for PrefixCommand {
-    //     fn prefix() -> &'static str {
-    //         "/prefix"
-    //     }
+    impl BotCommand for PrefixCommand {
+        fn prefix() -> &'static str {
+            "/prefix"
+        }
 
-    //     fn description() -> &'static str {
-    //         "Test"
-    //     }
-    // }
+        fn description() -> &'static str {
+            "Test"
+        }
+    }
 
     // impl PrefixTwoCommand {
     //     pub fn new() -> Box<Self> {
@@ -145,15 +98,15 @@ mod tests {
     //     }
     // }
 
-    // impl BotCommand for PrefixTwoCommand {
-    //     fn prefix() -> &'static str {
-    //         "/prefixtwo"
-    //     }
+    impl BotCommand for PrefixTwoCommand {
+        fn prefix() -> &'static str {
+            "/prefixtwo"
+        }
 
-    //     fn description() -> &'static str {
-    //         "Test two"
-    //     }
-    // }
+        fn description() -> &'static str {
+            "Test two"
+        }
+    }
 
     // #[test]
     // fn test_command_insertion_order1() {
@@ -209,3 +162,4 @@ mod tests {
     //        tokio::run(retry);
     //    }
 }
+*/

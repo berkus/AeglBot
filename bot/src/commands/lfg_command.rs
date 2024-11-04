@@ -1,8 +1,7 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
-        datetime::{format_start_time, reference_date},
         models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
         BotCommand,
     },
@@ -11,6 +10,7 @@ use {
     chrono_tz::Europe::Moscow,
     diesel::{self, prelude::*},
     diesel_derives_traits::{Model, NewModel},
+    libbot::datetime::{format_start_time, reference_date},
     riker::actors::Tell,
 };
 

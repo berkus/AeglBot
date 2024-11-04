@@ -2,7 +2,6 @@ use {
     crate::{
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
-        datetime::reference_date,
         models::{ActivityShortcut, PlannedActivity},
         BotCommand,
     },
@@ -11,6 +10,7 @@ use {
     chrono_tz::Europe::Moscow,
     diesel_derives_traits::Model,
     riker::actors::Tell,
+    libbot::datetime::reference_date,
 };
 
 command_actor!(EditCommand, [ActorUpdateMessage]);
