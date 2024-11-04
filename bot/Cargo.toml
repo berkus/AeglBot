@@ -9,6 +9,7 @@ anyhow.workspace = true
 chrono-tz.workspace = true
 chrono.workspace = true
 dotenv.workspace = true
+entity.workspace = true
 fern.workspace = true
 include_dir.workspace = true
 itertools.workspace = true

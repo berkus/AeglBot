@@ -11,8 +11,6 @@ use {
 pub mod bot_actor;
 pub mod commands;
 pub mod datetime;
-pub mod models;
-pub mod schema;
 pub mod services;
 
 // TODO: only BotConnection should be public
