@@ -336,17 +336,14 @@ impl PlannedActivity {
         }
     }
 
-    pub fn upcoming_activities(connection: &DbConnection) -> Vec<PlannedActivity> {
-        use {
-            crate::{datetime::nowtz, schema::plannedactivities::dsl::*},
-            diesel::dsl::IntervalDsl,
-        };
+    pub async fn upcoming_activities(connection: &DbConnection) -> Vec<PlannedActivity> {
+        use crate::{datetime::nowtz, schema::plannedactivities::dsl::*};
 
-        plannedactivities
-            .filter(start.ge(nowtz() - 60_i32.minutes()))
-            .order(start.asc())
-            .load::<PlannedActivity>(connection)
-            .expect("TEMP failed to load planned activities @FIXME")
+        plannedactivities::Entity::find()
+            .cursor_by(PlannedActivity::Column::Start)
+            .after(nowtz() - 60_i32.minutes())
+            .all(&connection)
+            .await?
     }
 
     pub fn author(&self, connection: &DbConnection) -> Option<Guardian> {
