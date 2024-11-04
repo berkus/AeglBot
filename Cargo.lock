@@ -25,6 +25,7 @@ dependencies = [
  "chrono",
  "chrono-tz 0.10.4",
  "dotenv",
+ "entity",
  "fern",
  "include_dir",
  "itertools 0.14.0",
@@ -580,6 +581,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "culpa"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ae0bfe9317b1cb4ff5a56d766ee4b157b3e1f47f11979253570e88d10fd1fd3"
+dependencies = [
+ "culpa-macros",
+]
+
+[[package]]
+name = "culpa-macros"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1234e1717066d3c71dcf89b75e7b586299e41204d361db56ec51e6ded5014279"
+dependencies = [
+ "proc-macro2 1.0.101",
+ "quote 1.0.40",
+ "syn 2.0.106",
+]
+
+[[package]]
 name = "darling"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -725,6 +746,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75030f3c4f45dafd7586dd6780965a8c7e8e285a5ecb86713e63a79c5b2766f3"
 dependencies = [
  "cfg-if 1.0.3",
+]
+
+[[package]]
+name = "entity"
+version = "0.4.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "culpa",
+ "dotenv",
+ "regex",
+ "sea-orm",
+ "serde 1.0.219",
+ "tokio",
 ]
 
 [[package]]

@@ -1,5 +1,41 @@
 More features:
 
+`Impl`s for the SeaORM entities:
+
+```rust
+// src/entity/pet.rs
+
+// Model - for views and other state/display things
+impl Model {
+    pub fn display_name(&self) -> String {
+        format!("Pet: {} (ID: {})", self.name, self.id)
+    }
+}
+
+use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait};
+
+// Entity - for reading data from DB
+impl Entity {
+    pub async fn find_by_name(
+        db: &DatabaseConnection,
+        name: &str,
+    ) -> sea_orm::Result<Option<Model>> {
+        Entity::find()
+            .filter(Column::Name.eq(name))
+            .one(db)
+            .await
+    }
+}
+
+// ActiveModel - for changing data in the DB
+impl ActiveModel {
+    pub fn set_name(&mut self, name: String) {
+        self.name = sea_orm::ActiveValue::Set(name);
+    }
+}
+```
+
+
 - [ ] Add waiting-list for activities.
 
 - [ ] Mark past WF events with "(ended) " prefix.
@@ -40,4 +76,3 @@ Remember to use `async fn`!!
 
 Send function:
 - https://github.com/bytesnake/telebot/blob/master/telebot-derive/src/lib.rs#L239
-
