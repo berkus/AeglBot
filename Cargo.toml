@@ -1,44 +1,35 @@
-[package]
-authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
-edition = "2021"
-name = "aegl_bot"
-version = "0.3.0"
+[workspace]
+members = ["bot"]
+resolver = "2"
 
-[dependencies]
-regex = "1"
+[workspace.dependencies]
+anyhow = "1"
 chrono = "0.4"
 chrono-tz = "0.10"
-chrono-english = "0.1"
-diesel_derives_extra = "0.2"
-diesel_derives_traits = "0.2"
-#diesel-derive-more = "1.1"
-diesel_logger = "0.1"
-diesel_migrations = "1.4" # -- retry with "extern crate" macros
-diesel = { version = "1.4", features = [
-    "postgres",
-    "chrono",
-    "serde_json",
-    "r2d2",
-] }
-r2d2 = "0.8"
+culpa = "1.0"
 dotenv = "0.15"
-#anyhow = "1.0"
-futures = "0.3"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-teloxide = { version = "0.5", features = ["macros"] }
-log = "0.4"
 fern = { version = "0.7", features = ["colored"] }
-futures-retry = "0.6"
+include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
-# plurals = "0.3"
-thousands = "0.2.0"
-tokio = { version = "1.12", features = ["macros", "rt-multi-thread"] }
-tokio-util = { version = "0.6", features = ["codec"] }
-riker = "0.4"
+libbot = { path = "./lib" }
+log = "0.4"
 paste = "1"
+# plurals = "0.3"
+regex = "1"
+riker = "0.4"
+sea-orm = { version = "1.1", features = [
+    "macros",
+    "runtime-tokio-rustls",
+    "sqlx-postgres",
+    "with-chrono",
+] }
+sea-orm-migration = { version = "1.1", features = [
+    "runtime-tokio-rustls",
+    "sqlx-postgres",
+    "with-chrono",
+] }
+serde = { version = "1.0", features = ["derive"] }
+teloxide = { version = "0.13", features = ["macros"] }
 tera = "1"
-include_dir = { version = "0.7.4", features = ["glob", "metadata", "nightly"] }
-
-[target.'cfg(target_os="linux")'.dependencies]
-procfs = "0.17"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+two_timer = "2.2" # doesn't parse "in 3 hours"

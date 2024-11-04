@@ -1,0 +1,29 @@
+[package]
+authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
+edition = "2021"
+name = "aegl_bot"
+version = "0.4.0"
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+chrono-tz.workspace = true
+chrono.workspace = true
+dotenv.workspace = true
+fern.workspace = true
+futures.workspace = true
+include_dir.workspace = true
+itertools.workspace = true
+libbot.workspace = true
+log.workspace = true
+paste.workspace = true
+regex.workspace = true
+riker.workspace = true
+serde.workspace = true
+teloxide.workspace = true
+tera.workspace = true
+tokio.workspace = true
+two_timer.workspace = true
+
+[target.'cfg(target_os="linux")'.dependencies]
+procfs = "0.17"
