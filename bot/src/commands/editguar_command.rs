@@ -102,7 +102,7 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
                         .psn_clan
                         .clone()
                         .map(|s| format!("[{}] ", s))
-                        .unwrap_or("".into()),
+                        .unwrap_or_default(),
                     name = guardian.format_name(),
                     email = guardian.email.clone().unwrap_or("<no email>".into()),
                     admin = if guardian.is_superadmin {

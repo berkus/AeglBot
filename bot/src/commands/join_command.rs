@@ -97,7 +97,6 @@ impl Receive<ActorUpdateMessage> for JoinCommand {
                     .expect("Unexpected error saving group joiner");
 
                 // join/joined template
-
                 let guar_name = guardian.to_string();
                 let act_name = planned.activity(&connection).format_name();
                 let act_time = decapitalize(&format_start_time(planned.start, reference_date()));
