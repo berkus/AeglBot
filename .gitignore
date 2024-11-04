@@ -1,16 +1,5 @@
-.idea/
-.gradle/
-**/*.iml
-build/
-local.properties
-application.properties
-
 target/
 logs/
 **/*.rs.bk
-Cargo.lock
 bot-*.log
-
 aeglbot.sql
-src/schema.rs.orig
-
