@@ -10,8 +10,6 @@ use {
 
 pub mod actors;
 pub mod commands;
-pub mod models;
-pub mod schema;
 
 // TODO: only BotConnection should be public
 pub type DbConnection = LoggingConnection<PgConnection>;

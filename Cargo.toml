@@ -1,5 +1,5 @@
 [workspace]
-members = ["bot"]
+members = ["bot", "entity"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -8,6 +8,7 @@ chrono = "0.4"
 chrono-tz = "0.10"
 culpa = "1.0"
 dotenv = "0.15"
+entity = { version = "0.4", path = "./entity" }
 fern = { version = "0.7", features = ["colored"] }
 include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
