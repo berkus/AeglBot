@@ -1,2 +1,3 @@
 [workspace]
 members = ["bot", "migration"]
+resolver = "2"
