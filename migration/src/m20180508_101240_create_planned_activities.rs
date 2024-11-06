@@ -1,5 +1,5 @@
 use {
-    crate::{PlannedActivities, PlannedActivityMembers},
+    crate::{Activities, Guardians, PlannedActivities, PlannedActivityMembers},
     sea_orm_migration::{prelude::*, schema::*},
 };
 
@@ -12,7 +12,7 @@ impl MigrationTrait for Migration {
         // create table plannedactivities (
         //     id serial primary key not null,
         //     author_id integer not null references guardians(id),
-        //     activity_id integer not null references activities(id),
+        //     activity_id integer not null references activities(id) on delete restrict on update cascade,
         //     details text,
         //     start timestamp with time zone not null
         // );
@@ -31,11 +31,14 @@ impl MigrationTrait for Migration {
                             .from(PlannedActivities::Table, PlannedActivities::AuthorId)
                             .to(Guardians::Table, Guardians::Id),
                     )
+                    // -- Disallow activity drop if plannedactivities exist.
                     .foreign_key(
                         ForeignKey::create()
                             .name("plannedactivities_activity_id_fkey")
                             .from(PlannedActivities::Table, PlannedActivities::ActivityId)
-                            .to(Activities::Table, Activities::Id),
+                            .to(Activities::Table, Activities::Id)
+                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -66,7 +69,9 @@ impl MigrationTrait for Migration {
                                 PlannedActivityMembers::Table,
                                 PlannedActivityMembers::PlannedActivityId,
                             )
-                            .to(PlannedActivities::Table, PlannedActivities::Id),
+                            .to(PlannedActivities::Table, PlannedActivities::Id)
+                            .on_delete(ForeignKeyAction::Cascade) // Drop all members if planned activity is dropped.
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
@@ -75,7 +80,9 @@ impl MigrationTrait for Migration {
                                 PlannedActivityMembers::Table,
                                 PlannedActivityMembers::UserId,
                             )
-                            .to(Guardians::Table, Guardians::Id),
+                            .to(Guardians::Table, Guardians::Id)
+                            .on_delete(ForeignKeyAction::Cascade) // Drop member if guardian is dropped.
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .index(
                         Index::create()

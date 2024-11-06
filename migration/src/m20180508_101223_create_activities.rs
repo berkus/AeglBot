@@ -64,7 +64,8 @@ impl MigrationTrait for Migration {
                             .name("activityshortcuts_link_fkey")
                             .from(ActivityShortcuts::Table, ActivityShortcuts::Link)
                             .to(Activities::Table, Activities::Id)
-                            .on_delete(ForeignKeyAction::Restrict),
+                            .on_delete(ForeignKeyAction::Cascade) // Drop all shortcuts if activity is dropped.
+                            .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
