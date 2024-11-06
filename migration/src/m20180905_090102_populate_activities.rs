@@ -1,6 +1,6 @@
 use {
     crate::{Activities, ActivityShortcuts},
-    sea_orm_migration::{prelude::*, schema::*},
+    sea_orm_migration::{prelude::*, sea_orm::TransactionTrait},
 };
 
 #[derive(DeriveMigrationName)]
@@ -10,6 +10,7 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let transaction = manager.get_connection().begin().await?;
+        let builder = transaction.get_database_backend();
 
         // INSERT INTO activities (id, name, mode, min_fireteam_size, max_fireteam_size, min_light, min_level)
         // VALUES
@@ -41,7 +42,7 @@ impl MigrationTrait for Migration {
                 .values_panic([
                     act.0,
                     act.1,
-                    act2,
+                    act.2,
                     act.3,
                     act.4,
                     act.5.unwrap_or(Expr::value("null")),
@@ -49,7 +50,8 @@ impl MigrationTrait for Migration {
                 ])
                 .to_owned();
 
-            transaction.exec_stmt(insert).await?;
+            let insert = builder.build(&insert);
+            transaction.execute(insert).await?;
         }
 
         // INSERT INTO activityshortcuts (id, name, game, link)
@@ -76,10 +78,11 @@ impl MigrationTrait for Migration {
                     ActivityShortcuts::Game,
                     ActivityShortcuts::Link,
                 ])
-                .values_panic([shr.0, shr.1, shr.2, shr.3])
+                .values_panic([shr.0.into(), shr.1.into(), shr.2.into(), shr.3.into()])
                 .to_owned();
 
-            transaction.exec_stmt(insert).await?;
+            let insert = builder.build(&insert);
+            transaction.execute(insert).await?;
         }
 
         transaction.commit().await?;

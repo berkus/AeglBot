@@ -105,6 +105,8 @@ impl MigrationTrait for Migration {
                     .table(PlannedActivityMembers::Table)
                     .to_owned(),
             )
+            .await?;
+        manager
             .drop_table(Table::drop().table(PlannedActivities::Table).to_owned())
             .await
     }

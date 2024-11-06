@@ -27,7 +27,7 @@ impl MigrationTrait for Migration {
                     .col(string(Alerts::Title))
                     .col(string(Alerts::Type))
                     .col(timestamp_with_time_zone(Alerts::StartDate))
-                    .col(timestamp_with_time_zone_null(ExpiryDate))
+                    .col(timestamp_with_time_zone_null(Alerts::ExpiryDate))
                     .col(string_null(Alerts::Faction))
                     .col(string_null(Alerts::Flavor))
                     .to_owned(),

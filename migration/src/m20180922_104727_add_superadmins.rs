@@ -23,7 +23,10 @@ impl MigrationTrait for Migration {
             .table(Guardians::Table)
             .value(Guardians::IsSuperadmin, true)
             .and_where(Expr::col(Guardians::TelegramName).eq("berkus"));
-        manager.exec_stmt(update).await?;
+
+        let builder = manager.get_database_backend();
+        let update = builder.build(update);
+        manager.get_db().update(update).await?;
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
