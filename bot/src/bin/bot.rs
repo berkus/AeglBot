@@ -6,6 +6,7 @@
 use {
     aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
     dotenv::dotenv,
+    migration::{Migrator, MigratorTrait},
     // riker::prelude::*, doesn't work here!
     riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
     std::env,
@@ -77,6 +78,9 @@ async fn main() {
     setup_logging().expect("failed to initialize logging");
 
     aegl_bot::datetime::bot_start_time(); // Mark start timestamp
+
+    let connection = sea_orm::Database::connect(&database_url).await?;
+    Migrator::up(&connection, None).await?;
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");

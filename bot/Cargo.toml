@@ -12,6 +12,8 @@ sea-orm = { version = "1.1.0", features = [
     "sqlx-postgres",
     "with-time",
 ] }
+entity = { version = "0.4", path = "../entity" }
+migration = { version = "0.4", path = "../migration" }
 regex = "1"
 # chrono = "0.4"
 # chrono-tz = "0.10"
