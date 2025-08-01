@@ -1,8 +1,9 @@
 use {
     crate::{
         bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
+        models::Guardian,
+        schema::guardians::dsl::*,
         DbConnection,
-        {models::Guardian, schema::guardians::dsl::*},
     },
     diesel::prelude::*,
     riker::actors::{ActorRef, Tell},
@@ -67,8 +68,6 @@ mod editguar_command;
 pub use self::editguar_command::*;
 mod help_command;
 pub use self::help_command::*;
-mod info_command;
-pub use self::info_command::*;
 mod join_command;
 pub use self::join_command::*;
 mod lfg_command;
@@ -79,6 +78,8 @@ mod manage_command;
 pub use self::manage_command::*;
 mod psn_command;
 pub use self::psn_command::*;
+mod uptime_command;
+pub use self::uptime_command::*;
 mod whois_command;
 pub use self::whois_command::*;
 

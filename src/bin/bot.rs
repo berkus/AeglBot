@@ -1,9 +1,7 @@
 // Async Rust implementation of the bot
 //
 // To make it usable it misses natty parsing lib implementation in rust
-// (yeah, i'd prefer native, although there are ways to use natty through jlink
-// or take python equivalent from https://dateparser.readthedocs.io/en/latest/)
-#![feature(associated_type_bounds)]
+// (There are now several rust impls including two_timer and some other good ones)
 
 use {
     aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
@@ -77,6 +75,8 @@ fn setup_logging() -> Result<(), fern::InitError> {
 async fn main() {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
+
+    aegl_bot::datetime::bot_start_time(); // Mark start timestamp
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");

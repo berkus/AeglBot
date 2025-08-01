@@ -58,6 +58,16 @@ fn time_diff_string(duration: Duration) -> String {
     }
 }
 
+pub fn format_uptime() -> String {
+    time_diff_string(reference_date() - bot_start_time())
+}
+
+pub fn bot_start_time() -> BotDateTime {
+    use std::sync::LazyLock;
+    static START_TIME: LazyLock<BotDateTime> = LazyLock::new(reference_date);
+    *START_TIME
+}
+
 /// Return today() but in UTC timezone
 pub fn reference_date() -> BotDateTime {
     Utc::now()
