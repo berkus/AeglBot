@@ -4,7 +4,7 @@ use {
         commands::{match_command, validate_username},
         datetime::nowtz,
         models::PlannedActivity,
-        BotCommand,
+        BotCommand, TERA,
     },
     diesel::{self, dsl::IntervalDsl, prelude::*},
     riker::actors::Tell,
@@ -39,33 +39,30 @@ impl Receive<ActorUpdateMessage> for ListCommand {
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            use crate::schema::plannedactivities::dsl::*;
-
             let connection = self.connection();
 
-            let upcoming_events = plannedactivities
-                .filter(start.ge(nowtz() - 60_i32.minutes()))
-                .order(start.asc())
-                .load::<PlannedActivity>(&connection)
-                .expect("TEMP loading @FIXME");
+            if let Some(_guardian) = validate_username(&self.bot_ref, &message, &connection) {
+                // let count = self.activity(connection).max_fireteam_size as usize
+                //     - self.members_count(connection);
 
-            if upcoming_events.is_empty() {
-                return self.send_reply(
-                    &message,
-                    "No activities planned, add something with /lfg",
-                    Format::Plain,
-                );
-            }
+                use crate::schema::plannedactivities::dsl::*;
+                let upcoming_events = plannedactivities
+                    .filter(start.ge(nowtz() - 60_i32.minutes()))
+                    .order(start.asc())
+                    .load::<PlannedActivity>(&connection)
+                    .expect("TEMP loading @FIXME");
+                // .iter()
+                // .map(|s| s.to_template(connection, _guardian));
 
-            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
-                let text = upcoming_events.iter().fold(
-                    "Planned activities:\n\n".to_owned(),
-                    |acc, event| {
-                        acc + &format!("{}\n\n", event.display(&connection, Some(&guardian)))
-                    },
-                );
-
-                self.send_reply(&message, text, Format::Html);
+                // let mut cx = tera::Context::new();
+                // cx.insert("events", &upcoming_events);
+                // let output = TERA.render("activity_list", &cx).expect("to render nicely");
+                //
+                //  self.send_reply(
+                //     &message,
+                //     &output,
+                //     Format::Html,
+                // );
             }
         }
     }

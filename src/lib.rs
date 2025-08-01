@@ -3,14 +3,13 @@
 // #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![warn(unused_imports)] // during development
 #![feature(type_ascription)]
-#![feature(lazy_cell)]
 
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_derives_extra;
 
-use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool};
+use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool, tera::Tera};
 
 pub mod bot_actor;
 pub mod commands;
@@ -18,6 +17,15 @@ pub mod datetime;
 pub mod models;
 pub mod schema;
 pub mod services;
+
+static TERA: LazyLock<Tera> = LazyLock::new(|| {
+    let mut tera = Tera::default();
+    tera.add_raw_templates(vec![(
+        "activity_list",
+        include_str!("./outputs/activity_list.tera"),
+    )]);
+    tera
+});
 
 // TODO: only BotConnection should be public
 pub type DbConnection = LoggingConnection<PgConnection>;
@@ -30,7 +38,7 @@ pub trait NamedActor {
 
 pub trait BotCommand {
     /// Print command usage instructions.
-    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);
+    // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<Bot>, Message>);
     /// Return command prefix to match.
     /// To support sub-commands the prefix for root commands should start with '/'.
     fn prefix() -> &'static str;

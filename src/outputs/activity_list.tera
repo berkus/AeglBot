@@ -1,0 +1,24 @@
+Planned activities:
+
+{% for event in events -%}
+    <b>{{ id }}</b>: <b>{{ name }}</b>
+    {% if details -%}
+        {{ details }}
+    {% endif %}
+    {% for member in members -%}
+        {{ member.psn_name }} (t.me/{{ member.telegram_name }})
+    {% endfor %}
+    ⏰ <b>{{ time }}</b>
+    {# join_prompt #}
+    {% if fireteam_full %}
+    This activity fireteam is full.
+    {% else %}
+    Enter `{{ join_link }}` to join this group. Up to {{ count }} more can join.
+    {% endif %}
+    {# end join_prompt #}
+    {% if fireteam_joined %}
+    Enter `{{ leave_link }}` to leave this group.
+    {% endif %}
+{% else %}
+No activities planned, add something with `/lfg`
+{% endfor %}
