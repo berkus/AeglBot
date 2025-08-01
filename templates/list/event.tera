@@ -1,0 +1,18 @@
+<b>{{ event.id }}: {{ event.name }}</b>
+{% if event.details -%}
+{{ event.details }}
+{% endif %}
+{% for member in event.members -%}
+{{ member.psn_name }} (t.me/{{ member.telegram_name }})
+{% endfor %}
+⏰ <b>{{ event.time }}</b>
+{#- join_prompt -#}
+{%- if event.fireteam_full %}
+This activity fireteam is full.
+{% else %}
+Enter `{{ event.join_link }}` to join this group. Up to {{ event.count }} more can join.
+{% endif -%}
+{#- end join_prompt -#}
+{% if event.fireteam_joined -%}
+Enter `{{ event.leave_link }}` to leave this group.
+{% endif -%}

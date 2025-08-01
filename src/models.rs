@@ -1,19 +1,25 @@
+//=================================================================================================
+// DB Models and Tera templates
+//=================================================================================================
+
 use {
     crate::{
         datetime::{format_start_time, reference_date},
+        render_template,
         schema::*,
         DbConnection,
     },
     chrono::{prelude::*, Duration},
     diesel::{ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl},
     diesel_derives_traits::Model,
+    serde::{Deserialize, Serialize},
     serde_json::Value,
     std::{fmt, sync::LazyLock},
 };
 
-//
+//-------------------------------------------------------------------------------------------------
 // ActivityShortcut
-//
+//-------------------------------------------------------------------------------------------------
 
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[table_name = "activityshortcuts"]
@@ -48,9 +54,9 @@ impl ActivityShortcut {
     }
 }
 
-//
+//-------------------------------------------------------------------------------------------------
 // Activity
-//
+//-------------------------------------------------------------------------------------------------
 
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Model)]
 #[table_name = "activities"]
@@ -82,9 +88,9 @@ impl Activity {
     }
 }
 
-//
+//-------------------------------------------------------------------------------------------------
 // Alert
-//
+//-------------------------------------------------------------------------------------------------
 
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Model)]
 pub struct Alert {
@@ -209,9 +215,9 @@ impl Alert {
     }
 }
 
-//
+//-------------------------------------------------------------------------------------------------
 // Guardian
-//
+//-------------------------------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Queryable, Identifiable, AsChangeset, Model)]
 pub struct Guardian {
@@ -243,6 +249,10 @@ impl Guardian {
     pub fn format_name(&self) -> String {
         format!("{} (t.me/{})", self.psn_name, self.telegram_name)
     }
+
+    pub fn names(&self) -> (String, String) {
+        (self.telegram_name.clone(), self.psn_name.clone())
+    }
 }
 
 impl fmt::Display for Guardian {
@@ -251,9 +261,9 @@ impl fmt::Display for Guardian {
     }
 }
 
-//
+//-------------------------------------------------------------------------------------------------
 // PlannedActivity
-//
+//-------------------------------------------------------------------------------------------------
 
 // class PlannedActivity(id: EntityID<Int>) : IntEntity(id) {
 //     var author by Guardian referencedOn PlannedActivities.authorId
@@ -274,6 +284,21 @@ pub struct PlannedActivity {
     pub start: DateTime<Utc>,
 }
 
+// Output information
+#[derive(Serialize, Deserialize)]
+pub struct PlannedActivityTemplate {
+    pub id: i32,
+    pub name: String,
+    pub details: String,
+    pub members: Vec<ActivityMemberTemplate>,
+    pub count: usize,
+    pub time: String,
+    pub fireteam_full: bool,
+    pub fireteam_joined: bool,
+    pub join_link: String,
+    pub leave_link: String,
+}
+
 #[derive(Insertable, NewModel)]
 #[table_name = "plannedactivities"]
 #[model(PlannedActivity)]
@@ -284,6 +309,33 @@ pub struct NewPlannedActivity {
 }
 
 impl PlannedActivity {
+    pub fn to_template(
+        &self,
+        guardian: Option<&Guardian>,
+        connection: &DbConnection,
+    ) -> PlannedActivityTemplate {
+        let activity = self.activity(connection);
+
+        let count = activity.max_fireteam_size as usize - self.members_count(connection);
+
+        PlannedActivityTemplate {
+            id: self.id,
+            name: activity.format_name(),
+            details: self.format_details(),
+            members: self
+                .members(connection)
+                .into_iter()
+                .map(|m| m.to_template(connection))
+                .collect(),
+            count,
+            time: format_start_time(self.start, reference_date()),
+            fireteam_full: count == 0,
+            join_link: self.join_prompt(connection),
+            fireteam_joined: self.find_member(connection, guardian).is_some(),
+            leave_link: self.cancel_link(),
+        }
+    }
+
     pub fn upcoming_activities(connection: &DbConnection) -> Vec<PlannedActivity> {
         use {
             crate::{datetime::nowtz, schema::plannedactivities::dsl::*},
@@ -440,6 +492,13 @@ pub struct PlannedActivityMember {
     pub added: DateTime<Utc>,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct ActivityMemberTemplate {
+    pub psn_name: String,
+    pub telegram_name: String,
+    pub icon: String,
+}
+
 #[derive(Insertable, NewModel)]
 #[table_name = "plannedactivitymembers"]
 #[model(PlannedActivityMember)]
@@ -455,6 +514,39 @@ impl PlannedActivityMember {
             .expect("Failed to load associated Guardian")
             .expect("Failed to find associated activity member")
             .format_name()
+    }
+
+    pub fn to_template(&self, connection: &DbConnection) -> ActivityMemberTemplate {
+        let (telegram_name, psn_name) = Guardian::find_one(connection, &self.user_id)
+            .expect("Failed to load associated Guardian")
+            .expect("Failed to find associated activity member")
+            .names();
+        ActivityMemberTemplate {
+            psn_name,
+            telegram_name,
+            icon: self.icon(),
+        }
+    }
+
+    pub fn icon(&self) -> String {
+        static ICON_POOL: LazyLock<Vec<&str>> = LazyLock::new(|| {
+            vec![
+                "💂🏻",
+                "🕵🏼",
+                "🧑🏽‍🏭",
+                "🧑‍💻",
+                "🧑🏼‍🚒",
+                "🧑🏾‍🚀",
+                "🥷🏾",
+                "🥷🏻",
+                "🧙🏽",
+                "🧝🏼",
+                "🧌",
+                "🧛🏼",
+                "🧟",
+            ]
+        });
+        ICON_POOL[self.user_id.unsigned_abs() as usize % ICON_POOL.len()].into()
     }
 }
 

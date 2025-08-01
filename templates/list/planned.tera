@@ -1,0 +1,7 @@
+📝 Planned activities:
+
+{% for event in events -%}
+{% include "list/event" %}
+{% else -%}
+No activities planned, add something with `/lfg`
+{%- endfor -%}

@@ -1,0 +1,10 @@
+Edit guardian information:
+
+/editguar <id|@telegram|PSN|'my'>
+    List known guardian information
+/editguar <id|@telegram|PSN|'my'> psn <NewPSN>
+    Change guardian's PSN
+/editguar <id|@telegram|PSN|'my'> clan <Clan ticker, e.g. AEGL or \"delete\">
+    Change guardian's clan
+/editguar <id|@telegram|PSN|'my'> email <NewEmail>
+    Change guardian's email
