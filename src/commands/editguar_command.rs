@@ -2,7 +2,7 @@ use {
     crate::{
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{admin_check, guardian_lookup, match_command, validate_username},
-        BotCommand,
+        render_template, BotCommand,
     },
     riker::actors::Tell,
 };
@@ -23,15 +23,7 @@ impl EditGuardianCommand {
     fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(
             message,
-            "Edit guardian information:
-/editguar <id|@telegram|PSN|'my'>
-    List known guardian information
-/editguar <id|@telegram|PSN|'my'> psn <NewPSN>
-    Change guardian's PSN
-/editguar <id|@telegram|PSN|'my'> clan <Clan ticker, e.g. AEGL or \"delete\">
-    Change guardian's clan
-/editguar <id|@telegram|PSN|'my'> email <NewEmail>
-    Change guardian's email",
+            render_template!("editguar/usage").expect("Failed to render editguar usage template"),
         );
     }
 }
@@ -106,7 +98,11 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
             if args.len() == 1 {
                 let info = format!(
                     "{clan}{name} {email} {admin}",
-                    clan = guardian.psn_clan.clone().map(|s| format!("[{}] ",s)).unwrap_or("".into()),
+                    clan = guardian
+                        .psn_clan
+                        .clone()
+                        .map(|s| format!("[{}] ", s))
+                        .unwrap_or("".into()),
                     name = guardian.format_name(),
                     email = guardian.email.clone().unwrap_or("<no email>".into()),
                     admin = if guardian.is_superadmin {

@@ -3,7 +3,7 @@ use {
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
         models::PlannedActivity,
-        BotCommand,
+        render_template, BotCommand,
     },
     riker::actors::Tell,
 };
@@ -42,25 +42,15 @@ impl Receive<ActorUpdateMessage> for ListCommand {
             if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
                 // let count = self.activity(connection).max_fireteam_size as usize
                 //     - self.members_count(connection);
+                let upcoming_events: Vec<_> = PlannedActivity::upcoming_activities(&connection)
+                    .iter()
+                    .map(|s| s.to_template(Some(&guardian), &connection))
+                    .collect();
 
-                let upcoming_events = PlannedActivity::upcoming_activities(&connection);
+                let output = render_template!("list/planned", ("events", &upcoming_events))
+                    .expect("Rendering failed");
 
-                if upcoming_events.is_empty() {
-                    return self.send_reply(
-                        &message,
-                        "No activities planned, add something with /lfg",
-                        Format::Plain,
-                    );
-                }
-
-                let text = upcoming_events.iter().fold(
-                    "Planned activities:\n\n".to_owned(),
-                    |acc, event| {
-                        acc + &format!("{}\n\n", event.display(&connection, Some(&guardian)))
-                    },
-                );
-
-                self.send_reply(&message, text, Format::Html);
+                self.send_reply(&message, output, Format::Html);
             }
         }
     }

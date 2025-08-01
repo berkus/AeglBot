@@ -24,6 +24,7 @@ r2d2 = "0.8"
 dotenv = "0.15"
 #anyhow = "1.0"
 futures = "0.3"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 teloxide = { version = "0.5", features = ["macros"] }
 log = "0.4"
@@ -36,6 +37,8 @@ tokio = { version = "1.12", features = ["macros", "rt-multi-thread"] }
 tokio-util = { version = "0.6", features = ["codec"] }
 riker = "0.4"
 paste = "1"
+tera = "1"
+include_dir = { version = "0.7.4", features = ["glob", "metadata", "nightly"] }
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.17"

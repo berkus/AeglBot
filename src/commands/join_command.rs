@@ -4,7 +4,7 @@ use {
         commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
         models::{NewPlannedActivityMember, PlannedActivity},
-        BotCommand,
+        render_template, BotCommand,
     },
     chrono::Duration,
     diesel_derives_traits::{Model, NewModel},
@@ -27,8 +27,7 @@ impl JoinCommand {
     fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(
             message,
-            "To join a fireteam provide fireteam id
-Fireteam IDs are available from output of /list command.",
+            render_template!("join/usage").expect("Failed to render join usage template"),
         );
     }
 }
@@ -97,16 +96,23 @@ impl Receive<ActorUpdateMessage> for JoinCommand {
                     .save(&connection)
                     .expect("Unexpected error saving group joiner");
 
-                let text = format!(
-                    "{guarName} has joined {actName} group {actTime}
-{otherGuars} are going
-{joinPrompt}",
-                    guarName = guardian,
-                    actName = planned.activity(&connection).format_name(),
-                    actTime = decapitalize(&format_start_time(planned.start, reference_date())),
-                    otherGuars = planned.members_formatted_list(&connection),
-                    joinPrompt = planned.join_prompt(&connection)
-                );
+                // join/joined template
+
+                let guar_name = guardian.to_string();
+                let act_name = planned.activity(&connection).format_name();
+                let act_time = decapitalize(&format_start_time(planned.start, reference_date()));
+                let other_guars = planned.members_formatted_list(&connection);
+                let join_prompt = planned.join_prompt(&connection);
+
+                let text = render_template!(
+                    "join/joined",
+                    ("guarName", &guar_name),
+                    ("actName", &act_name),
+                    ("actTime", &act_time),
+                    ("otherGuars", &other_guars),
+                    ("joinPrompt", &join_prompt)
+                )
+                .expect("Failed to render join joined template");
 
                 self.send_reply(&message, text);
             }
