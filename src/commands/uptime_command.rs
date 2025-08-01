@@ -9,7 +9,7 @@ use {
     riker::actors::Tell,
 };
 
-command_actor!(InfoCommand, [ActorUpdateMessage]);
+command_actor!(UptimeCommand, [ActorUpdateMessage]);
 
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {
@@ -30,23 +30,25 @@ fn get_process_info() -> String {
     "Process info only available on Linux hosts.".to_string()
 }
 
-impl BotCommand for InfoCommand {
+impl BotCommand for UptimeCommand {
     fn prefix() -> &'static str {
-        "/info"
+        "/uptime"
     }
 
     fn description() -> &'static str {
-        "Show bot info"
+        "Show bot uptime and statistics"
     }
 }
 
-impl Receive<ActorUpdateMessage> for InfoCommand {
-    type Msg = InfoCommandMsg;
+impl Receive<ActorUpdateMessage> for UptimeCommand {
+    type Msg = UptimeCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
+            let uptime = crate::datetime::format_uptime();
+            let message = format!("- ⏰ Started {uptime}\n- 📦 {}", get_process_info());
             self.bot_ref.tell(
-                SendMessageReply(get_process_info(), msg, Format::Html, Notify::Off),
+                SendMessageReply(message, msg, Format::Plain, Notify::Off),
                 None,
             );
         }
