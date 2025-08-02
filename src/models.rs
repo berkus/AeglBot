@@ -428,58 +428,31 @@ impl PlannedActivity {
     pub fn find_member(
         &self,
         connection: &DbConnection,
-        g: &Guardian,
+        guardian: Option<&Guardian>,
     ) -> Option<PlannedActivityMember> {
         use crate::schema::plannedactivitymembers::dsl::*;
 
-        plannedactivitymembers
-            .filter(user_id.eq(g.id))
-            .filter(planned_activity_id.eq(self.id))
-            .first::<PlannedActivityMember>(connection)
-            .optional()
-            .expect("Failed to run SQL")
+        guardian.and_then(|g| {
+            plannedactivitymembers
+                .filter(user_id.eq(g.id))
+                .filter(planned_activity_id.eq(self.id))
+                .first::<PlannedActivityMember>(connection)
+                .optional()
+                .expect("Failed to run SQL")
+        })
     }
 
-    // Makes a telegram markdown formatted display.
-    pub fn display(&self, connection: &DbConnection, g: Option<&Guardian>) -> String {
-        format!(
-            "<b>{id}</b>: <b>{name}</b>
-{details}{members}
-⏰ <b>{time}</b>
-{join}{leave}",
-            id = self.id,
-            name = self.activity(connection).format_name(),
-            details = teloxide::utils::html::escape(&self.format_details()),
-            members = self.members_formatted_column(connection),
-            time = format_start_time(self.start, reference_date()),
-            join = self.join_prompt(connection),
-            leave = g
-                .and_then(|g| self.find_member(connection, g))
-                .map(|_| format!("\nEnter `{}` to leave this group.", self.cancel_link()))
-                .unwrap_or_default()
-        )
+    // Makes a telegram Html formatted display.
+    pub fn to_string(&self, connection: &DbConnection, g: Option<&Guardian>) -> String {
+        let event = self.to_template(g, connection);
+        render_template!("list/event", ("event", &event))
+            .expect("Failed to render list event template")
     }
 }
 
-// @todo when/if PlannedActivity stores all necessary state locally..
-// impl fmt::Display for PlannedActivity {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(
-//             f,
-//             "<b>{id}</b>: <b>{name}</b>\n{details}{members}\n⏰ <b>{time}</b>\n{join}\n",
-//             id = self.id,
-//             name = self.activity().format_name(),
-//             details = self.format_details(),
-//             members = self.members_formatted_column(),
-//             time = format_start_time(Local.from_local_datetime(&self.start).unwrap()),
-//             join = self.join_prompt()
-//         )
-//     }
-// }
-
-//
+//-------------------------------------------------------------------------------------------------
 // PlannedActivityMember
-//
+//-------------------------------------------------------------------------------------------------
 
 #[derive(Debug, Queryable, Identifiable, AsChangeset, Associations, Model)]
 #[belongs_to(Guardian, foreign_key = "user_id")]
@@ -643,7 +616,7 @@ mod tests {
 
         println!("Displaying {} planned activities", results.len());
         for act in results {
-            println!("{}", act.display(&connection, Some(&guar)));
+            println!("{}", act.to_string(&connection, Some(&guar)));
         }
 
         Ok(())

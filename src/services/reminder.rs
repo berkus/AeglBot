@@ -32,7 +32,7 @@ pub fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: Cha
     let text = upcoming_events
         .into_iter()
         .fold("Activities starting soon:\n\n".to_owned(), |acc, event| {
-            acc + &format!("{}\n\n", event.display(&connection, None))
+            acc + &format!("{}\n\n", event.to_string(&connection, None))
         });
 
     bot.tell(SendMessage(text, chat_id, Format::Html, Notify::On), None);

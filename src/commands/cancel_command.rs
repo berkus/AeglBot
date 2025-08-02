@@ -73,7 +73,7 @@ impl Receive<ActorUpdateMessage> for CancelCommand {
 
                 let planned = planned.unwrap();
 
-                let member = planned.find_member(&connection, &guardian);
+                let member = planned.find_member(&connection, Some(&guardian));
 
                 if member.is_none() {
                     return self.send_reply(&message, "You are not part of this group.");

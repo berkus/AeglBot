@@ -72,7 +72,7 @@ impl Receive<ActorUpdateMessage> for JoinCommand {
 
                 let planned = planned.unwrap();
 
-                let member = planned.find_member(&connection, &guardian);
+                let member = planned.find_member(&connection, Some(&guardian));
 
                 if member.is_some() {
                     return self.send_reply(&message, "You are already part of this group.");
