@@ -1,7 +1,7 @@
 // Async Rust implementation of the bot
 //
 // To make it usable it misses natty parsing lib implementation in rust
-// (There are now several rust impls including two_timer and some other good ones)
+// (There are now several rust impls including https://lib.rs/crates/two_timer and https://lib.rs/crates/intervalle)
 
 use {
     aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
