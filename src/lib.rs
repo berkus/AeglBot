@@ -37,6 +37,20 @@ pub trait BotCommand {
     fn description() -> &'static str;
 }
 
+/// Establish a pool of connections with DB.
+pub fn establish_db_connection() -> DbConnPool {
+    dotenv::dotenv().ok();
+
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
+
+    r2d2::Pool::builder()
+        .min_idle(Some(1))
+        .max_size(15)
+        .build(manager)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
 // https://chaoslibrary.blot.im/rust-cloning-a-trait-object/
 //
 // trait BotCommandClone {
@@ -60,12 +74,12 @@ pub trait BotCommand {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
 
     // Command is prefix of another command.
-    struct PrefixCommand;
+    // struct PrefixCommand;
 
-    struct PrefixTwoCommand;
+    // struct PrefixTwoCommand;
 
     // impl PrefixCommand {
     //     pub fn new() -> Box<Self> {
@@ -73,15 +87,15 @@ mod tests {
     //     }
     // }
 
-    impl BotCommand for PrefixCommand {
-        fn prefix() -> &'static str {
-            "/prefix"
-        }
+    // impl BotCommand for PrefixCommand {
+    //     fn prefix() -> &'static str {
+    //         "/prefix"
+    //     }
 
-        fn description() -> &'static str {
-            "Test"
-        }
-    }
+    //     fn description() -> &'static str {
+    //         "Test"
+    //     }
+    // }
 
     // impl PrefixTwoCommand {
     //     pub fn new() -> Box<Self> {
@@ -89,15 +103,15 @@ mod tests {
     //     }
     // }
 
-    impl BotCommand for PrefixTwoCommand {
-        fn prefix() -> &'static str {
-            "/prefixtwo"
-        }
+    // impl BotCommand for PrefixTwoCommand {
+    //     fn prefix() -> &'static str {
+    //         "/prefixtwo"
+    //     }
 
-        fn description() -> &'static str {
-            "Test two"
-        }
-    }
+    //     fn description() -> &'static str {
+    //         "Test two"
+    //     }
+    // }
 
     // #[test]
     // fn test_command_insertion_order1() {
