@@ -106,17 +106,9 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
             if args.len() == 1 {
                 let info = format!(
                     "{clan}{name} {email} {admin}",
-                    clan = if guardian.psn_clan.is_none() {
-                        "".into()
-                    } else {
-                        format!("[{}] ", guardian.psn_clan.clone().unwrap())
-                    },
+                    clan = guardian.psn_clan.clone().map(|s| format!("[{}] ",s)).unwrap_or("".into()),
                     name = guardian.format_name(),
-                    email = if guardian.email.is_none() {
-                        "<no email>".into()
-                    } else {
-                        guardian.email.clone().unwrap()
-                    },
+                    email = guardian.email.clone().unwrap_or("<no email>".into()),
                     admin = if guardian.is_superadmin {
                         "<superadmin>"
                     } else if guardian.is_admin {

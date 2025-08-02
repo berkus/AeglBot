@@ -78,11 +78,7 @@ pub struct NewActivity {
 
 impl Activity {
     pub fn format_name(&self) -> String {
-        format!(
-            "{} {}",
-            self.name,
-            self.mode.clone().unwrap_or(String::new())
-        )
+        format!("{} {}", self.name, self.mode.clone().unwrap_or_default())
     }
 }
 
@@ -192,7 +188,7 @@ impl Alert {
 
     pub fn is_credits(&self) -> bool {
         static CREDITS: LazyLock<regex::Regex> =
-            LazyLock::new(|| regex::Regex::new(r#"^\d+cr "#).unwrap());
+            LazyLock::new(|| regex::Regex::new(r"^\d+cr ").unwrap());
         CREDITS.is_match(&self.title)
     }
 
@@ -344,10 +340,7 @@ impl PlannedActivity {
     }
 
     pub fn format_details(&self) -> String {
-        self.details
-            .clone()
-            .map(|s| s + "\n")
-            .unwrap_or(String::new())
+        self.details.clone().map(|s| s + "\n").unwrap_or_default()
     }
 
     pub fn members_formatted(&self, connection: &DbConnection, joiner: &str) -> String {
@@ -398,7 +391,7 @@ impl PlannedActivity {
             leave = g
                 .and_then(|g| self.find_member(connection, g))
                 .map(|_| format!("\nEnter `{}` to leave this group.", self.cancel_link()))
-                .unwrap_or(String::new())
+                .unwrap_or_default()
         )
     }
 }
