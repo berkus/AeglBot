@@ -18,14 +18,43 @@ pub mod models;
 pub mod schema;
 pub mod services;
 
-static TERA: LazyLock<Tera> = LazyLock::new(|| {
-    let mut tera = Tera::default();
-    let _ = tera.add_raw_templates(vec![(
-        "activity_list",
-        include_str!("./outputs/activity_list.tera"),
-    )]);
+static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
+    std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates"));
+
+pub(crate) static TEMPLATES: std::sync::LazyLock<tera::Tera> = std::sync::LazyLock::new(|| {
+    let mut tera = tera::Tera::default();
+    for file in TEMPLATE_FILES.find("**/*.tera").unwrap() {
+        file.as_file().map(|template| {
+            tera.add_raw_template(
+                &template.path().with_extension("").to_str().unwrap(), // drop .tera extension
+                template.contents_utf8().unwrap(),
+            )
+            .unwrap();
+        });
+    }
     tera
 });
+
+#[macro_export]
+macro_rules! render_template {
+    ($writer:expr, $template:expr) => {
+        {
+            let context = tera::Context::new();
+            let template = crate::TEMPLATES.render($template, &context)?;
+            template
+        }
+    };
+    ($writer:expr, $template:expr, $(($key:expr,$value:expr)),+) => {
+        {
+            let mut context = tera::Context::new();
+            $(
+                context.insert($key, $value);
+            )*
+            let template = crate::TEMPLATES.render($template, &context)?;
+            template
+        }
+    };
+}
 
 // TODO: only BotConnection should be public
 pub type DbConnection = LoggingConnection<PgConnection>;

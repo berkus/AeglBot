@@ -4,7 +4,7 @@ use {
         commands::{match_command, validate_username},
         datetime::nowtz,
         models::PlannedActivity,
-        BotCommand, TERA,
+        render_template, BotCommand,
     },
     diesel::{self, dsl::IntervalDsl, prelude::*},
     riker::actors::Tell,
@@ -47,9 +47,7 @@ impl Receive<ActorUpdateMessage> for ListCommand {
                     .map(|s| s.to_template(&guardian, &connection))
                     .collect();
 
-                let mut cx = tera::Context::new();
-                cx.insert("events", &upcoming_events);
-                let output = TERA.render("activity_list", &cx).expect("to render nicely");
+                let output = render_template!("activity_list", ("events", &upcoming_events));
 
                 self.send_reply(&message, output, Format::Html);
             }
