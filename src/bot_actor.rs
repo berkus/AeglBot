@@ -1,17 +1,17 @@
 use {
     crate::{
         commands::*,
+        establish_db_connection,
         services::reminder_actor::{
             ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
         BotCommand, DbConnPool, NamedActor,
     },
-    dotenv::dotenv,
     riker::actors::{
         actor, Actor, ActorFactoryArgs, ActorRefFactory, BasicActorRef, ChannelRef, Context,
         Receive, Sender, Subscribe, Tell,
     },
-    std::{env, fmt::Formatter},
+    std::fmt::Formatter,
     teloxide::{
         prelude::*,
         types::{ChatId, ParseMode},
@@ -70,7 +70,7 @@ impl BotActor {
             bot_name: name.to_string(),
             lfg_chat_id,
             update_channel: chan,
-            connection_pool: Self::establish_connection(),
+            connection_pool: establish_db_connection(),
             commands_list: vec![],
         }
     }
@@ -96,19 +96,6 @@ impl BotActor {
     //         }
     //     }
     // }
-
-    pub fn establish_connection() -> DbConnPool {
-        dotenv().ok();
-
-        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
-
-        r2d2::Pool::builder()
-            .min_idle(Some(1))
-            .max_size(15)
-            .build(manager)
-            .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-    }
 }
 
 impl Actor for BotActor {
