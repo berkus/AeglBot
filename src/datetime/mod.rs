@@ -58,8 +58,9 @@ fn time_diff_string(duration: Duration) -> String {
     }
 }
 
+/// Needs to produce negative duration, because we want to display uptime as "Started X time ago"
 pub fn format_uptime() -> String {
-    time_diff_string(reference_date() - bot_start_time())
+    time_diff_string(bot_start_time() - reference_date())
 }
 
 pub fn bot_start_time() -> BotDateTime {
