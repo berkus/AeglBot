@@ -5,37 +5,29 @@ name = "aegl_bot"
 version = "0.4.0"
 
 [dependencies]
-anyhow = "1"
-sea-orm = { version = "1.1.0", features = [
-    "macros",
-    "runtime-tokio-rustls",
-    "sqlx-postgres",
-    "with-time",
-] }
-entity = { version = "0.4", path = "../entity" }
-migration = { version = "0.4", path = "../migration" }
-regex = "1"
-# chrono = "0.4"
-# chrono-tz = "0.10"
-time = "0.3"
-time-tz = "3.0.0-rc.5.0.0"
-two_timer = "2.2"                                      # replaces natty from the kotlin version
-dotenv = "0.15"
-futures = "0.3"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-teloxide = { version = "0.13", features = ["macros"] }
-log = "0.4"
-fern = { version = "0.7", features = ["colored"] }
-futures-retry = "0.6"
-itertools = "0.14"
-# plurals = "0.3"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tokio-util = { version = "0.7", features = ["codec"] }
-riker = "0.4"
-paste = "1"
-tera = "1"
-include_dir = { version = "0.7.4", features = ["glob", "metadata", "nightly"] }
+anyhow.workspace = true
+dotenv.workspace = true
+entity.workspace = true
+fern.workspace = true
+futures-retry.workspace = true
+futures.workspace = true
+include_dir.workspace = true
+itertools.workspace = true
+log.workspace = true
+migration.workspace = true
+paste.workspace = true
+regex.workspace = true
+riker.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+teloxide.workspace = true
+tera.workspace = true
+time-tz.workspace = true
+time.workspace = true
+tokio-util.workspace = true
+tokio.workspace = true
+two_timer.workspace = true
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.17"
