@@ -9,7 +9,7 @@ entity = { version = "0.4", path = "./entity" }
 fern = { version = "0.7", features = ["colored"] }
 futures = "0.3"
 futures-retry = "0.6"
-include_dir = { version = "0.7.4", features = ["glob", "metadata", "nightly"] }
+include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
 log = "0.4"
 migration = { version = "0.4", path = "./migration" }
