@@ -26,7 +26,7 @@ impl MigrationTrait for Migration {
 
         let builder = manager.get_database_backend();
         let update = builder.build(update);
-        manager.get_db().update(update).await?;
+        manager.get_db().update(update).await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {

@@ -9,22 +9,15 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // create table plannedactivities (
-        //     id serial primary key not null,
-        //     author_id integer not null references guardians(id),
-        //     activity_id integer not null references activities(id) on delete restrict on update cascade,
-        //     details text,
-        //     start timestamp with time zone not null
-        // );
         manager
             .create_table(
                 Table::create()
-                    .table(PlannedActivities::Table)
-                    .col(pk_auto(PlannedActivities::Id))
-                    .col(string(PlannedActivities::AuthorId))
-                    .col(integer(PlannedActivities::ActivityId))
-                    .col(string_null(PlannedActivities::Details))
-                    .col(timestamp_with_time_zone(PlannedActivities::Start))
+                    .table(PlannedActivities::Table) // create table plannedactivities (
+                    .col(pk_auto(PlannedActivities::Id)) // id serial primary key not null,
+                    .col(string(PlannedActivities::AuthorId)) // author_id integer not null references guardians(id),
+                    .col(integer(PlannedActivities::ActivityId)) // activity_id integer not null references activities(id) on delete restrict on update cascade,
+                    .col(string_null(PlannedActivities::Details)) // details text,
+                    .col(timestamp_with_time_zone(PlannedActivities::Start)) // start timestamp with time zone not null
                     .foreign_key(
                         ForeignKey::create()
                             .name("plannedactivities_author_id_fkey")
@@ -44,22 +37,15 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // create table plannedactivitymembers (
-        //     id serial primary key not null,
-        //     planned_activity_id integer not null references plannedactivities(id),
-        //     user_id integer not null references guardians(id),
-        //     added timestamp with time zone not null default now(),
-        //     unique (planned_activity_id, user_id)
-        // );
         manager
             .create_table(
                 Table::create()
-                    .table(PlannedActivityMembers::Table)
-                    .col(pk_auto(PlannedActivityMembers::Id))
-                    .col(integer(PlannedActivityMembers::PlannedActivityId))
-                    .col(integer(PlannedActivityMembers::UserId))
+                    .table(PlannedActivityMembers::Table) // create table plannedactivitymembers (
+                    .col(pk_auto(PlannedActivityMembers::Id)) //     id serial primary key not null,
+                    .col(integer(PlannedActivityMembers::PlannedActivityId)) // planned_activity_id integer not null references plannedactivities(id),
+                    .col(integer(PlannedActivityMembers::UserId)) // user_id integer not null references guardians(id),
                     .col(
-                        timestamp_with_time_zone(PlannedActivityMembers::Added)
+                        timestamp_with_time_zone(PlannedActivityMembers::Added) // added timestamp with time zone not null default now(),
                             .default(Expr::current_timestamp()),
                     )
                     .foreign_key(
@@ -86,7 +72,7 @@ impl MigrationTrait for Migration {
                     )
                     .index(
                         Index::create()
-                            .unique()
+                            .unique() // unique (planned_activity_id, user_id)
                             .name("plannedactivitymembers_planned_activity_id_user_id_key")
                             .col(PlannedActivityMembers::PlannedActivityId)
                             .col(PlannedActivityMembers::UserId),

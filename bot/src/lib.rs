@@ -15,7 +15,6 @@ use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool};
 pub mod bot_actor;
 pub mod commands;
 pub mod datetime;
-pub mod models;
 pub mod schema;
 pub mod services;
 

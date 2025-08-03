@@ -4,6 +4,7 @@ resolver = "2"
 
 [workspace.dependencies]
 anyhow = "1"
+culpa = "1.0"
 dotenv = "0.15"
 entity = { version = "0.4", path = "./entity" }
 fern = { version = "0.7", features = ["colored"] }

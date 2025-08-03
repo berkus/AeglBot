@@ -9,44 +9,31 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // create table guardians (
-        //     id serial primary key not null,
-        //     telegram_name text not null unique,
-        //     telegram_id bigint not null unique,
-        //     psn_name text not null,
-        //     email text,
-        //     psn_clan text,
-        //     created_at timestamp with time zone not null default now(),
-        //     updated_at timestamp with time zone not null default now(),
-        //     deleted_at timestamp with time zone default null,
-        //     tokens jsonb,
-        //     pending_activation_code text
-        // );
         manager
             .create_table(
                 Table::create()
-                    .table(Guardians::Table)
+                    .table(Guardians::Table) // create table guardians (
                     .if_not_exists()
-                    .col(pk_auto(Guardians::Id))
-                    .col(string_uniq(Guardians::TelegramName))
-                    .col(big_integer_uniq(Guardians::TelegramId))
-                    .col(string(Guardians::PsnName))
-                    .col(string_null(Guardians::Email))
-                    .col(string_null(Guardians::PsnClan))
+                    .col(pk_auto(Guardians::Id)) // id serial primary key not null,
+                    .col(string_uniq(Guardians::TelegramName)) // telegram_name text not null unique,
+                    .col(big_integer_uniq(Guardians::TelegramId)) // telegram_id bigint not null unique,
+                    .col(string(Guardians::PsnName)) // psn_name text not null,
+                    .col(string_null(Guardians::Email)) // email text,
+                    .col(string_null(Guardians::PsnClan)) // psn_clan text,
                     .col(
-                        timestamp_with_time_zone(Guardians::CreatedAt)
+                        timestamp_with_time_zone(Guardians::CreatedAt) // created_at timestamp with time zone not null default now(),
                             .default(Expr::current_timestamp()),
                     )
                     .col(
-                        timestamp_with_time_zone(Guardians::UpdatedAt)
+                        timestamp_with_time_zone(Guardians::UpdatedAt) // updated_at timestamp with time zone not null default now(),
                             .default(Expr::current_timestamp()),
                     )
                     .col(
-                        timestamp_with_time_zone_null(Guardians::DeletedAt)
+                        timestamp_with_time_zone_null(Guardians::DeletedAt) // deleted_at timestamp with time zone default null,
                             .default(Expr::value("null")),
                     )
-                    .col(json_binary_null(Guardians::Tokens))
-                    .col(string_null(Guardians::PendingActivationCode))
+                    .col(json_binary_null(Guardians::Tokens)) // tokens jsonb,
+                    .col(string_null(Guardians::PendingActivationCode)) // pending_activation_code text
                     .to_owned(),
             )
             .await
