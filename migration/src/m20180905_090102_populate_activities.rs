@@ -41,12 +41,12 @@ impl MigrationTrait for Migration {
                 ])
                 .values_panic([
                     act.0,
-                    act.1,
-                    act.2,
-                    act.3,
+                    act.1.into(),
+                    act.2.into(),
+                    act.3.into(),
                     act.4,
-                    act.5.unwrap_or(Expr::value("null")),
-                    act.6.unwrap_or(Expr::value("null")),
+                    act.5.into(), // unwrap_or(Expr::value("null")),
+                    act.6.into(), // unwrap_or(Expr::value("null")),
                 ])
                 .to_owned();
 

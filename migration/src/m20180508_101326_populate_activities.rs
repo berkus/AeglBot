@@ -75,8 +75,8 @@ impl MigrationTrait for Migration {
                     act.2.into(),
                     act.3.into(),
                     act.4.into(),
-                    act.5.unwrap_or(Expr::value("null")).into(),
-                    act.6.unwrap_or(Expr::value("null")).into(),
+                    act.5.into(), //.unwrap_or(Expr::value("null")).into(),
+                    act.6.into(), // unwrap_or(Expr::value("null")).into(),
                 ])
                 .to_owned();
 

@@ -1,6 +1,19 @@
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveIden)]
+pub enum Alerts {
+    Table,
+    Id,
+    Guid,
+    Title,
+    Type,
+    StartDate,
+    ExpiryDate,
+    Faction,
+    Flavor,
+}
+
+#[derive(DeriveIden)]
 pub enum Activities {
     Table,
     Id,

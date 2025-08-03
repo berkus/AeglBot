@@ -9,26 +9,17 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // create table activities (
-        //     id serial primary key not null,
-        //     name text not null,
-        //     mode text,
-        //     min_fireteam_size integer not null,
-        //     max_fireteam_size integer not null,
-        //     min_light integer,
-        //     min_level integer
-        // );
         manager
             .create_table(
                 Table::create()
-                    .table(Activities::Table)
-                    .col(pk_auto(Activities::Id))
-                    .col(string(Activities::Name))
-                    .col(string_null(Activities::Mode))
-                    .col(integer(Activities::MinFireteamSize))
-                    .col(integer(Activities::MaxFireteamSize))
-                    .col(integer_null(Activities::MinLight))
-                    .col(integer_null(Activities::MinLevel))
+                    .table(Activities::Table) // create table activities (
+                    .col(pk_auto(Activities::Id)) // id serial primary key not null,
+                    .col(string(Activities::Name)) // name text not null,
+                    .col(string_null(Activities::Mode)) // mode text,
+                    .col(integer(Activities::MinFireteamSize)) // min_fireteam_size integer not null,
+                    .col(integer(Activities::MaxFireteamSize)) // max_fireteam_size integer not null,
+                    .col(integer_null(Activities::MinLight)) // min_light integer,
+                    .col(integer_null(Activities::MinLevel)) // min_level integer
                     .to_owned(),
             )
             .await?;
@@ -43,20 +34,14 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // create table activityshortcuts (
-        //     id serial primary key not null,
-        //     name text not null unique,
-        //     game text not null,
-        //     link integer not null references activities(id) on delete restrict
-        // );
         manager
             .create_table(
                 Table::create()
-                    .table(ActivityShortcuts::Table)
-                    .col(pk_auto(ActivityShortcuts::Id))
-                    .col(string_uniq(ActivityShortcuts::Name))
-                    .col(string(ActivityShortcuts::Game))
-                    .col(integer(ActivityShortcuts::Link))
+                    .table(ActivityShortcuts::Table) // create table activityshortcuts (
+                    .col(pk_auto(ActivityShortcuts::Id)) // id serial primary key not null,
+                    .col(string_uniq(ActivityShortcuts::Name)) // name text not null unique,
+                    .col(string(ActivityShortcuts::Game)) // game text not null,
+                    .col(integer(ActivityShortcuts::Link)) // link integer not null references activities(id) on delete restrict
                     .foreign_key(
                         ForeignKey::create()
                             .name("activityshortcuts_link_fkey")

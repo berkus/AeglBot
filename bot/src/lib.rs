@@ -5,19 +5,16 @@
 #![feature(type_ascription)]
 #![expect(non_local_definitions)] // Old diesel macros
 
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_derives_extra;
-
-use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool};
+use {
+    diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool,
+    sea_orm::DatabaseConnection,
+};
 
 pub mod bot_actor;
 pub mod commands;
 pub mod datetime;
-pub mod models;
-pub mod schema;
 pub mod services;
+pub mod templates;
 
 static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates"));
@@ -61,9 +58,9 @@ macro_rules! render_template {
 }
 
 // TODO: only BotConnection should be public
-pub type DbConnection = LoggingConnection<PgConnection>;
-pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
-pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
+// pub type DbConnection = LoggingConnection<PgConnection>;
+// pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
+// pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
 
 pub trait NamedActor {
     fn actor_name() -> String;
@@ -77,20 +74,6 @@ pub trait BotCommand {
     fn prefix() -> &'static str;
     /// Return command description.
     fn description() -> &'static str;
-}
-
-/// Establish a pool of connections with DB.
-pub fn establish_db_connection() -> DbConnPool {
-    dotenv::dotenv().ok();
-
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
-
-    r2d2::Pool::builder()
-        .min_idle(Some(1))
-        .max_size(15)
-        .build(manager)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
 // https://chaoslibrary.blot.im/rust-cloning-a-trait-object/

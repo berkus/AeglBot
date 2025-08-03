@@ -672,6 +672,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "culpa"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ae0bfe9317b1cb4ff5a56d766ee4b157b3e1f47f11979253570e88d10fd1fd3"
+dependencies = [
+ "culpa-macros",
+]
+
+[[package]]
+name = "culpa-macros"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1234e1717066d3c71dcf89b75e7b586299e41204d361db56ec51e6ded5014279"
+dependencies = [
+ "proc-macro2 1.0.95",
+ "quote 1.0.40",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "darling"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -857,7 +877,13 @@ dependencies = [
 name = "entity"
 version = "0.4.0"
 dependencies = [
+ "anyhow",
+ "culpa",
+ "dotenv",
+ "regex",
  "sea-orm",
+ "serde 1.0.219",
+ "tokio",
 ]
 
 [[package]]
@@ -1732,6 +1758,7 @@ checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
 name = "migration"
 version = "0.4.0"
 dependencies = [
+ "entity",
  "sea-orm-migration",
  "tokio",
 ]
