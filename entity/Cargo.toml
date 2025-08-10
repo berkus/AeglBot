@@ -6,6 +6,8 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
+chrono-tz.workspace = true
+chrono.workspace = true
 culpa.workspace = true
 dotenv.workspace = true
 regex.workspace = true

@@ -19,7 +19,7 @@ impl MigrationTrait for Migration {
             )
             .await?;
         // update guardians set is_admin = true where telegram_name = 'berkus';
-        entity::Guardians::update_one();
+        // entity::Guardians::update_one();
         let update = sea_orm::Update::one()
             .table(Guardians::Table)
             .value(Guardians::IsAdmin, true)
