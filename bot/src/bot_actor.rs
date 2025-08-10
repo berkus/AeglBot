@@ -1,7 +1,6 @@
 use {
     crate::{
         commands::*,
-        establish_db_connection,
         services::reminder_actor::{
             ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
@@ -37,40 +36,34 @@ impl std::fmt::Debug for BotActor {
     }
 }
 
-pub type UpdateMessage = UpdateWithCx<Bot, Message>;
-pub type ActorUpdateMessage = ActorUpdateWithCx<Bot, Message>;
-
-// Manually derived version of UpdateWithCx<_, _>
 #[derive(Debug, Clone)]
-pub struct ActorUpdateWithCx<R, Upd> {
-    pub requester: R,
-    pub update: Upd,
+pub struct ActorUpdateMessage {
+    pub requester: Bot,
+    pub update: Message,
 }
 
-impl From<UpdateMessage> for ActorUpdateMessage {
-    fn from(m: UpdateMessage) -> Self {
-        Self {
-            requester: m.requester,
-            update: m.update,
-        }
+impl ActorUpdateMessage {
+    pub fn new(requester: Bot, update: Message) -> Self {
+        Self { requester, update }
     }
 }
 
 impl BotActor {
     // Public API
 
-    pub fn new(
+    pub async fn new(
         name: &str,
         bot: Bot,
         chan: ChannelRef<ActorUpdateMessage>,
         lfg_chat_id: i64,
     ) -> Self {
+        let connection_pool = crate::establish_db_connection().await.unwrap();
         BotActor {
             bot,
             bot_name: name.to_string(),
             lfg_chat_id,
             update_channel: chan,
-            connection_pool: establish_db_connection(),
+            connection_pool,
             commands_list: vec![],
         }
     }
@@ -127,7 +120,7 @@ impl Actor for BotActor {
         new_command!(EditCommand);
         new_command!(EditGuardianCommand);
         new_command!(HelpCommand);
-        new_command!(InfoCommand);
+        new_command!(UptimeCommand);
         new_command!(JoinCommand);
         new_command!(LfgCommand);
         new_command!(ListCommand);
@@ -157,7 +150,11 @@ impl ActorFactoryArgs<(String, Bot, ChannelRef<ActorUpdateMessage>, i64)> for Bo
     fn create_args(
         (bot_name, bot, chan, lfg_chat): (String, Bot, ChannelRef<ActorUpdateMessage>, i64),
     ) -> Self {
-        Self::new(&bot_name, bot, chan, lfg_chat)
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        rt.block_on(Self::new(&bot_name, bot, chan, lfg_chat))
     }
 }
 
@@ -195,7 +192,13 @@ impl Receive<SendMessage> for BotActor {
                 Notify::On => false,
                 Notify::Off => true,
             })
-            .disable_web_page_preview(true);
+            .link_preview_options(teloxide::types::LinkPreviewOptions {
+                is_disabled: true,
+                url: None,
+                prefer_small_media: false,
+                prefer_large_media: false,
+                show_above_text: false,
+            });
 
         let resp = match msg.2 {
             Format::Html => resp.parse_mode(ParseMode::Html),
@@ -221,13 +224,19 @@ impl Receive<SendMessageReply> for BotActor {
 
         let fut = self
             .bot
-            .send_message(message.update.chat_id(), msg.0)
-            .reply_to_message_id(message.update.id)
+            .send_message(message.update.chat.id, msg.0)
+            .reply_parameters(teloxide::types::ReplyParameters::new(message.update.id))
             .disable_notification(match msg.3 {
                 Notify::On => false,
                 Notify::Off => true,
             })
-            .disable_web_page_preview(true);
+            .link_preview_options(teloxide::types::LinkPreviewOptions {
+                is_disabled: true,
+                url: None,
+                prefer_small_media: false,
+                prefer_large_media: false,
+                show_above_text: false,
+            });
 
         let fut = match msg.2 {
             Format::Html => fut.parse_mode(ParseMode::Html),

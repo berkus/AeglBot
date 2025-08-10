@@ -35,10 +35,21 @@ impl Receive<ActorUpdateMessage> for WhoisCommand {
     type Msg = WhoisCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        tokio::runtime::Handle::current().block_on(async {
+            self.handle_message(message).await;
+        });
+    }
+}
+
+impl WhoisCommand {
+    async fn handle_message(&self, message: ActorUpdateMessage) {
+        let connection = self.connection();
+
         if let (Some(_), name) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if name.is_none() {
+                // usage()
                 return self.send_reply(
                     &message,
                     "To query user provide his @TelegramId (starting with @) or PsnId",
@@ -46,13 +57,15 @@ impl Receive<ActorUpdateMessage> for WhoisCommand {
             }
 
             let name = name.unwrap();
-            let connection = self.connection();
 
-            if validate_username(&self.bot_ref, &message, &connection).is_none() {
+            if validate_username(&self.bot_ref, &message, connection)
+                .await
+                .is_none()
+            {
                 return; // TODO: say something?
             }
 
-            let guardian = guardian_lookup(&name, &connection);
+            let guardian = guardian_lookup(&name, connection).await;
 
             match guardian {
                 Ok(Some(guardian)) => {

@@ -3,15 +3,12 @@ use {
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
         datetime::{format_start_time, reference_date},
-        models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
         BotCommand,
     },
-    chrono::prelude::*,
-    chrono_english::{parse_date_string, Dialect},
-    chrono_tz::Europe::Moscow,
-    diesel::{self, prelude::*},
-    diesel_derives_traits::{Model, NewModel},
+    entity::{activities, activityshortcuts, plannedactivities, plannedactivitymembers},
     riker::actors::Tell,
+    sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
+    two_timer::parse,
 };
 
 command_actor!(LfgCommand, [ActorUpdateMessage]);
@@ -53,6 +50,16 @@ impl Receive<ActorUpdateMessage> for LfgCommand {
     type Msg = LfgCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        tokio::runtime::Handle::current().block_on(async {
+            self.handle_message(message).await;
+        });
+    }
+}
+
+impl LfgCommand {
+    async fn handle_message(&self, message: ActorUpdateMessage) {
+        let connection = self.connection();
+
         if let (Some(_), args) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
@@ -68,18 +75,20 @@ impl Receive<ActorUpdateMessage> for LfgCommand {
             let args = args.unwrap();
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
-            if args.len() < 2 {
+            if args.len() != 2 {
                 return self.usage(&message);
             }
 
             let activity = args[0];
             let timespec = args[1];
-            let connection = self.connection();
 
             log::info!("Adding activity `{}` at `{}`", &activity, &timespec);
 
-            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
-                let act = ActivityShortcut::find_one_by_name(&connection, activity)
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
+                let act = activityshortcuts::Entity::find()
+                    .filter(activityshortcuts::Column::Name.eq(activity))
+                    .one(connection)
+                    .await
                     .expect("Failed to load Activity shortcut");
 
                 if act.is_none() {
@@ -93,8 +102,7 @@ impl Receive<ActorUpdateMessage> for LfgCommand {
                     );
                 }
                 // Parse input in MSK timezone...
-                let start_time =
-                    parse_date_string(timespec, Local::now().with_timezone(&Moscow), Dialect::Uk);
+                let start_time = parse(timespec, None);
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
@@ -106,58 +114,56 @@ impl Receive<ActorUpdateMessage> for LfgCommand {
                 }
 
                 // ...then convert back to UTC.
-                let start_time = start_time.unwrap().with_timezone(&Utc);
+                let start_time = start_time.unwrap().0.and_utc();
 
                 let act = act.unwrap();
 
                 log::info!("...parsed `{:?}`", start_time);
 
-                let planned_activity = NewPlannedActivity {
-                    author_id: guardian.id,
-                    activity_id: act.link,
-                    start: start_time,
+                let planned_activity = plannedactivities::ActiveModel {
+                    author_id: Set(guardian.id),
+                    activity_id: Set(act.link),
+                    start: Set(start_time.into()),
+                    ..Default::default()
                 };
 
-                use diesel::result::Error;
+                // Note: Simplified without transaction for now
 
-                connection
-                    .transaction::<_, Error, _>(|| {
-                        let planned_activity = planned_activity
-                            .save(&connection)
-                            .expect("Unexpected error saving LFG group");
+                let planned_activity = planned_activity
+                    .insert(connection)
+                    .await
+                    .expect("Unexpected error saving LFG group");
 
-                        let planned_activity_member = NewPlannedActivityMember {
-                            user_id: guardian.id,
-                            planned_activity_id: planned_activity.id,
-                            added: reference_date(),
-                        };
+                let planned_activity_member = plannedactivitymembers::ActiveModel {
+                    user_id: Set(guardian.id),
+                    planned_activity_id: Set(planned_activity.id),
+                    added: Set(reference_date().into()),
+                    ..Default::default()
+                };
 
-                        planned_activity_member
-                            .save(&connection)
-                            .expect("Unexpected error saving LFG group creator");
+                planned_activity_member
+                    .insert(connection)
+                    .await
+                    .expect("Unexpected error saving LFG group creator");
 
-                        let activity = Activity::find_one(&connection, &act.link)
-                            .expect("Couldn't find linked activity")
-                            .unwrap();
+                let activity = activities::Entity::find_by_id(act.link)
+                    .one(connection)
+                    .await
+                    .expect("Couldn't find linked activity")
+                    .unwrap();
 
-                        self.send_reply(
-                            &message,
-                            format!(
-                                "{guarName} is looking for {groupName} group {onTime}
-{joinPrompt}
+                self.send_reply(
+                    &message,
+                    format!(
+                        "{guarName} is looking for {groupName} group {onTime}
 Enter `/edit{actId} details <free form description text>` to specify more details about the event.",
-                                guarName = guardian,
-                                groupName = activity.format_name(),
-                                onTime = format_start_time(start_time, reference_date()),
-                                joinPrompt = planned_activity.join_prompt(&connection),
-                                actId = planned_activity.id
-                            ),
-                            Format::Plain,
-                        );
-
-                        Ok(())
-                    })
-                    .expect("never happens, but please implement error handling");
+                        guarName = guardian,
+                        groupName = activity.format_name(),
+                        onTime = format_start_time(start_time, reference_date()),
+                        actId = planned_activity.id
+                    ),
+                    Format::Plain,
+                );
             }
         }
     }

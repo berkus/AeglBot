@@ -1,12 +1,11 @@
 use {
     crate::{
         bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
-        models::Guardian,
-        schema::guardians::dsl::*,
         DbConnection,
     },
-    diesel::prelude::*,
+    entity::guardians,
     riker::actors::{ActorRef, Tell},
+    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 #[macro_export]
@@ -27,8 +26,8 @@ macro_rules! command_actor {
         }
 
         impl $name {
-            pub fn connection(&self) -> BotConnection {
-                self.connection_pool.get().unwrap()
+            pub fn connection(&self) -> &BotConnection {
+                &self.connection_pool
             }
         }
 
@@ -91,12 +90,12 @@ pub fn decapitalize(s: &str) -> String {
 }
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
-pub fn validate_username(
+pub async fn validate_username(
     bot: &ActorRef<BotActorMsg>,
     message: &ActorUpdateMessage,
     connection: &DbConnection,
-) -> Option<Guardian> {
-    let username = match message.update.from().as_ref().unwrap().username {
+) -> Option<guardians::Model> {
+    let username = match message.update.from.as_ref().unwrap().username {
         None => {
             bot.tell(
                 SendMessageReply(
@@ -112,10 +111,10 @@ pub fn validate_username(
         Some(ref name) => name.clone(),
     };
 
-    let db_user = guardians
-        .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
-        .first::<Guardian>(connection)
-        .optional();
+    let db_user = guardians::Entity::find()
+        .filter(guardians::Column::TelegramName.eq(&username)) // @todo Fix with tg-id
+        .one(connection)
+        .await;
 
     match db_user {
         Ok(Some(user)) => Some(user),
@@ -147,28 +146,36 @@ pub fn validate_username(
 }
 
 /// Return a guardian record if message author is an admin user, `None` otherwise.
-pub fn admin_check(
+pub async fn admin_check(
     bot: &ActorRef<BotActorMsg>,
     message: &ActorUpdateMessage,
     connection: &DbConnection,
-) -> Option<Guardian> {
-    validate_username(bot, message, connection).filter(|g| g.is_admin)
+) -> Option<guardians::Model> {
+    if let Some(user) = validate_username(bot, message, connection).await {
+        if user.is_admin {
+            Some(user)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
-pub fn guardian_lookup(
+pub async fn guardian_lookup(
     name: &str,
     connection: &DbConnection,
-) -> Result<Option<Guardian>, diesel::result::Error> {
+) -> Result<Option<guardians::Model>, sea_orm::DbErr> {
     if let Some(name) = name.strip_prefix('@') {
-        guardians
-            .filter(telegram_name.eq(name))
-            .first::<Guardian>(connection)
-            .optional()
+        guardians::Entity::find()
+            .filter(guardians::Column::TelegramName.eq(name))
+            .one(connection)
+            .await
     } else {
-        guardians
-            .filter(psn_name.ilike(&name))
-            .first::<Guardian>(connection)
-            .optional()
+        guardians::Entity::find()
+            .filter(guardians::Column::PsnName.contains(name))
+            .one(connection)
+            .await
     }
     // @todo: lookup by integer id, positive
 }

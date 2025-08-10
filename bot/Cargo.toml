@@ -8,6 +8,7 @@ version = "0.4.0"
 anyhow.workspace = true
 chrono-tz.workspace = true
 chrono.workspace = true
+culpa.workspace = true
 dotenv.workspace = true
 entity.workspace = true
 fern.workspace = true

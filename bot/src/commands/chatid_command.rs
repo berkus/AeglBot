@@ -26,7 +26,7 @@ impl Receive<ActorUpdateMessage> for ChatidCommand {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
             self.bot_ref.tell(
                 SendMessageReply(
-                    format!("ChatId: {}", msg.update.chat_id()),
+                    format!("ChatId: {}", msg.update.chat.id),
                     msg,
                     Format::Plain,
                     Notify::Off,
