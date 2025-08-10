@@ -27,7 +27,6 @@ serde.workspace = true
 teloxide.workspace = true
 tera.workspace = true
 tokio.workspace = true
-two_timer.workspace = true
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.17"

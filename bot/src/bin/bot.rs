@@ -1,7 +1,7 @@
 // Async Rust implementation of the bot
 //
 // To make it usable it misses natty parsing lib implementation in rust
-// (There are now several rust impls including https://lib.rs/crates/two_timer and https://lib.rs/crates/intervalle)
+// Use https://lib.rs/crates/two_timer
 
 use {
     aegl_bot::{
