@@ -4,7 +4,7 @@
 // Use https://lib.rs/crates/two_timer
 
 use {
-    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor, UpdateMessage},
+    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor},
     dotenv::dotenv,
     migration::{Migrator, MigratorTrait},
     // riker::prelude::*, doesn't work here!
@@ -73,12 +73,13 @@ fn setup_logging() -> Result<(), fern::InitError> {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
     aegl_bot::datetime::bot_start_time(); // Mark start timestamp
 
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let connection = sea_orm::Database::connect(&database_url).await?;
     Migrator::up(&connection, None).await?;
 
@@ -100,13 +101,16 @@ async fn main() {
         .actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone(), lfg_chat))
         .expect("Couldn't start the bot");
 
-    teloxide::repl(tgbot.clone(), move |message: UpdateMessage| {
+    teloxide::repl(tgbot.clone(), move |bot: Bot, message: Message| {
         let chan = chan.clone();
         async move {
-            log::debug!("Processing message {}", message.update.id);
+            log::debug!("Processing message {}", message.id);
             chan.tell(
                 Publish {
-                    msg: message.into(),
+                    msg: ActorUpdateMessage {
+                        requester: bot,
+                        update: message,
+                    },
                     topic: "raw-commands".into(),
                 },
                 None,
@@ -115,4 +119,6 @@ async fn main() {
         }
     })
     .await;
+
+    Ok(())
 }

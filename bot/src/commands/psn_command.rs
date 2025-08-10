@@ -2,12 +2,11 @@ use {
     crate::{
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::match_command,
-        models::{Guardian, NewGuardian},
-        schema::guardians::dsl::*,
         BotCommand,
     },
-    diesel::{self, prelude::*},
+    entity::guardians,
     riker::actors::Tell,
+    sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
 command_actor!(PsnCommand, [ActorUpdateMessage]);
@@ -20,6 +19,14 @@ impl PsnCommand {
         self.bot_ref.tell(
             SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
             None,
+        );
+    }
+
+    fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(
+            message,
+            "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE",
+            Format::Html,
         );
     }
 }
@@ -38,29 +45,35 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
     type Msg = PsnCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        tokio::runtime::Handle::current().block_on(async {
+            self.handle_message(message).await;
+        });
+    }
+}
+
+impl PsnCommand {
+    async fn handle_message(&self, message: ActorUpdateMessage) {
+        let connection = self.connection();
+
         if let (Some(_), name) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             log::info!("PSN command");
 
             if name.is_none() {
-                return self.send_reply(
-                    &message,
-                    "Usage: /psn <b>psnid</b>\nFor example: /psn KPOTA_B_ATEOHE",
-                    Format::Html,
-                );
+                return self.usage(&message);
             }
 
             let name = name.unwrap();
 
-            let from = match message.update.from() {
+            let from = match &message.update.from {
                 None => {
                     return self.send_reply(&message, "Message has no sender info.", Format::Plain);
                 }
                 Some(from) => from,
             };
 
-            let username = match from.username {
+            let username = match &from.username {
                 None => {
                     return self.send_reply(
                         &message,
@@ -68,24 +81,23 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                         Format::Plain,
                     );
                 }
-                Some(ref name) => name,
+                Some(name) => name,
             };
 
-            let connection = self.connection();
             let user_id = from.id;
 
-            let db_user = guardians
-                .filter(telegram_id.eq(&user_id))
-                .first::<Guardian>(&connection)
-                .optional();
+            let db_user = guardians::Entity::find()
+                .filter(guardians::Column::TelegramId.eq(user_id.0 as i64))
+                .one(connection)
+                .await;
 
             match db_user {
                 Ok(Some(user)) => {
-                    let another_user = guardians
-                        .filter(psn_name.ilike(&name))
-                        .filter(telegram_id.ne(&user_id))
-                        .first::<Guardian>(&connection)
-                        .optional();
+                    let another_user = guardians::Entity::find()
+                        .filter(guardians::Column::PsnName.contains(&name))
+                        .filter(guardians::Column::TelegramId.ne(user_id.0 as i64))
+                        .one(connection)
+                        .await;
 
                     match another_user {
                         Ok(Some(_)) => {
@@ -99,12 +111,11 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                             );
                         }
                         Ok(None) => {
-                            use diesel_derives_traits::Model;
+                            let mut user: guardians::ActiveModel = user.into();
+                            user.telegram_name = Set(username.to_string());
+                            user.psn_name = Set(name.to_string());
 
-                            let mut user = user;
-                            user.telegram_name = username.to_string();
-                            user.psn_name = name.to_string();
-                            if user.save(&connection).is_err() {
+                            if user.update(connection).await.is_err() {
                                 self.send_reply(
                                     &message,
                                     "Failed to update telegram and PSN names.",
@@ -132,28 +143,30 @@ impl Receive<ActorUpdateMessage> for PsnCommand {
                     }
                 }
                 Ok(None) => {
-                    use crate::schema::guardians;
-
-                    let guardian = NewGuardian {
-                        telegram_name: username,
-                        telegram_id: user_id,
-                        psn_name: &name,
+                    let guardian = guardians::ActiveModel {
+                        telegram_name: Set(username.to_string()),
+                        telegram_id: Set(user_id.0 as i64),
+                        psn_name: Set(name.to_string()),
+                        ..Default::default()
                     };
 
-                    diesel::insert_into(guardians::table)
-                        .values(&guardian)
-                        .execute(&connection)
-                        .expect("Unexpected error saving guardian");
-
-                    self.send_reply(
-                        &message,
-                        format!(
-                            "Linking telegram @{username} with PSN {psn}",
-                            username = username,
-                            psn = name
-                        ),
-                        Format::Plain,
-                    );
+                    if guardian.insert(connection).await.is_err() {
+                        self.send_reply(
+                            &message,
+                            "Unexpected error saving guardian",
+                            Format::Plain,
+                        );
+                    } else {
+                        self.send_reply(
+                            &message,
+                            format!(
+                                "Linking telegram @{username} with PSN {psn}",
+                                username = username,
+                                psn = name
+                            ),
+                            Format::Plain,
+                        );
+                    }
                 }
                 Err(_) => {
                     self.send_reply(&message, "Error querying guardian name.", Format::Plain);

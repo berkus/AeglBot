@@ -1,15 +1,8 @@
 use {
     chrono::{prelude::*, DateTime, Duration, TimeZone, Utc},
     chrono_tz::{Europe::Moscow, Tz},
-    diesel::{helper_types::AsExprOf, sql_types::Timestamptz},
     std::fmt::Write,
 };
-
-// Diesel farts, see issues/1752 (will never be fixed)
-pub fn nowtz() -> AsExprOf<diesel::dsl::now, Timestamptz> {
-    use diesel::{dsl::now, IntoSql};
-    now.into_sql::<Timestamptz>()
-}
 
 // All internal date representation and storage is in UTC.
 // MSK time zone is used only to parse input time and to display times.

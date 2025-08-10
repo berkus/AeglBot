@@ -2,11 +2,12 @@ use {
     crate::{
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
-        datetime::nowtz,
-        models::PlannedActivity,
+        datetime::reference_date,
         render_template, BotCommand,
     },
+    entity::plannedactivities,
     riker::actors::Tell,
+    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 command_actor!(ListCommand, [ActorUpdateMessage]);
@@ -37,18 +38,38 @@ impl Receive<ActorUpdateMessage> for ListCommand {
     type Msg = ListCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            let connection = self.connection();
+        tokio::runtime::Handle::current().block_on(async {
+            self.handle_message(message).await;
+        });
+    }
+}
 
-            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
-                // let count = self.activity(connection).max_fireteam_size as usize
-                //     - self.members_count(connection);
-                let upcoming_events: Vec<_> = PlannedActivity::upcoming_activities(&connection)
+impl ListCommand {
+    async fn handle_message(&self, message: ActorUpdateMessage) {
+        let connection = self.connection();
+
+        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
+            if let Some(_guardian) = validate_username(&self.bot_ref, &message, connection).await {
+                let upcoming_events = plannedactivities::Entity::find()
+                    .filter(plannedactivities::Column::Start.gt(reference_date()))
+                    .all(connection)
+                    .await
+                    .unwrap_or_default();
+
+                // Simplified event data for template - you may want to expand this
+                let events_data: Vec<_> = upcoming_events
                     .iter()
-                    .map(|s| s.to_template(Some(&guardian), &connection))
+                    .map(|event| {
+                        serde_json::json!({
+                            "id": event.id,
+                            "activity_id": event.activity_id,
+                            "start": event.start.to_string(),
+                            "details": event.details.as_deref().unwrap_or("")
+                        })
+                    })
                     .collect();
 
-                let output = render_template!("list/planned", ("events", &upcoming_events))
+                let output = render_template!("list/planned", ("events", &events_data))
                     .expect("Rendering failed");
 
                 self.send_reply(&message, output, Format::Html);

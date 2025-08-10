@@ -30,8 +30,8 @@ pub struct ReminderActor {
 }
 
 impl ReminderActor {
-    pub fn connection(&self) -> BotConnection {
-        self.connection_pool.get().unwrap()
+    fn connection(&self) -> &BotConnection {
+        &self.connection_pool
     }
 }
 
@@ -68,12 +68,15 @@ impl Receive<Reminders> for ReminderActor {
     type Msg = ReminderActorMsg;
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: Reminders, _sender: Sender) {
-        reminder::check(
-            self.bot_ref.clone(),
-            self.connection(),
-            ChatId::Id(self.lfg_chat),
-        );
-        ctx.myself().tell(ScheduleNextMinute, None);
+        let bot_ref = self.bot_ref.clone();
+        let connection = self.connection().clone();
+        let lfg_chat = self.lfg_chat;
+        let myself = ctx.myself();
+
+        tokio::spawn(async move {
+            reminder::check(bot_ref, connection, ChatId(lfg_chat)).await;
+            myself.tell(ScheduleNextMinute, None);
+        });
     }
 }
 
@@ -81,7 +84,7 @@ impl Receive<DailyReset> for ReminderActor {
     type Msg = ReminderActorMsg;
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: DailyReset, _sender: Sender) {
-        destiny_schedule::daily_reset(self.bot_ref.clone(), ChatId::Id(self.lfg_chat));
+        destiny_schedule::daily_reset(self.bot_ref.clone(), ChatId(self.lfg_chat));
         ctx.myself().tell(ScheduleNextDay, None);
     }
 }
@@ -90,7 +93,7 @@ impl Receive<WeeklyReset> for ReminderActor {
     type Msg = ReminderActorMsg;
 
     fn receive(&mut self, ctx: &Context<Self::Msg>, _msg: WeeklyReset, _sender: Sender) {
-        destiny_schedule::major_weekly_reset(self.bot_ref.clone(), ChatId::Id(self.lfg_chat));
+        destiny_schedule::major_weekly_reset(self.bot_ref.clone(), ChatId(self.lfg_chat));
         ctx.myself().tell(ScheduleNextWeek, None);
     }
 }

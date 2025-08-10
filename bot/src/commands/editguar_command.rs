@@ -4,7 +4,9 @@ use {
         commands::{admin_check, guardian_lookup, match_command, validate_username},
         render_template, BotCommand,
     },
+    entity::guardians,
     riker::actors::Tell,
+    sea_orm::{ActiveModelTrait, Set},
 };
 
 command_actor!(EditGuardianCommand, [ActorUpdateMessage]);
@@ -42,11 +44,19 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
     type Msg = EditGuardianCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        tokio::runtime::Handle::current().block_on(async {
+            self.handle_message(message).await;
+        });
+    }
+}
+
+impl EditGuardianCommand {
+    async fn handle_message(&self, message: ActorUpdateMessage) {
+        let connection = self.connection();
+
         if let (Some(_), args) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
-            let connection = self.connection();
-
             if args.is_none() {
                 return self.usage(&message);
             }
@@ -65,19 +75,19 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
             let name = args[0];
 
             let guardian = if name == "my" {
-                let guardian = validate_username(&self.bot_ref, &message, &connection);
+                let guardian = validate_username(&self.bot_ref, &message, connection).await;
                 if guardian.is_none() {
                     return;
                 }
                 guardian.unwrap()
             } else {
-                let admin = admin_check(&self.bot_ref, &message, &connection);
+                let admin = admin_check(&self.bot_ref, &message, connection).await;
 
                 if admin.is_none() {
                     return self.send_reply(&message, "You are not admin");
                 }
 
-                let guardian = guardian_lookup(name, &connection);
+                let guardian = guardian_lookup(name, connection).await;
                 let guardian = match guardian {
                     Ok(Some(guardian)) => Some(guardian),
                     Ok(None) => {
@@ -103,7 +113,7 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
                         .clone()
                         .map(|s| format!("[{}] ", s))
                         .unwrap_or_default(),
-                    name = guardian.format_name(),
+                    name = guardian.telegram_name,
                     email = guardian.email.clone().unwrap_or("<no email>".into()),
                     admin = if guardian.is_superadmin {
                         "<superadmin>"
@@ -119,34 +129,39 @@ impl Receive<ActorUpdateMessage> for EditGuardianCommand {
             let command = args[1];
             let value = args[2];
 
-            let mut guardian = guardian;
-
-            use diesel_derives_traits::Model;
-
             match command {
                 "psn" => {
-                    guardian.psn_name = value.into();
-                    guardian.save(&connection).expect("Failed to update PSN");
-                    self.send_reply(&message, "Updated guardian PSN");
+                    let mut guardian: guardians::ActiveModel = guardian.into();
+                    guardian.psn_name = Set(value.to_string());
+                    if guardian.update(connection).await.is_err() {
+                        return self.send_reply(&message, "Failed to update PSN");
+                    }
+                    self.send_reply(&message, "PSN updated successfully");
                 }
                 "clan" => {
-                    let value = if value == "delete" {
+                    let clan_value = if value == "delete" {
                         None
                     } else {
-                        Some(value.into())
+                        Some(value.to_string())
                     };
-                    guardian.psn_clan = value;
-                    guardian.save(&connection).expect("Failed to update clan");
+                    let mut guardian: guardians::ActiveModel = guardian.into();
+                    guardian.psn_clan = Set(clan_value);
+                    if guardian.update(connection).await.is_err() {
+                        return self.send_reply(&message, "Failed to update clan");
+                    }
                     self.send_reply(&message, "Updated guardian clan");
                 }
                 "email" => {
-                    let value = if value == "delete" {
+                    let email_value = if value == "delete" {
                         None
                     } else {
-                        Some(value.into())
+                        Some(value.to_string())
                     };
-                    guardian.email = value;
-                    guardian.save(&connection).expect("Failed to update email");
+                    let mut guardian: guardians::ActiveModel = guardian.into();
+                    guardian.email = Set(email_value);
+                    if guardian.update(connection).await.is_err() {
+                        return self.send_reply(&message, "Failed to update email");
+                    }
                     self.send_reply(&message, "Updated guardian email");
                 }
                 _ => {

@@ -2,13 +2,14 @@ use {
     crate::{
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{admin_check, match_command},
-        models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
         BotCommand,
     },
-    diesel::{self, prelude::*},
-    diesel_derives_traits::{Model, NewModel},
+    entity::{activities, activityshortcuts},
     itertools::Itertools,
     riker::actors::Tell,
+    sea_orm::{
+        ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set,
+    },
     std::collections::HashMap,
 };
 
@@ -88,83 +89,95 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
     type Msg = ActivitiesCommandMsg;
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+        tokio::runtime::Handle::current().block_on(async {
+            self.handle_message(message).await;
+        });
+    }
+}
+
+impl ActivitiesCommand {
+    async fn handle_message(&self, message: ActorUpdateMessage) {
+        let connection = self.connection();
         if let (Some(_), args) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
-            let connection = self.connection();
-
             if args.is_none() {
-                use crate::schema::{
-                    activities::dsl::{activities, id},
-                    activityshortcuts::dsl::{activityshortcuts, game, name},
-                };
-
                 // Just /activities
-                let games = activityshortcuts
-                    .select(game)
+                let games = activityshortcuts::Entity::find()
+                    .select_only()
+                    .column(activityshortcuts::Column::Game)
                     .distinct()
-                    .order(game.asc())
-                    .load::<String>(&connection)
+                    .order_by_asc(activityshortcuts::Column::Game)
+                    .all(connection)
+                    .await
                     .expect("Failed to load activity shortcuts");
 
                 let mut text = "Activities: use a short name:\n".to_owned();
 
-                for game_name in games {
+                for game_row in games {
+                    let game_name = game_row.game;
                     text += &format!("*** <b>{0}</b>:\n", game_name);
-                    let shortcuts = activityshortcuts
-                        .filter(game.eq(game_name))
-                        .order(name.asc())
-                        .load::<ActivityShortcut>(&connection)
+                    let shortcuts = activityshortcuts::Entity::find()
+                        .filter(activityshortcuts::Column::Game.eq(&game_name))
+                        .order_by_asc(activityshortcuts::Column::Name)
+                        .all(connection)
+                        .await
                         .expect("TEMP loading @FIXME");
+
                     for shortcut in shortcuts {
-                        let link_name = activities
-                            .filter(id.eq(shortcut.link))
-                            .first::<Activity>(&connection)
-                            .expect("Failed to load activity");
+                        let link_activity = activities::Entity::find_by_id(shortcut.link)
+                            .one(connection)
+                            .await
+                            .expect("Failed to load activity")
+                            .expect("Activity not found");
 
                         text += &format!(
                             "<b>{name}</b>\t{link}\n",
                             name = shortcut.name,
-                            link = link_name.format_name(),
+                            link = link_activity.format_name(),
                         );
                     }
                     text += "\n";
                 }
 
-                return self.bot_ref.tell(
+                self.bot_ref.tell(
                     SendMessageReply(text, message, Format::Html, Notify::Off),
                     None,
                 );
+                return;
             }
 
             // some args - pass to a subcommand
-
             let args = args.unwrap();
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
             if args.is_empty() {
-                return self.usage(&message);
+                self.usage(&message);
+                return;
             }
 
-            let admin = admin_check(&self.bot_ref, &message, &connection);
+            let admin = admin_check(&self.bot_ref, &message, connection).await;
             if admin.is_none() {
-                return self.send_reply(&message, "You are not admin");
+                self.send_reply(&message, "You are not admin");
+                return;
             }
 
             // split into subcommands:
             match args[0] {
                 "ids" => {
-                    use crate::schema::activities::dsl::{activities, id, mode, name};
-
-                    let games = activities
-                        .select((id, name, mode))
-                        .order(id.asc())
-                        .load::<(i32, String, Option<String>)>(&connection)
+                    let games = activities::Entity::find()
+                        .all(connection)
+                        .await
                         .expect("Failed to load activities");
 
                     let mut text = "Activities:\n\n".to_string();
-                    for (id_, name_, mode_) in games {
-                        text += &format!("{}. {} {}\n", id_, name_, mode_.unwrap_or("".into()));
+                    for activity in games {
+                        text += &format!(
+                            "{}. {} {}\n",
+                            activity.id,
+                            activity.name,
+                            activity.mode.unwrap_or("".into())
+                        );
                     }
                     self.send_reply(&message, text);
                 }
@@ -208,13 +221,14 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     let max_fireteam_size = max_fireteam_size.unwrap();
 
                     // check no duplicates -- ?
-                    let mut act = NewActivity {
-                        name: name.unwrap().into(),
-                        mode: None,
-                        min_fireteam_size,
-                        max_fireteam_size,
-                        min_level: None,
-                        min_light: None,
+                    let mut act = activities::ActiveModel {
+                        name: Set(name.unwrap().to_string()),
+                        mode: Set(None),
+                        min_fireteam_size: Set(min_fireteam_size),
+                        max_fireteam_size: Set(max_fireteam_size),
+                        min_level: Set(None),
+                        min_light: Set(None),
+                        ..Default::default()
                     };
 
                     for (key, val) in argmap {
@@ -224,16 +238,16 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                                 if val.is_err() {
                                     return self.send_reply(&message, "min_light must be a number");
                                 }
-                                act.min_light = Some(val.unwrap())
+                                act.min_light = Set(Some(val.unwrap()));
                             }
                             "min_level" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
                                     return self.send_reply(&message, "min_level must be a number");
                                 }
-                                act.min_level = Some(val.unwrap())
+                                act.min_level = Set(Some(val.unwrap()));
                             }
-                            "mode" => act.mode = Some(val.into()),
+                            "mode" => act.mode = Set(Some(val.to_string())),
                             _ => {
                                 return self
                                     .send_reply(&message, format!("Unknown field name {}", key));
@@ -241,7 +255,7 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                         }
                     }
 
-                    match act.save(&connection) {
+                    match act.insert(connection).await {
                         Ok(act) => self
                             .send_reply(&message, format!("Activity {} added.", act.format_name())),
                         Err(e) => {
@@ -273,16 +287,24 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     let name = args[1].to_string();
                     let game = args[2].to_string();
 
-                    let act = Activity::find_one(&connection, &link).expect("Failed to run SQL");
+                    let act = activities::Entity::find_by_id(link)
+                        .one(connection)
+                        .await
+                        .expect("Failed to run SQL");
 
                     if act.is_none() {
                         return self
                             .send_reply(&message, format!("Activity {} was not found.", link));
                     }
 
-                    let shortcut = NewActivityShortcut { name, game, link };
+                    let shortcut = activityshortcuts::ActiveModel {
+                        name: Set(name),
+                        game: Set(game),
+                        link: Set(link),
+                        ..Default::default()
+                    };
 
-                    if shortcut.save(&connection).is_err() {
+                    if shortcut.insert(connection).await.is_err() {
                         return self.send_reply(&message, "Error creating shortcut");
                     }
 
@@ -308,13 +330,17 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     }
                     let id = id.unwrap();
 
-                    let act = Activity::find_one(&connection, &id).expect("Failed to run SQL");
+                    let act = activities::Entity::find_by_id(id)
+                        .one(connection)
+                        .await
+                        .expect("Failed to run SQL");
 
                     if act.is_none() {
                         return self
                             .send_reply(&message, format!("Activity {} was not found.", id));
                     }
-                    let mut act = act.unwrap();
+                    let act = act.unwrap();
+                    let mut act: activities::ActiveModel = act.into();
 
                     let argmap = parse_kv_args(args[1]);
                     if argmap.is_none() {
@@ -325,7 +351,7 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
 
                     for (key, val) in argmap {
                         match key {
-                            "name" => act.name = val.into(),
+                            "name" => act.name = Set(val.to_string()),
                             "min_fireteam_size" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
@@ -334,7 +360,7 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                                         "min_fireteam_size must be a number",
                                     );
                                 }
-                                act.min_fireteam_size = val.unwrap()
+                                act.min_fireteam_size = Set(val.unwrap())
                             }
                             "max_fireteam_size" => {
                                 let val = val.parse::<i32>();
@@ -344,23 +370,23 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                                         "max_fireteam_size must be a number",
                                     );
                                 }
-                                act.max_fireteam_size = val.unwrap()
+                                act.max_fireteam_size = Set(val.unwrap())
                             }
                             "min_light" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
                                     return self.send_reply(&message, "min_light must be a number");
                                 }
-                                act.min_light = Some(val.unwrap())
+                                act.min_light = Set(Some(val.unwrap()))
                             }
                             "min_level" => {
                                 let val = val.parse::<i32>();
                                 if val.is_err() {
                                     return self.send_reply(&message, "min_level must be a number");
                                 }
-                                act.min_level = Some(val.unwrap())
+                                act.min_level = Set(Some(val.unwrap()))
                             }
-                            "mode" => act.mode = Some(val.into()),
+                            "mode" => act.mode = Set(Some(val.to_string())),
                             _ => {
                                 return self
                                     .send_reply(&message, format!("Unknown field name {}", key));
@@ -368,7 +394,7 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                         }
                     }
 
-                    match act.save(&connection) {
+                    match act.update(connection).await {
                         Ok(act) => self.send_reply(
                             &message,
                             format!("Activity {} updated.", act.format_name()),
@@ -390,18 +416,20 @@ impl Receive<ActorUpdateMessage> for ActivitiesCommand {
                     }
                     let id = id.unwrap();
 
-                    let act = Activity::find_one(&connection, &id).expect("Failed to run SQL");
+                    let act = activities::Entity::find_by_id(id)
+                        .one(connection)
+                        .await
+                        .expect("Failed to run SQL");
 
                     if act.is_none() {
                         return self
                             .send_reply(&message, format!("Activity {} was not found.", id));
                     }
-
                     let act = act.unwrap();
 
                     let name = act.format_name();
 
-                    match act.destroy(&connection) {
+                    match activities::Entity::delete_by_id(id).exec(connection).await {
                         Ok(_) => self.send_reply(&message, format!("Activity {} deleted.", name)),
                         Err(e) => {
                             self.send_reply(&message, format!("Error deleting activity. {:?}", e))
@@ -431,8 +459,11 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
 
     match fragments.len() {
         x if x < 2 => None,
-        2 =>         // only single parameter
-            Some(final_collect(fragments)),
+        2 =>
+        // only single parameter
+        {
+            Some(final_collect(fragments))
+        }
         _ => {
             // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
             let subfrags = fragments[1..fragments.len() - 1]

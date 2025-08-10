@@ -3,11 +3,10 @@
 // #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![warn(unused_imports)] // during development
 #![feature(type_ascription)]
-#![expect(non_local_definitions)] // Old diesel macros
 
 use {
-    diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool,
-    sea_orm::DatabaseConnection,
+    culpa::throws,
+    sea_orm::{DatabaseConnection, DbErr},
 };
 
 pub mod bot_actor;
@@ -58,9 +57,15 @@ macro_rules! render_template {
 }
 
 // TODO: only BotConnection should be public
-// pub type DbConnection = LoggingConnection<PgConnection>;
-// pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
-// pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
+pub type DbConnection = DatabaseConnection;
+pub type DbConnPool = DatabaseConnection;
+pub type BotConnection = DatabaseConnection;
+
+/// Establish a database connection using the entity crate
+#[throws(DbErr)]
+pub async fn establish_db_connection() -> DatabaseConnection {
+    entity::establish_db_connection().await?
+}
 
 pub trait NamedActor {
     fn actor_name() -> String;
