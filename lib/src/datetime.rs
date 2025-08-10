@@ -1,6 +1,8 @@
 use {
+    anyhow::bail,
     chrono::{prelude::*, DateTime, Duration, TimeZone, Utc},
     chrono_tz::{Europe::Moscow, Tz},
+    culpa::throws,
     std::fmt::Write,
 };
 
@@ -9,6 +11,30 @@ use {
 
 pub type BotDateTime = chrono::DateTime<chrono::Utc>;
 pub type BotTime = chrono::NaiveTime; // UTC
+
+#[throws(anyhow::Error)]
+pub fn parse_time_spec(timespec: impl AsRef<str>) -> DateTime<Tz> {
+    let now = Local::now().with_timezone(&Moscow);
+    // Parse input in MSK timezone...
+    // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
+    let start_time = match two_timer::parse(
+        timespec.as_ref(),
+        two_timer::Config::new(now).default_to_past(false),
+    ) {
+        Ok((start, _end, _found)) => start, //.and_utc(),
+        Err(_) => {
+            bail!("❌ Failed to parse time {}", timespec.as_ref())
+        }
+    };
+
+    // ...then convert back to UTC.
+    // let start_time = start_time.unwrap().0; //.and_utc();
+
+    // use chrono::Offset;
+    // let offset = start_time.offset().fix();
+
+    start_time
+}
 
 fn time_diff_string(duration: Duration) -> String {
     let times = vec![

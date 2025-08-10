@@ -44,7 +44,6 @@ dependencies = [
  "tera",
  "thousands",
  "tokio",
- "two_timer",
 ]
 
 [[package]]
@@ -1595,9 +1594,11 @@ dependencies = [
 name = "libbot"
 version = "0.4.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "chrono-tz 0.10.4",
  "culpa",
+ "two_timer",
 ]
 
 [[package]]
@@ -3780,12 +3781,10 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "two_timer"
-version = "2.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75e22270f53d0cc86e580617796a681e89d5d5c22fa3774d70ba1592915404ee"
+version = "2.2.1"
+source = "git+https://github.com/berkus/two-timer.git?branch=updated#2becda6a3a9c7c99bb0fc538079649ef43d67eb2"
 dependencies = [
  "chrono",
- "lazy_static",
  "pidgin",
  "regex",
  "serde_json",
