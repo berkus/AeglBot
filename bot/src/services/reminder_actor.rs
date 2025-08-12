@@ -3,7 +3,7 @@ use {
         bot_actor::BotActorMsg,
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
         services::{destiny_schedule, reminder},
-        BotConnection, DbConnPool,
+        BotConnection,
     },
     chrono::Timelike,
     riker::{
@@ -26,7 +26,7 @@ use {
 pub struct ReminderActor {
     bot_ref: ActorRef<BotActorMsg>,
     lfg_chat: i64,
-    connection_pool: DbConnPool,
+    connection_pool: BotConnection,
 }
 
 impl ReminderActor {
@@ -43,9 +43,9 @@ impl Actor for ReminderActor {
     }
 }
 
-impl ActorFactoryArgs<(ActorRef<BotActorMsg>, i64, DbConnPool)> for ReminderActor {
+impl ActorFactoryArgs<(ActorRef<BotActorMsg>, i64, BotConnection)> for ReminderActor {
     fn create_args(
-        (bot_ref, lfg_chat, connection_pool): (ActorRef<BotActorMsg>, i64, DbConnPool),
+        (bot_ref, lfg_chat, connection_pool): (ActorRef<BotActorMsg>, i64, BotConnection),
     ) -> Self {
         Self {
             bot_ref,

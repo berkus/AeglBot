@@ -4,7 +4,7 @@ use {
         services::reminder_actor::{
             ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
-        BotCommand, DbConnPool, NamedActor,
+        BotCommand, BotConnection, NamedActor,
     },
     riker::actors::{
         actor, Actor, ActorFactoryArgs, ActorRefFactory, BasicActorRef, ChannelRef, Context,
@@ -24,7 +24,7 @@ pub struct BotActor {
     bot_name: String,
     lfg_chat_id: i64,
     update_channel: ChannelRef<ActorUpdateMessage>,
-    connection_pool: DbConnPool,
+    connection_pool: BotConnection,
     commands_list: Vec<(String, String)>,
 }
 

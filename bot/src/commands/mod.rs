@@ -1,7 +1,7 @@
 use {
     crate::{
         bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
-        DbConnection,
+        BotConnection,
     },
     entity::guardians,
     riker::actors::{ActorRef, Tell},
@@ -11,7 +11,7 @@ use {
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use $crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
+        use $crate::{bot_actor::BotActorMsg, NamedActor,  BotConnection};
         use riker::actors::{
             actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
         };
@@ -22,7 +22,7 @@ macro_rules! command_actor {
         pub struct $name {
             bot_ref: ActorRef<BotActorMsg>,
             bot_name: String,
-            connection_pool: DbConnPool,
+            connection_pool: BotConnection,
         }
 
         impl $name {
@@ -43,8 +43,8 @@ macro_rules! command_actor {
             }
         }
 
-        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String, DbConnPool)> for $name {
-            fn create_args((bot_ref, bot_name, connection_pool): (ActorRef<BotActorMsg>, String, DbConnPool)) -> Self {
+        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String, BotConnection)> for $name {
+            fn create_args((bot_ref, bot_name, connection_pool): (ActorRef<BotActorMsg>, String, BotConnection)) -> Self {
                 Self { bot_ref, bot_name, connection_pool }
             }
         }
@@ -93,7 +93,7 @@ pub fn decapitalize(s: &str) -> String {
 pub async fn validate_username(
     bot: &ActorRef<BotActorMsg>,
     message: &ActorUpdateMessage,
-    connection: &DbConnection,
+    connection: &BotConnection,
 ) -> Option<guardians::Model> {
     let username = match message.update.from.as_ref().unwrap().username {
         None => {
@@ -149,7 +149,7 @@ pub async fn validate_username(
 pub async fn admin_check(
     bot: &ActorRef<BotActorMsg>,
     message: &ActorUpdateMessage,
-    connection: &DbConnection,
+    connection: &BotConnection,
 ) -> Option<guardians::Model> {
     if let Some(user) = validate_username(bot, message, connection).await {
         if user.is_admin {
@@ -164,7 +164,7 @@ pub async fn admin_check(
 
 pub async fn guardian_lookup(
     name: &str,
-    connection: &DbConnection,
+    connection: &BotConnection,
 ) -> Result<Option<guardians::Model>, sea_orm::DbErr> {
     if let Some(name) = name.strip_prefix('@') {
         guardians::Entity::find()
