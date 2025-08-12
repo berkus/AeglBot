@@ -20,7 +20,7 @@ use {
 // }
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "plannedactivities")]
+#[sea_orm(table_name = "planned_activities")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,

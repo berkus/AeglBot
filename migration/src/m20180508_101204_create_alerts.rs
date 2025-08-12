@@ -12,8 +12,8 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Alerts::Table)
-                    .if_not_exists() // create table if not exists alerts (
+                    .if_not_exists()
+                    .table(Alerts::Table) // create table if not exists alerts (
                     .col(pk_auto(Alerts::Id)) //     id serial primary key not null,
                     .col(string(Alerts::Guid)) //     guid text not null unique,
                     .col(string(Alerts::Title)) //     title text not null,

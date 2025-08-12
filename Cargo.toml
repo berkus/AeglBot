@@ -20,7 +20,7 @@ migration = { path = "./migration" }
 paste = "1"
 # plurals = "0.3"
 regex = "1"
-riker = "0.4"
+riker = { version = "0.4", git = "https://github.com/enri1196/riker.git" }
 sea-orm = { version = "1.1", features = [
     "macros",
     "runtime-tokio-rustls",

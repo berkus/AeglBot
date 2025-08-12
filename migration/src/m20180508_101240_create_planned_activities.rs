@@ -12,6 +12,7 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
+                    .if_not_exists()
                     .table(PlannedActivities::Table) // create table plannedactivities (
                     .col(pk_auto(PlannedActivities::Id)) // id serial primary key not null,
                     .col(string(PlannedActivities::AuthorId)) // author_id integer not null references guardians(id),
@@ -40,6 +41,7 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
+                    .if_not_exists()
                     .table(PlannedActivityMembers::Table) // create table plannedactivitymembers (
                     .col(pk_auto(PlannedActivityMembers::Id)) //     id serial primary key not null,
                     .col(integer(PlannedActivityMembers::PlannedActivityId)) // planned_activity_id integer not null references plannedactivities(id),
