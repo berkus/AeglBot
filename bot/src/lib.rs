@@ -56,14 +56,11 @@ macro_rules! render_template {
     };
 }
 
-// TODO: only BotConnection should be public
-pub type DbConnection = DatabaseConnection;
-pub type DbConnPool = DatabaseConnection;
 pub type BotConnection = DatabaseConnection;
 
 /// Establish a database connection using the entity crate
 #[throws(DbErr)]
-pub async fn establish_db_connection() -> DatabaseConnection {
+pub async fn establish_db_connection() -> BotConnection {
     entity::establish_db_connection().await?
 }
 
