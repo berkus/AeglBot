@@ -41,15 +41,21 @@ impl Message<ActorUpdateMessage> for ListCommand {
                     .unwrap_or_default();
 
                 // Simplified event data for template - you may want to expand this
+                #[derive(serde::Serialize)]
+                struct EventTemplate {
+                    id: String,
+                    activity_id: String,
+                    start: String,
+                    details: String,
+                }
+
                 let events_data: Vec<_> = upcoming_events
                     .iter()
-                    .map(|event| {
-                        serde_json::json!({
-                            "id": event.id,
-                            "activity_id": event.activity_id,
-                            "start": event.start.to_string(),
-                            "details": event.details.as_deref().unwrap_or("")
-                        })
+                    .map(|event| EventTemplate {
+                        id: event.id.to_string(),
+                        activity_id: event.activity_id.to_string(),
+                        start: event.start.to_string(),
+                        details: event.details.clone().unwrap_or_default(),
                     })
                     .collect();
 

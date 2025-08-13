@@ -11,16 +11,12 @@ culpa = "1.0"
 dotenv = "0.15"
 entity = { path = "./entity" }
 fern = { version = "0.7", features = ["colored"] }
-futures = "0.3"
-futures-retry = "0.6"
 include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
+kameo = "0.17"
 log = "0.4"
 migration = { path = "./migration" }
-paste = "1"
-# plurals = "0.3"
 regex = "1"
-kameo = "0.17"
 sea-orm = { version = "1.1", features = [
     "macros",
     "runtime-tokio-rustls",
@@ -33,9 +29,7 @@ sea-orm-migration = { version = "1.1", features = [
     "with-chrono",
 ] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
 teloxide = { version = "0.13", features = ["macros"] }
-two_timer = "2.2" # doesn't parse "in 3 hours"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tokio-util = { version = "0.7", features = ["codec"] }
 tera = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+two_timer = "2.2" # doesn't parse "in 3 hours"
