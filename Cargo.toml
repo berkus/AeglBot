@@ -43,3 +43,6 @@ surrealdb = { version = "1.0.0-beta.8", git = "https://github.com/surrealdb/surr
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.17"
+
+[[bin]]
+name = "convert"
