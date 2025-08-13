@@ -1,31 +1,25 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::ActorUpdateMessage,
         commands::{decapitalize, match_command, validate_username},
         datetime::{format_start_time, reference_date},
         BotCommand,
     },
     chrono::Duration,
     entity::{plannedactivities, plannedactivitymembers},
-    riker::actors::Tell,
+    kameo::message::Context,
     sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter},
 };
 
 command_actor!(CancelCommand, [ActorUpdateMessage]);
 
 impl CancelCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
-        );
-    }
-
-    fn usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(message, "To leave a fireteam provide fireteam id\nFireteam IDs are available from output of /list command.");
+    async fn cancel_usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(
+            message,
+            "Cancel command help:\n\n/cancel ActivityID\n    Leave planned activity by its number.",
+        )
+        .await;
     }
 }
 
@@ -39,13 +33,15 @@ impl BotCommand for CancelCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for CancelCommand {
-    type Msg = CancelCommandMsg;
+impl Message<ActorUpdateMessage> for CancelCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        tokio::runtime::Handle::current().block_on(async {
-            self.handle_message(message).await;
-        });
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        self.handle_message(message).await;
     }
 }
 
@@ -57,12 +53,12 @@ impl CancelCommand {
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
-                return self.usage(&message);
+                return self.cancel_usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap().parse::<i32>();
             if activity_id.is_err() {
-                return self.usage(&message);
+                return self.cancel_usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap();
@@ -75,7 +71,8 @@ impl CancelCommand {
 
                 if planned.is_none() {
                     return self
-                        .send_reply(&message, format!("Activity {} was not found.", activity_id));
+                        .send_reply(&message, format!("Activity {} was not found.", activity_id))
+                        .await;
                 }
 
                 let planned = planned.unwrap();
@@ -89,14 +86,16 @@ impl CancelCommand {
 
                 if member.is_none() {
                     return self
-                        .send_reply(&message, "You are not part of this group.".to_string());
+                        .send_reply(&message, "You are not part of this group.".to_string())
+                        .await;
                 }
 
                 if chrono::DateTime::<chrono::Utc>::from(planned.start)
                     < reference_date() + Duration::hours(1)
                 {
                     return self
-                        .send_reply(&message, "You can not leave past activities.".to_string());
+                        .send_reply(&message, "You can not leave past activities.".to_string())
+                        .await;
                 }
 
                 let member = member.unwrap();
@@ -107,7 +106,9 @@ impl CancelCommand {
                     .await
                     .is_err()
                 {
-                    return self.send_reply(&message, "Failed to remove group member".to_string());
+                    return self
+                        .send_reply(&message, "Failed to remove group member".to_string())
+                        .await;
                 }
 
                 // Get activity name - simplified for now
@@ -131,7 +132,8 @@ impl CancelCommand {
                         .is_err()
                     {
                         return self
-                            .send_reply(&message, "Failed to remove planned activity".to_string());
+                            .send_reply(&message, "Failed to remove planned activity".to_string())
+                            .await;
                     }
                     "This fireteam is disbanded and can no longer be joined.".into()
                 } else {
@@ -150,7 +152,8 @@ impl CancelCommand {
                         actTime = act_time,
                         suffix = suffix
                     ),
-                );
+                )
+                .await;
             }
         }
     }

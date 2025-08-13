@@ -1,11 +1,4 @@
-use {
-    crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::match_command,
-        BotCommand,
-    },
-    riker::actors::Tell,
-};
+use crate::{bot_actor::ActorUpdateMessage, commands::match_command, BotCommand};
 
 command_actor!(ChatidCommand, [ActorUpdateMessage]);
 
@@ -19,20 +12,18 @@ impl BotCommand for ChatidCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for ChatidCommand {
-    type Msg = ChatidCommandMsg;
+impl Message<ActorUpdateMessage> for ChatidCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &mut self,
+        msg: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(
-                SendMessageReply(
-                    format!("ChatId: {}", msg.update.chat.id),
-                    msg,
-                    Format::Plain,
-                    Notify::Off,
-                ),
-                None,
-            );
+            let _ = self
+                .send_reply(&msg, format!("ChatId: {}", msg.update.chat.id))
+                .await;
         }
     }
 }

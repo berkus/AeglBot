@@ -7,28 +7,22 @@ use {
     },
     chrono::Duration,
     entity::{plannedactivities, plannedactivitymembers},
-    riker::actors::Tell,
+    kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
 command_actor!(JoinCommand, [ActorUpdateMessage]);
 
 impl JoinCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
-        );
-    }
-
-    fn usage(&self, message: &ActorUpdateMessage) {
+    async fn join_usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(
             message,
-            render_template!("join/usage").expect("Failed to render join usage template"),
-        );
+            "Join command help:
+
+/join ActivityID
+    Join planned activity by its number.",
+        )
+        .await;
     }
 }
 
@@ -42,13 +36,15 @@ impl BotCommand for JoinCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for JoinCommand {
-    type Msg = JoinCommandMsg;
+impl Message<ActorUpdateMessage> for JoinCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        tokio::runtime::Handle::current().block_on(async {
-            self.handle_message(message).await;
-        });
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        self.handle_message(message).await;
     }
 }
 
@@ -60,12 +56,12 @@ impl JoinCommand {
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
-                return self.usage(&message);
+                return self.join_usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap().parse::<i32>();
             if activity_id.is_err() {
-                return self.usage(&message);
+                return self.join_usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap();
@@ -78,7 +74,8 @@ impl JoinCommand {
 
                 if planned.is_none() {
                     return self
-                        .send_reply(&message, format!("Activity {} was not found.", activity_id));
+                        .send_reply(&message, format!("Activity {} was not found.", activity_id))
+                        .await;
                 }
 
                 let planned = planned.unwrap();
@@ -91,7 +88,9 @@ impl JoinCommand {
                     .expect("Failed to find member");
 
                 if member.is_some() {
-                    return self.send_reply(&message, "You are already part of this group.");
+                    return self
+                        .send_reply(&message, "You are already part of this group.")
+                        .await;
                 }
 
                 // Note: planned.is_full() method needs to be implemented for SeaORM
@@ -110,7 +109,9 @@ impl JoinCommand {
                 // }
 
                 if planned.start < reference_date() - Duration::hours(1) {
-                    return self.send_reply(&message, "You can not join past activities.");
+                    return self
+                        .send_reply(&message, "You can not join past activities.")
+                        .await;
                 }
 
                 let planned_activity_member = plannedactivitymembers::ActiveModel {
@@ -121,7 +122,9 @@ impl JoinCommand {
                 };
 
                 if planned_activity_member.insert(connection).await.is_err() {
-                    return self.send_reply(&message, "Unexpected error saving group joiner");
+                    return self
+                        .send_reply(&message, "Unexpected error saving group joiner")
+                        .await;
                 }
 
                 // join/joined template
@@ -142,10 +145,10 @@ impl JoinCommand {
                 )
                 .expect("Failed to render join joined template");
 
-                self.bot_ref.tell(
-                    SendMessageReply(text, message, Format::Plain, Notify::Off),
-                    None,
-                );
+                let _ = self
+                    .bot_ref
+                    .tell(SendMessageReply(text, message, Format::Plain, Notify::Off))
+                    .await;
             }
         }
     }
