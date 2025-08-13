@@ -64,7 +64,6 @@ impl Related<super::plannedactivities::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-// todo Tera templates
 #[derive(Serialize, Deserialize)]
 pub struct ActivityMemberTemplate {
     pub psn_name: String,
@@ -75,7 +74,12 @@ pub struct ActivityMemberTemplate {
 impl Model {
     #[throws(DbErr)]
     pub async fn format_name(&self, connection: &DatabaseConnection) -> String {
-        let guardian = super::guardians::Entity::find_by_id(self.user_id)
+        Self::format_member_name(connection, self.user_id).await?
+    }
+
+    #[throws(DbErr)]
+    pub async fn format_member_name(connection: &DatabaseConnection, user_id: i32) -> String {
+        let guardian = super::guardians::Entity::find_by_id(user_id)
             .one(connection)
             .await?
             .ok_or(DbErr::RecordNotFound("Guardian not found".to_string()))?;

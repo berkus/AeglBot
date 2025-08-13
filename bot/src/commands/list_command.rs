@@ -34,29 +34,12 @@ impl Message<ActorUpdateMessage> for ListCommand {
 
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
             if let Some(_guardian) = validate_username(&self.bot_ref, &message, connection).await {
-                let upcoming_events = plannedactivities::Entity::find()
-                    .filter(plannedactivities::Column::Start.gt(reference_date()))
-                    .all(connection)
-                    .await
-                    .unwrap_or_default();
+                // let count = self.activity(connection).max_fireteam_size as usize
+                //     - self.members_count(connection);
 
-                // Simplified event data for template - you may want to expand this
-                #[derive(serde::Serialize)]
-                struct EventTemplate {
-                    id: String,
-                    activity_id: String,
-                    start: String,
-                    details: String,
-                }
-
-                let events_data: Vec<_> = upcoming_events
+                let events_data: Vec<_> = PlannedActivity::upcoming_activities(&connection)
                     .iter()
-                    .map(|event| EventTemplate {
-                        id: event.id.to_string(),
-                        activity_id: event.activity_id.to_string(),
-                        start: event.start.to_string(),
-                        details: event.details.clone().unwrap_or_default(),
-                    })
+                    .map(|event| event.to_template(Some(&guardian), &connection))
                     .collect();
 
                 let output = render_template!("list/planned", ("events", &events_data));

@@ -34,15 +34,6 @@ impl ReminderActor {
     }
 }
 
-impl Actor for ReminderActor {
-    type Args = Self;
-    type Error = Infallible;
-
-    async fn on_start(args: Self::Args, _actor_ref: ActorRef<Self>) -> Result<Self, Self::Error> {
-        Ok(args)
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct Reminders;
 
@@ -62,13 +53,40 @@ impl Message<Reminders> for ReminderActor {
         let bot_ref = self.bot_ref.clone();
         let connection = self.connection().clone();
         let lfg_chat = self.lfg_chat;
-        let actor_ref = ctx.actor_ref().clone();
 
-        tokio::spawn(async move {
-            reminder::check(bot_ref, connection, ChatId(lfg_chat)).await;
-            let _ = actor_ref.tell(ScheduleNextMinute).await;
-        });
+        let found = entity::PlannedActivity::upcoming_activities_alert(connection);
+
+        if let Some(upcoming_events) = found {
+            // @Todo: this text should be populated in tera template in `bot`
+            let text = upcoming_events
+                .into_iter()
+                .fold("Activities starting soon:\n\n".to_owned(), |acc, event| {
+                    acc + &format!("Activity {} starting soon\n\n", event.id)
+                });
+
+            bot.tell(SendMessage(
+                text,
+                ChatId(lfg_chat),
+                Format::Html,
+                Notify::On,
+            ))
+            .await;
+        }
+
+        ctx.actor_ref().tell(ScheduleNextMinute).await;
     }
+}
+
+// 1. Daily resets at 20:00 MSK (17:00 UTC) every day
+#[throws(kameo::error::SendError<crate::bot_actor::SendMessage>)]
+pub async fn daily_reset(bot: ActorRef<crate::bot_actor::BotActor>, lfg_chat: ChatId) {
+    bot.tell(SendMessage(
+        "⚡️ Daily reset".into(),
+        lfg_chat,
+        Format::Plain,
+        Notify::Off,
+    ))
+    .await?;
 }
 
 impl Message<DailyReset> for ReminderActor {
@@ -79,10 +97,26 @@ impl Message<DailyReset> for ReminderActor {
         _msg: DailyReset,
         ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        destiny_schedule::daily_reset(self.bot_ref.clone(), ChatId(self.lfg_chat)).await?;
+        daily_reset(self.bot_ref.clone(), ChatId(self.lfg_chat)).await?;
         ctx.actor_ref().tell(ScheduleNextDay).await?;
         Ok(())
     }
+}
+
+// 2. Weekly (main) resets at 20:00 msk every Tue
+// 6. On main reset: change in Dreaming City curse
+//    dreaming city on 3-week schedule
+// 7. On main reset: change in Dreaming City Ascendant Challenges
+//    dreaming city challenges on 6-week schedule
+#[throws(kameo::error::SendError<crate::bot_actor::SendMessage>)]
+pub async fn major_weekly_reset(bot: ActorRef<crate::bot_actor::BotActor>, lfg_chat: ChatId) {
+    let msg = format!(
+        "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
+        d1week = this_week_in_d1(),
+        d2week = this_week_in_d2(),
+    );
+    bot.tell(SendMessage(msg, lfg_chat, Format::Markdown, Notify::Off))
+        .await?;
 }
 
 impl Message<WeeklyReset> for ReminderActor {
@@ -93,7 +127,7 @@ impl Message<WeeklyReset> for ReminderActor {
         _msg: WeeklyReset,
         ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        destiny_schedule::major_weekly_reset(self.bot_ref.clone(), ChatId(self.lfg_chat)).await?;
+        major_weekly_reset(self.bot_ref.clone(), ChatId(self.lfg_chat)).await?;
         ctx.actor_ref().tell(ScheduleNextWeek).await?;
         Ok(())
     }
@@ -119,14 +153,13 @@ impl Message<ScheduleNextMinute> for ReminderActor {
         let target_time = (reference_date() + chrono::Duration::minutes(1))
             .with_second(0)
             .unwrap();
-        let actor_ref = ctx.actor_ref().clone();
 
         let now = std::time::SystemTime::now();
         let target_system_time =
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            let _ = actor_ref.tell(Reminders).await;
+            ctx.actor_ref().tell(Reminders).await;
         }
     }
 }
@@ -139,14 +172,13 @@ impl Message<ScheduleNextDay> for ReminderActor {
         ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
         let target_time = start_at_time(reference_date(), d2_reset_time());
-        let actor_ref = ctx.actor_ref().clone();
 
         let now = std::time::SystemTime::now();
         let target_system_time =
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            let _ = actor_ref.tell(DailyReset).await;
+            ctx.actor_ref().tell(DailyReset).await;
         }
     }
 }
@@ -160,14 +192,13 @@ impl Message<ScheduleNextWeek> for ReminderActor {
     ) -> Self::Reply {
         let target_time =
             start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time());
-        let actor_ref = ctx.actor_ref().clone();
 
         let now = std::time::SystemTime::now();
         let target_system_time =
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            let _ = actor_ref.tell(WeeklyReset).await;
+            ctx.actor_ref().tell(WeeklyReset).await;
         }
     }
 }

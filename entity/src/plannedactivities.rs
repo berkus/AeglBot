@@ -4,7 +4,14 @@
 //-------------------------------------------------------------------------------------------------
 
 use {
+    crate::{
+        guardians,
+        plannedactivitymembers::{self, ActivityMemberTemplate},
+    },
+    chrono::Duration,
     culpa::throws,
+    futures::future::try_join_all,
+    libbot::datetime::{format_start_time, reference_date},
     sea_orm::{entity::prelude::*, QueryOrder},
 };
 
@@ -73,141 +80,203 @@ impl Related<super::plannedactivitymembers::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
+// Output information
+#[derive(serde::Serialize)]
+pub struct PlannedActivityTemplate {
+    pub id: i32,
+    pub name: String,
+    pub details: String,
+    pub members: Vec<ActivityMemberTemplate>,
+    pub count: usize,
+    pub time: String,
+    pub fireteam_full: bool,
+    pub fireteam_joined: bool,
+    pub join_link: String,
+    pub leave_link: String,
+}
+
+impl Entity {
+    pub async fn upcoming_activities(connection: &DatabaseConnection) -> Vec<Model> {
+        Self::find()
+            .filter(Column::Start.gt(reference_date() - Duration::minutes(60)))
+            .all(connection)
+            .await
+            .unwrap_or_default()
+    }
+
+    pub async fn upcoming_activities_alert(connection: &DatabaseConnection) -> Option<Vec<Model>> {
+        // log::info!("reminder check at {}", reference_date());
+
+        let reference = reference_date();
+
+        let upcoming_events = Self::find()
+            .filter(Column::Start.gt(reference))
+            .all(connection)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|event| {
+                let event_start: chrono::DateTime<chrono::Utc> = event.start.into();
+                if event_start > reference {
+                    let diff = event_start - reference;
+                    matches!(diff.num_minutes(), 60 | 15 | 0)
+                } else {
+                    false
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if upcoming_events.is_empty() {
+            return None;
+        }
+
+        Some(upcoming_events)
+    }
+}
+
 impl Model {
-    // pub fn to_template(
-    //     &self,
-    //     guardian: Option<&Guardian>,
-    //     connection: &DatabaseConnection,
-    // ) -> PlannedActivityTemplate {
-    //     let activity = self.activity(connection);
+    #[throws(sea_orm::DbErr)]
+    pub async fn to_template(
+        &self,
+        guardian: Option<&guardians::Model>,
+        connection: &DatabaseConnection,
+    ) -> PlannedActivityTemplate {
+        let activity = self.activity(connection).await?.unwrap(); // use Relation
 
-    //     let count = activity.max_fireteam_size as usize - self.members_count(connection);
+        let count = activity.max_fireteam_size as usize - self.members_count(connection).await?;
 
-    //     PlannedActivityTemplate {
-    //         id: self.id,
-    //         name: activity.format_name(),
-    //         details: self.format_details(),
-    //         members: self
-    //             .members(connection)
-    //             .into_iter()
-    //             .map(|m| m.to_template(connection))
-    //             .collect(),
-    //         count,
-    //         time: format_start_time(self.start, reference_date()),
-    //         fireteam_full: count == 0,
-    //         join_link: self.join_prompt(connection),
-    //         fireteam_joined: self.find_member(connection, guardian).is_some(),
-    //         leave_link: self.cancel_link(),
-    //     }
-    // }
+        let members = self
+            .members(connection)
+            .await?
+            .into_iter()
+            .map(|m| m.to_template(connection));
+        let members = try_join_all(members).await?;
 
-    // // @fixme: that should be on Entity?
-    // pub async fn upcoming_activities(connection: &DatabaseConnection) -> Vec<PlannedActivity> {
-    //     use crate::{datetime::nowtz, schema::plannedactivities::dsl::*};
+        PlannedActivityTemplate {
+            id: self.id,
+            name: activity.format_name(),
+            details: self.format_details(),
+            members,
+            count,
+            time: format_start_time(self.start.into(), reference_date()),
+            fireteam_full: count == 0,
+            join_link: self.join_prompt(connection).await?,
+            fireteam_joined: self.find_member(connection, guardian).await?.is_some(),
+            leave_link: self.cancel_link(),
+        }
+    }
 
-    //     plannedactivities::Entity::find()
-    //         .cursor_by(PlannedActivity::Column::Start)
-    //         .after(nowtz() - 60_i32.minutes())
-    //         .all(&connection)
-    //         .await?
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn author(&self, connection: &DatabaseConnection) -> Option<guardians::Model> {
+        self.find_related(crate::guardians::Entity)
+            .one(connection)
+            .await?
+    }
 
-    // pub fn author(&self, connection: &DatabaseConnection) -> Option<Guardian> {
-    //     Guardian::find_one(connection, &self.author_id)
-    //         .expect("Failed to load PlannedActivity author")
-    // }
-
-    // pub fn activity(&self, connection: &DatabaseConnection) -> Activity {
-    //     Activity::find_one(connection, &self.activity_id)
-    //         .expect("Failed to load associated Activity")
-    //         .expect("PlannedActivity without Activity shouldn't exist")
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn activity(
+        &self,
+        connection: &DatabaseConnection,
+    ) -> Option<crate::activities::Model> {
+        self.find_related(crate::activities::Entity)
+            .one(connection)
+            .await?
+    }
 
     #[throws(sea_orm::DbErr)]
     pub async fn members(
         &self,
         connection: &DatabaseConnection,
     ) -> Vec<super::plannedactivitymembers::Model> {
-        super::plannedactivitymembers::Entity::find()
-            .filter(crate::plannedactivitymembers::Column::PlannedActivityId.eq(self.id))
+        self.find_related(crate::plannedactivitymembers::Entity)
             .order_by_asc(crate::plannedactivitymembers::Column::Added)
             .all(connection)
             .await?
     }
 
-    // pub fn members_count(&self, connection: &DatabaseConnection) -> usize {
-    //     //@TODO replace with proper diesel query
-    //     self.members(connection).len()
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn members_count(&self, connection: &DatabaseConnection) -> usize {
+        //@TODO replace with proper count(*) query
+        self.members(connection).await?.len()
+    }
 
-    // pub fn join_link(&self) -> String {
-    //     format!("/join{}", self.id)
-    // }
+    pub fn join_link(&self) -> String {
+        format!("/join{}", self.id)
+    }
 
-    // pub fn cancel_link(&self) -> String {
-    //     format!("/cancel{}", self.id)
-    // }
+    pub fn cancel_link(&self) -> String {
+        format!("/cancel{}", self.id)
+    }
 
-    // pub fn join_prompt(&self, connection: &DatabaseConnection) -> String {
-    //     if self.is_full(connection) {
-    //         "This activity fireteam is full.".into()
-    //     } else {
-    //         let count = self.activity(connection).max_fireteam_size as usize
-    //             - self.members_count(connection);
-    //         format!(
-    //             "Enter `{joinLink}` to join this group. Up to {count} more can join.",
-    //             joinLink = self.join_link(),
-    //             count = count
-    //         )
-    //     }
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn join_prompt(&self, connection: &DatabaseConnection) -> String {
+        if self.is_full(connection).await? {
+            "This activity fireteam is full.".into()
+        } else {
+            let count = self.activity(connection).await?.unwrap().max_fireteam_size as usize
+                - self.members_count(connection).await?;
+            format!(
+                "Enter `{joinLink}` to join this group. Up to {count} more can join.",
+                joinLink = self.join_link(),
+                count = count
+            )
+        }
+    }
 
-    // pub fn is_full(&self, connection: &DatabaseConnection) -> bool {
-    //     self.members(connection).len() >= self.activity(connection).max_fireteam_size as usize
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn is_full(&self, connection: &DatabaseConnection) -> bool {
+        self.members_count(connection).await?
+            >= self.activity(connection).await?.unwrap().max_fireteam_size as usize
+    }
 
-    // pub fn requires_more_members(&self, connection: &DatabaseConnection) -> bool {
-    //     self.members(connection).len() < self.activity(connection).min_fireteam_size as usize
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn requires_more_members(&self, connection: &DatabaseConnection) -> bool {
+        self.members_count(connection).await?
+            < self.activity(connection).await?.unwrap().min_fireteam_size as usize
+    }
 
-    // pub fn format_details(&self) -> String {
-    //     self.details.clone().map(|s| s + "\n").unwrap_or_default()
-    // }
+    pub fn format_details(&self) -> String {
+        self.details.clone().map(|s| s + "\n").unwrap_or_default()
+    }
 
-    // pub fn members_formatted(&self, connection: &DatabaseConnection, joiner: &str) -> String {
-    //     self.members(connection)
-    //         .into_iter()
-    //         .map(|guardian| guardian.format_name(connection))
-    //         .collect::<Vec<String>>()
-    //         .as_slice()
-    //         .join(joiner)
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn members_formatted(&self, connection: &DatabaseConnection, joiner: &str) -> String {
+        use futures::future::try_join_all;
 
-    // pub fn members_formatted_list(&self, connection: &DatabaseConnection) -> String {
-    //     self.members_formatted(connection, ", ")
-    // }
+        let members = self.members(connection).await?;
+        let futures = members.into_iter().map(|guardian| {
+            crate::plannedactivitymembers::Model::format_member_name(connection, guardian.user_id)
+        });
+        let names: Vec<String> = try_join_all(futures).await?;
+        names.join(joiner)
+    }
 
-    // pub fn members_formatted_column(&self, connection: &DatabaseConnection) -> String {
-    //     self.members_formatted(connection, "\n")
-    // }
+    #[throws(sea_orm::DbErr)]
+    pub async fn members_formatted_list(&self, connection: &DatabaseConnection) -> String {
+        self.members_formatted(connection, ", ").await?
+    }
 
-    // // This should be on Entity?
-    // pub fn find_member(
-    //     &self,
-    //     connection: &DatabaseConnection,
-    //     guardian: Option<&Guardian>,
-    // ) -> Option<PlannedActivityMember> {
-    //     use crate::schema::plannedactivitymembers::dsl::*;
+    #[throws(sea_orm::DbErr)]
+    pub async fn members_formatted_column(&self, connection: &DatabaseConnection) -> String {
+        self.members_formatted(connection, "\n").await?
+    }
 
-    //     guardian.and_then(|g| {
-    //         plannedactivitymembers
-    //             .filter(user_id.eq(g.id))
-    //             .filter(planned_activity_id.eq(self.id))
-    //             .first::<PlannedActivityMember>(connection)
-    //             .optional()
-    //             .expect("Failed to run SQL")
-    //     })
-    // }
+    // This should be on Entity?
+    #[throws(sea_orm::DbErr)]
+    pub async fn find_member(
+        &self,
+        connection: &DatabaseConnection,
+        guardian: Option<&guardians::Model>,
+    ) -> Option<plannedactivitymembers::Model> {
+        if let Some(g) = guardian {
+            return plannedactivitymembers::Entity::find()
+                .filter(plannedactivitymembers::Column::Id.eq(g.id))
+                .filter(plannedactivitymembers::Column::PlannedActivityId.eq(self.id))
+                .one(connection)
+                .await?;
+        }
+        None
+    }
 
     // // Makes a telegram Html formatted display.
     // pub fn to_string(&self, connection: &DatabaseConnection, g: Option<&Guardian>) -> String {
