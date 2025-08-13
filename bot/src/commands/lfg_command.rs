@@ -8,7 +8,6 @@ use {
     entity::{activities, activityshortcuts, plannedactivities, plannedactivitymembers},
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
-    two_timer::parse,
 };
 
 command_actor!(LfgCommand, [ActorUpdateMessage]);
@@ -96,7 +95,10 @@ impl LfgCommand {
                         .await;
                 }
                 // Parse input in MSK timezone...
-                let start_time = parse(timespec, None);
+                let start_time = two_timer::parse(
+                    timespec,
+                    Some(two_timer::Config::new().default_to_past(false)),
+                );
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
