@@ -10,7 +10,6 @@ use {
     entity::{activityshortcuts, plannedactivities},
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
-    two_timer::parse,
 };
 
 command_actor!(EditCommand, [ActorUpdateMessage]);
@@ -109,20 +108,18 @@ impl EditCommand {
                     "time" => {
                         let timespec = args[2];
                         let now = Local::now().with_timezone(&Moscow);
-                        let start_time = match parse(
-                            timespec,
-                            Some(two_timer::Config::new().now(now.naive_local())),
-                        ) {
-                            Ok((start, _end, _found)) => start.and_utc(),
-                            Err(_) => {
-                                return self
-                                    .send_reply(
-                                        &message,
-                                        format!("Failed to parse time {}", timespec),
-                                    )
-                                    .await;
-                            }
-                        };
+                        let start_time =
+                            match two_timer::parse(timespec, two_timer::Config::new(now)) {
+                                Ok((start, _end, _found)) => start, //.and_utc(),
+                                Err(_) => {
+                                    return self
+                                        .send_reply(
+                                            &message,
+                                            format!("Failed to parse time {}", timespec),
+                                        )
+                                        .await;
+                                }
+                            };
 
                         log::info!("...parsed `{:?}`", start_time);
 
@@ -133,7 +130,8 @@ impl EditCommand {
                         }
 
                         let mut planned: plannedactivities::ActiveModel = planned.into();
-                        planned.start = Set(start_time.into());
+                        let offset = start_time.offset().fix();
+                        planned.start = Set(start_time.with_timezone(&offset));
 
                         if planned.update(connection).await.is_err() {
                             return self

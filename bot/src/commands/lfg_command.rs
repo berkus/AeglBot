@@ -5,6 +5,8 @@ use {
         datetime::{format_start_time, reference_date},
         BotCommand,
     },
+    chrono::Local,
+    chrono_tz::Europe::Moscow,
     entity::{activities, activityshortcuts, plannedactivities, plannedactivitymembers},
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
@@ -94,11 +96,10 @@ impl LfgCommand {
                         )
                         .await;
                 }
+                let now = Local::now().with_timezone(&Moscow);
                 // Parse input in MSK timezone...
-                let start_time = two_timer::parse(
-                    timespec,
-                    Some(two_timer::Config::new().default_to_past(false)),
-                );
+                let start_time =
+                    two_timer::parse(timespec, two_timer::Config::new(now).default_to_past(false));
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
@@ -108,16 +109,19 @@ impl LfgCommand {
                 }
 
                 // ...then convert back to UTC.
-                let start_time = start_time.unwrap().0.and_utc();
+                let start_time = start_time.unwrap().0; //.and_utc();
 
                 let act = act.unwrap();
 
                 log::info!("...parsed `{:?}`", start_time);
 
+                use chrono::Offset;
+                let offset = start_time.offset().fix();
+
                 let planned_activity = plannedactivities::ActiveModel {
                     author_id: Set(guardian.id),
                     activity_id: Set(act.link),
-                    start: Set(start_time.into()),
+                    start: Set(start_time.with_timezone(&offset)),
                     ..Default::default()
                 };
 
@@ -153,7 +157,7 @@ impl LfgCommand {
 Enter `/edit{actId} details <free form description text>` to specify more details about the event.",
                         guarName = guardian,
                         groupName = activity.format_name(),
-                        onTime = format_start_time(start_time, reference_date()),
+                        onTime = format_start_time(start_time.to_utc(), reference_date()),
                         actId = planned_activity.id
                     ),
                 )
