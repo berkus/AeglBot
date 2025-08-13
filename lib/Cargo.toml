@@ -1,0 +1,15 @@
+[package]
+authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
+edition = "2021"
+name = "libbot"
+version = "0.4.0"
+publish = false
+
+[lib]
+name = "libbot"
+
+[dependencies]
+chrono.workspace = true
+chrono-tz.workspace = true
+culpa.workspace = true
+# entity.workspace = true

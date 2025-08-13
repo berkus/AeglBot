@@ -28,9 +28,11 @@ dependencies = [
  "dotenv",
  "entity",
  "fern",
+ "futures",
  "include_dir",
  "itertools 0.14.0",
  "kameo",
+ "libbot",
  "log",
  "migration",
  "paste",
@@ -789,6 +791,8 @@ dependencies = [
  "chrono",
  "culpa",
  "dotenv",
+ "futures",
+ "libbot",
  "regex",
  "sea-orm",
  "serde",
@@ -1584,6 +1588,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 dependencies = [
  "spin",
+]
+
+[[package]]
+name = "libbot"
+version = "0.4.0"
+dependencies = [
+ "chrono",
+ "chrono-tz 0.10.4",
+ "culpa",
 ]
 
 [[package]]

@@ -8,10 +8,8 @@ use {
     std::{error::Error, fmt::Write},
 };
 
-pub mod bot_actor;
+pub mod actors;
 pub mod commands;
-pub mod datetime;
-pub mod services;
 
 static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates"));
