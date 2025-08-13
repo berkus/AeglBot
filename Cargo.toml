@@ -35,7 +35,7 @@ sea-orm-migration = { version = "1.1", features = [
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 teloxide = { version = "0.13", features = ["macros"] }
-two_timer = "2.2"
+two_timer = "2.2" # doesn't parse "in 3 hours"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 tera = "1"
