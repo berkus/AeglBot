@@ -7,6 +7,7 @@
 use {
     culpa::throws,
     sea_orm::{DatabaseConnection, DbErr},
+    std::{error::Error, fmt::Write},
 };
 
 pub mod bot_actor;
@@ -32,6 +33,16 @@ pub(crate) static TEMPLATES: std::sync::LazyLock<tera::Tera> = std::sync::LazyLo
     tera
 });
 
+pub fn error_chain_to_string(err: &dyn Error) -> String {
+    let mut result = format!("Error: {}", err);
+    let mut current = err.source();
+    while let Some(source) = current {
+        write!(&mut result, "\n- caused by: {}", source).unwrap();
+        current = source.source();
+    }
+    result
+}
+
 #[allow(
     clippy::crate_in_macro_def,
     reason = "We refer to this specific TEMPLATES instance in this specific crate"
@@ -41,7 +52,7 @@ macro_rules! render_template {
     ($template:expr) => {
         {
             crate::TEMPLATES.render($template, &tera::Context::new())
-                .map_err(|e| format!("Failed to render template '{}': {}", $template, e))
+                .map_err(|e| format!("{}", crate::error_chain_to_string(&e)))
         }
     };
     ($template:expr, $(($key:expr,$value:expr)),+) => {
@@ -51,7 +62,7 @@ macro_rules! render_template {
                 context.insert($key, $value);
             )*
             crate::TEMPLATES.render($template, &context)
-                .map_err(|e| format!("Failed to render template '{}': {}", $template, e))
+                .map_err(|e| format!("{}", crate::error_chain_to_string(&e)))
         }
     };
 }

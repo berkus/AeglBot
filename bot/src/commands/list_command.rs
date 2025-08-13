@@ -59,8 +59,13 @@ impl Message<ActorUpdateMessage> for ListCommand {
                     })
                     .collect();
 
-                let output = render_template!("list/planned", ("events", &events_data))
-                    .expect("Rendering failed");
+                let output = render_template!("list/planned", ("events", &events_data));
+
+                let output = if output.is_err() {
+                    output.unwrap_err()
+                } else {
+                    output.unwrap()
+                };
 
                 self.send_reply_with_format(&message, output, Format::Html)
                     .await;
