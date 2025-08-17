@@ -5,10 +5,11 @@ use {
         render_template_or_err, BotCommand,
     },
     chrono::Duration,
+    culpa::throws,
     entity::{plannedactivities, plannedactivitymembers},
     kameo::message::Context,
     libbot::datetime::{format_start_time, reference_date},
-    sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter},
+    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 command_actor!(CancelCommand, [ActorUpdateMessage]);
@@ -31,13 +32,10 @@ impl BotCommand for CancelCommand {
 }
 
 impl Message<ActorUpdateMessage> for CancelCommand {
-    type Reply = ();
+    type Reply = anyhow::Result<()>;
 
-    async fn handle(
-        &mut self,
-        message: ActorUpdateMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    #[throws(anyhow::Error)]
+    async fn handle(&mut self, message: ActorUpdateMessage, _ctx: &mut Context<Self, Self::Reply>) {
         let connection = self.connection();
 
         if let (Some(_), activity_id) =
@@ -77,15 +75,15 @@ impl Message<ActorUpdateMessage> for CancelCommand {
 
                 if member.is_none() {
                     return self
-                        .send_reply(&message, "You are not part of this group.".to_string())
+                        .send_reply(&message, "❌ You are not a part of this group.")
                         .await;
                 }
 
                 if chrono::DateTime::<chrono::Utc>::from(planned.start)
-                    < reference_date() + Duration::hours(1)
+                    < reference_date() - Duration::hours(1)
                 {
                     return self
-                        .send_reply(&message, "You can not leave past activities.".to_string())
+                        .send_reply(&message, "❌ You can not leave past activities.")
                         .await;
                 }
 
@@ -98,19 +96,17 @@ impl Message<ActorUpdateMessage> for CancelCommand {
                     .is_err()
                 {
                     return self
-                        .send_reply(&message, "Failed to remove group member".to_string())
+                        .send_reply(&message, "❌ Failed to remove group member".to_string())
                         .await;
                 }
 
-                // TODO: Claude butchered code here too..
-                // Get activity name - simplified for now
-                let act_name = format!("Activity {}", planned.activity_id);
+                let act_name = planned.activity(connection).await?.unwrap().format_name();
                 let act_time = decapitalize(&format_start_time(
                     chrono::DateTime::<chrono::Utc>::from(planned.start),
                     reference_date(),
                 ));
 
-                let suffix = if remaining_members == 0 {
+                let suffix = if planned.members_count(connection).await? == 0 {
                     if plannedactivities::Entity::delete_by_id(activity_id)
                         .exec(connection)
                         .await
@@ -120,22 +116,23 @@ impl Message<ActorUpdateMessage> for CancelCommand {
                             .send_reply(&message, "Failed to remove planned activity".to_string())
                             .await;
                     }
-                    "This fireteam is disbanded and can no longer be joined.".into()
+                    render_template_or_err!("cancel/disbanded")
                 } else {
                     format!(
-                        "{} members remaining\nJoin with /join{}",
-                        remaining_members, activity_id
+                        "{} are going\n{}",
+                        planned.members_formatted_list(connection).await?,
+                        planned.join_prompt(connection).await?
                     )
                 };
 
                 self.send_reply(
                     &message,
-                    format!(
-                        "{guarName} has left {actName} group {actTime}\n{suffix}",
-                        guarName = guardian.telegram_name,
-                        actName = act_name,
-                        actTime = act_time,
-                        suffix = suffix
+                    render_template_or_err!(
+                        "cancel/left",
+                        ("guardian_name", &guardian.telegram_name),
+                        ("activity_name", &act_name),
+                        ("activity_time", &act_time),
+                        ("suffix", &suffix)
                     ),
                 )
                 .await;
