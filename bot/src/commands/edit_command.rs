@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{match_command, validate_username},
-        BotCommand,
+        render_template_or_err, BotCommand,
     },
     chrono::{prelude::*, Duration},
     chrono_tz::Europe::Moscow,
@@ -15,23 +15,9 @@ use {
 command_actor!(EditCommand, [ActorUpdateMessage]);
 
 impl EditCommand {
-    async fn edit_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "Edit command help:
-/edit ActivityID time <new time>
-    Change scheduled time for activity. Time format examples:
-    \"tomorrow at 21:00\" or \"Friday at 9 pm\" or \"21:00\"
-
-/edit ActivityID details <new description>
-    Change details/description for activity.
-    Use 'delete' as description to remove details.
-
-/edit ActivityID activity <new activity shortcut>
-    Change type of activity, list of shortcuts
-    is available from output of /activities command",
-        )
-        .await;
+    async fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(message, render_template_or_err!("edit/usage"))
+            .await;
     }
 }
 
@@ -53,25 +39,19 @@ impl Message<ActorUpdateMessage> for EditCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl EditCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
 
         if let (Some(_), args) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if args.is_none() {
-                return self.edit_usage(&message).await;
+                return self.usage(&message).await;
             }
             let args = args.unwrap();
 
             let args: Vec<_> = args.splitn(3, ' ').collect();
             if args.len() != 3 {
-                return self.edit_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             if validate_username(&self.bot_ref, &message, connection)
@@ -190,7 +170,7 @@ impl EditCommand {
                         self.send_reply(&message, "Activity type updated.").await;
                     }
                     _ => {
-                        self.edit_usage(&message).await;
+                        self.usage(&message).await;
                     }
                 }
             }

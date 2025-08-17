@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        BotCommand,
+        render_template_or_err, BotCommand,
     },
     chrono::Local,
     chrono_tz::Europe::Moscow,
@@ -16,15 +16,8 @@ command_actor!(LfgCommand, [ActorUpdateMessage]);
 
 impl LfgCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply_with_format(
-            message,
-            "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
-For a list of activity codes: /activities
-Example: /lfg kf 2018-09-10 23:00
-Times are in Moscow (MSK) timezone.",
-            Format::Html,
-        )
-        .await;
+        self.send_reply_with_format(message, render_template_or_err!("lfg/usage"), Format::Html)
+            .await;
     }
 }
 
@@ -46,12 +39,6 @@ impl Message<ActorUpdateMessage> for LfgCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl LfgCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
 
         if let (Some(_), args) =
@@ -90,7 +77,7 @@ impl LfgCommand {
                         .send_reply(
                             &message,
                             format!(
-                                "Activity {} was not found. Use /activities to see the list.",
+                                "❌ Activity {} was not found. Use /activities to see the list.",
                                 activity
                             ),
                         )
@@ -104,7 +91,7 @@ impl LfgCommand {
 
                 if start_time.is_err() {
                     return self
-                        .send_reply(&message, format!("Failed to parse time {}", timespec))
+                        .send_reply(&message, format!("❌ Failed to parse time {}", timespec))
                         .await;
                 }
 
@@ -152,13 +139,15 @@ impl LfgCommand {
 
                 self.send_reply(
                     &message,
-                    format!(
-                        "{guarName} is looking for {groupName} group {onTime}
-Enter `/edit{actId} details <free form description text>` to specify more details about the event.",
-                        guarName = guardian,
-                        groupName = activity.format_name(),
-                        onTime = format_start_time(start_time.to_utc(), reference_date()),
-                        actId = planned_activity.id
+                    render_template_or_err!(
+                        "lfg/created",
+                        ("guarName", &guardian.to_string()),
+                        ("groupName", &activity.format_name()),
+                        (
+                            "onTime",
+                            &format_start_time(start_time.to_utc(), reference_date())
+                        ),
+                        ("actId", &planned_activity.id)
                     ),
                 )
                 .await;

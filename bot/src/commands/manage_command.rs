@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command},
-        BotCommand,
+        render_template_or_err, BotCommand,
     },
     entity::guardians,
     sea_orm::{ActiveModelTrait, Set},
@@ -18,6 +18,13 @@ use {
 // struct RemoveAdminSubcommand;
 
 command_actor!(ManageCommand, [ActorUpdateMessage]);
+
+impl ManageCommand {
+    async fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(message, render_template_or_err!("manage/usage"))
+            .await;
+    }
+}
 
 impl BotCommand for ManageCommand {
     fn prefix() -> &'static str {
@@ -45,13 +52,13 @@ impl Message<ActorUpdateMessage> for ManageCommand {
             let admin = admin_check(&self.bot_ref, &message, connection).await;
 
             if admin.is_none() {
-                return self.send_reply(&message, "You are not admin").await;
+                return self.send_reply(&message, "❌ You are not admin").await;
             }
 
             // let _admin = admin.unwrap();
 
             if args.is_none() {
-                return self.manage_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             // Split args in two:
@@ -61,7 +68,7 @@ impl Message<ActorUpdateMessage> for ManageCommand {
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
             if args.is_empty() {
-                return self.manage_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let subcommand = args[0];
@@ -93,23 +100,6 @@ impl Message<ActorUpdateMessage> for ManageCommand {
             //            return AddAdminSubcommand::execute();
             //        }
         }
-    }
-}
-
-impl ManageCommand {
-    async fn manage_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "Manage command help:
-
-/manage list-admins
-    List currently registered admins.
-/manage add-admin <id|@telegram|PSN>
-    Grant admin rights to guardian.
-/manage remove-admin <id|@telegram|PSN>
-    Remove admin rights from guardian",
-        )
-        .await;
     }
 }
 
@@ -166,18 +156,18 @@ impl ManageCommand {
         let admin = admin_check(&self.bot_ref, message, connection).await;
 
         if admin.is_none() {
-            return self.send_reply(message, "You are not admin").await;
+            return self.send_reply(message, "❌ You are not admin").await;
         }
 
         let admin = admin.unwrap();
 
         if !admin.is_superadmin {
-            return self.send_reply(message, "You are not superadmin").await;
+            return self.send_reply(message, "❌ You are not superadmin").await;
         }
 
         if args.is_none() {
             return self
-                .send_reply(message, "Specify a guardian to promote to admin")
+                .send_reply(message, "❌ Specify a guardian to promote to admin")
                 .await;
         }
 
@@ -191,7 +181,7 @@ impl ManageCommand {
 
                 if guardian.is_admin {
                     return self
-                        .send_reply(message, format!("@{} is already an admin", &tg_name))
+                        .send_reply(message, format!("✅ @{} is already an admin", &tg_name))
                         .await;
                 }
 
@@ -202,15 +192,15 @@ impl ManageCommand {
                     return self.send_reply(message, "Error updating guardian").await;
                 }
 
-                self.send_reply(message, format!("@{} is now an admin!", &tg_name))
+                self.send_reply(message, format!("✅ @{} is now an admin!", &tg_name))
                     .await;
             }
             Ok(None) => {
-                self.send_reply(message, format!("Guardian {} was not found.", &name))
+                self.send_reply(message, format!("❌ Guardian {} was not found.", &name))
                     .await;
             }
             Err(_) => {
-                self.send_reply(message, "Error querying guardian name.")
+                self.send_reply(message, "❌ Error querying guardian name.")
                     .await;
             }
         }
@@ -234,18 +224,18 @@ impl ManageCommand {
         let admin = admin_check(&self.bot_ref, message, connection).await;
 
         if admin.is_none() {
-            return self.send_reply(message, "You are not admin").await;
+            return self.send_reply(message, "❌ You are not admin").await;
         }
 
         let admin = admin.unwrap();
 
         if !admin.is_superadmin {
-            return self.send_reply(message, "You are not superadmin").await;
+            return self.send_reply(message, "❌ You are not superadmin").await;
         }
 
         if args.is_none() {
             return self
-                .send_reply(message, "Specify a guardian to demote from admins")
+                .send_reply(message, "❌ Specify a guardian to demote from admins")
                 .await;
         }
 
@@ -259,7 +249,7 @@ impl ManageCommand {
 
                 if !guardian.is_admin {
                     return self
-                        .send_reply(message, format!("@{} is already not an admin", &tg_name))
+                        .send_reply(message, format!("✅ @{} is already not an admin", &tg_name))
                         .await;
                 }
 
@@ -267,7 +257,7 @@ impl ManageCommand {
                     return self
                         .send_reply(
                             message,
-                            format!("@{} is a superadmin, you can not demote.", &tg_name),
+                            format!("❌ @{} is a superadmin, you can not demote.", &tg_name),
                         )
                         .await;
                 }
@@ -279,8 +269,11 @@ impl ManageCommand {
                     return self.send_reply(message, "Error updating guardian").await;
                 }
 
-                self.send_reply(message, format!("@{} is not an admin anymore!", &tg_name))
-                    .await;
+                self.send_reply(
+                    message,
+                    format!("✅ @{} is not an admin anymore!", &tg_name),
+                )
+                .await;
             }
             Ok(None) => {
                 self.send_reply(message, format!("Guardian {} was not found.", &name))

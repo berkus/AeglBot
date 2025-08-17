@@ -21,8 +21,7 @@ impl Message<ActorUpdateMessage> for ChatidCommand {
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            let _ = self
-                .send_reply(&msg, format!("ChatId: {}", msg.update.chat.id))
+            self.send_reply(&msg, format!("Current chat id: {}", msg.update.chat.id))
                 .await;
         }
     }

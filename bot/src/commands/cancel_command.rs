@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{decapitalize, match_command, validate_username},
-        BotCommand,
+        render_template_or_err, BotCommand,
     },
     chrono::Duration,
     entity::{plannedactivities, plannedactivitymembers},
@@ -15,11 +15,8 @@ command_actor!(CancelCommand, [ActorUpdateMessage]);
 
 impl CancelCommand {
     async fn cancel_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "Cancel command help:\n\n/cancel ActivityID\n    Leave planned activity by its number.",
-        )
-        .await;
+        self.send_reply(message, render_template_or_err!("cancel/usage"))
+            .await;
     }
 }
 
@@ -41,12 +38,6 @@ impl Message<ActorUpdateMessage> for CancelCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl CancelCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
 
         if let (Some(_), activity_id) =
@@ -111,6 +102,7 @@ impl CancelCommand {
                         .await;
                 }
 
+                // TODO: Claude butchered code here too..
                 // Get activity name - simplified for now
                 let act_name = format!("Activity {}", planned.activity_id);
                 let act_time = decapitalize(&format_start_time(

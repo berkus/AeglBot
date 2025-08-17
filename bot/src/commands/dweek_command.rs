@@ -29,8 +29,7 @@ impl Message<ActorUpdateMessage> for D1weekCommand {
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            let _ = self
-                .send_reply_with_format(&message, this_week_in_d1(), Format::Markdown)
+            self.send_reply_with_format(&message, this_week_in_d1(), Format::Markdown)
                 .await;
         }
     }

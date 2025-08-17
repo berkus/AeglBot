@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command, validate_username},
-        BotCommand,
+        render_template_or_err, BotCommand,
     },
     entity::guardians,
     kameo::message::Context,
@@ -12,15 +12,9 @@ use {
 command_actor!(EditGuardianCommand, [ActorUpdateMessage]);
 
 impl EditGuardianCommand {
-    async fn editguar_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "Edit guardian command help:
-
-/editguar @Telegram NewPsnName
-    Change a guardian's PSN name (admin-only).",
-        )
-        .await;
+    async fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(message, render_template_or_err!("editguar/usage"))
+            .await;
     }
 }
 
@@ -42,19 +36,13 @@ impl Message<ActorUpdateMessage> for EditGuardianCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl EditGuardianCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
 
         if let (Some(_), args) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if args.is_none() {
-                return self.editguar_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             // Split args in two or three:
@@ -65,7 +53,7 @@ impl EditGuardianCommand {
             let args: Vec<&str> = args.splitn(3, ' ').collect();
 
             if args.is_empty() || args.len() == 2 {
-                return self.editguar_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let name = args[0];
@@ -80,19 +68,19 @@ impl EditGuardianCommand {
                 let admin = admin_check(&self.bot_ref, &message, connection).await;
 
                 if admin.is_none() {
-                    return self.send_reply(&message, "You are not admin").await;
+                    return self.send_reply(&message, "❌ You are not admin").await;
                 }
 
                 let guardian = guardian_lookup(name, connection).await;
                 let guardian = match guardian {
                     Ok(Some(guardian)) => Some(guardian),
                     Ok(None) => {
-                        self.send_reply(&message, format!("Guardian {} was not found.", &name))
+                        self.send_reply(&message, format!("❌ Guardian {} was not found.", &name))
                             .await;
                         None
                     }
                     Err(_) => {
-                        self.send_reply(&message, "Error querying guardian by name.")
+                        self.send_reply(&message, "❌ Error querying guardian by name.")
                             .await;
                         None
                     }
@@ -132,9 +120,10 @@ impl EditGuardianCommand {
                     let mut guardian: guardians::ActiveModel = guardian.into();
                     guardian.psn_name = Set(value.to_string());
                     if guardian.update(connection).await.is_err() {
-                        return self.send_reply(&message, "Failed to update PSN").await;
+                        return self.send_reply(&message, "❌ Failed to update PSN").await;
                     }
-                    self.send_reply(&message, "PSN updated successfully").await;
+                    self.send_reply(&message, "✅ PSN updated successfully")
+                        .await;
                 }
                 "clan" => {
                     let clan_value = if value == "delete" {
@@ -145,9 +134,9 @@ impl EditGuardianCommand {
                     let mut guardian: guardians::ActiveModel = guardian.into();
                     guardian.psn_clan = Set(clan_value);
                     if guardian.update(connection).await.is_err() {
-                        return self.send_reply(&message, "Failed to update clan").await;
+                        return self.send_reply(&message, "❌ Failed to update clan").await;
                     }
-                    self.send_reply(&message, "Updated guardian clan").await;
+                    self.send_reply(&message, "✅ Updated guardian clan").await;
                 }
                 "email" => {
                     let email_value = if value == "delete" {
@@ -158,12 +147,13 @@ impl EditGuardianCommand {
                     let mut guardian: guardians::ActiveModel = guardian.into();
                     guardian.email = Set(email_value);
                     if guardian.update(connection).await.is_err() {
-                        return self.send_reply(&message, "Failed to update email").await;
+                        return self.send_reply(&message, "❌ Failed to update email").await;
                     }
-                    self.send_reply(&message, "Updated guardian email").await;
+                    self.send_reply(&message, "✅ Updated guardian email").await;
                 }
                 _ => {
-                    self.send_reply(&message, "Unknown information field").await;
+                    self.send_reply(&message, "⁉️ Unknown information field")
+                        .await;
                 }
             }
         }

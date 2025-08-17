@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{admin_check, match_command},
-        BotCommand,
+        render_template_or_err, BotCommand,
     },
     entity::{activities, activityshortcuts},
     itertools::Itertools,
@@ -16,40 +16,9 @@ use {
 command_actor!(ActivitiesCommand, [ActorUpdateMessage]);
 
 impl ActivitiesCommand {
-    async fn activities_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "Activities command help:
-
-/activities
-    Lists all available activities shortcuts.
-
-Admin-only mode:
-
-/activities ids
-    Lists IDs of all activities.
-/activities add KV
-    Create new activity from KV pairs (see below).
-/activities edit ID KV
-    Modify activity with given ID by updating all given KVs.
-/activities addsc ID shortcut <Game Name>
-    Add activity shortcut for activity ID.
-/activities delete ID
-    Remove activity if it doesn't have any activities planned.
-
-KV pairs are space-separated pairs of key=value elements
-String arguments may be in quotes, but this is optional.
-
-Supported KV pairs for add/edit commands:
-
-name=activity name (e.g. Crucible)    <mandatory>
-mode=activity mode (e.g. Iron Banner) <optional>
-min_fireteam_size=n                   <mandatory>
-max_fireteam_size=n                   <mandatory>
-min_light=n                           <optional>
-min_level=n                           <optional>",
-        )
-        .await;
+    async fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(message, render_template_or_err!("activities/usage"))
+            .await;
     }
 }
 
@@ -63,7 +32,9 @@ impl BotCommand for ActivitiesCommand {
     }
 }
 
-// Need to find a way to partially implement the Actor trait here, esp to set up sub-command actors
+// Need to find a way to partially implement the Actor trait here,
+// > esp to set up sub-command actors
+//
 // impl Actor for ActivitiesCommand {
 //     // Create subcommand actors somewhere here...
 //
@@ -84,12 +55,6 @@ impl Message<ActorUpdateMessage> for ActivitiesCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl ActivitiesCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
         if let (Some(_), args) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
@@ -145,7 +110,7 @@ impl ActivitiesCommand {
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
             if args.is_empty() {
-                self.activities_usage(&message).await;
+                self.usage(&message).await;
                 return;
             }
 
@@ -178,7 +143,7 @@ impl ActivitiesCommand {
                     if args.len() < 2 {
                         self.send_reply(&message, "Syntax: /activities add KV")
                             .await;
-                        return self.activities_usage(&message).await;
+                        return self.usage(&message).await;
                     }
 
                     let argmap = parse_kv_args(args[1]);
@@ -333,7 +298,7 @@ impl ActivitiesCommand {
                     if args.len() < 2 {
                         self.send_reply(&message, "Syntax: /activities edit ID KV")
                             .await;
-                        return self.activities_usage(&message).await;
+                        return self.usage(&message).await;
                     }
 
                     let args: Vec<&str> = args[1].splitn(2, ' ').collect();
@@ -441,7 +406,7 @@ impl ActivitiesCommand {
                     if args.len() < 2 {
                         self.send_reply(&message, "Syntax: /activities delete ID")
                             .await;
-                        return self.activities_usage(&message).await;
+                        return self.usage(&message).await;
                     }
 
                     let id = args[1].parse::<i32>();
@@ -480,7 +445,7 @@ impl ActivitiesCommand {
                 _ => {
                     self.send_reply(&message, "Unknown activities operation")
                         .await;
-                    self.activities_usage(&message).await;
+                    self.usage(&message).await;
                 }
             }
         }

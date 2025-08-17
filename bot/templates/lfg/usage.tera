@@ -1,0 +1,4 @@
+LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
+For a list of activity codes: /activities
+Example: /lfg kf 2018-09-10 23:00
+Times are in Moscow (MSK) timezone.

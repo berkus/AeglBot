@@ -1,5 +1,8 @@
 use {
-    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
+    crate::{
+        actors::bot_actor::ActorUpdateMessage, commands::match_command, render_template_or_err,
+        BotCommand,
+    },
     entity::guardians,
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
@@ -8,12 +11,9 @@ use {
 command_actor!(PsnCommand, [ActorUpdateMessage]);
 
 impl PsnCommand {
-    async fn psn_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
-            message,
-            "PSN command help:\n\n/psn <PSN name>\n    Link your Telegram account to your PSN account.",
-        )
-        .await;
+    async fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply(message, render_template_or_err!("psn/usage"))
+            .await;
     }
 }
 
@@ -35,12 +35,6 @@ impl Message<ActorUpdateMessage> for PsnCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl PsnCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
 
         if let (Some(_), name) =
@@ -49,7 +43,7 @@ impl PsnCommand {
             log::info!("PSN command");
 
             if name.is_none() {
-                return self.psn_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let name = name.unwrap();
@@ -65,7 +59,7 @@ impl PsnCommand {
 
             let username = match &from.username {
                 None => {
-                    return self.psn_usage(&message).await;
+                    return self.usage(&message).await;
                 }
                 Some(name) => name,
             };

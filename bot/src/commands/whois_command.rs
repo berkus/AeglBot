@@ -29,12 +29,6 @@ impl Message<ActorUpdateMessage> for WhoisCommand {
         message: ActorUpdateMessage,
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
-        self.handle_message(message).await;
-    }
-}
-
-impl WhoisCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
         let connection = self.connection();
 
         if let (Some(_), name) =
@@ -45,6 +39,7 @@ impl WhoisCommand {
                 return self
                     .send_reply(
                         &message,
+                        // TODO: usage
                         "To query user provide his @TelegramId (starting with @) or PsnId",
                     )
                     .await;
