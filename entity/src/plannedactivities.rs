@@ -195,8 +195,10 @@ impl Model {
 
     #[throws(sea_orm::DbErr)]
     pub async fn members_count(&self, connection: &DatabaseConnection) -> usize {
-        //@TODO replace with proper count(*) query
-        self.members(connection).await?.len()
+        self.find_related(crate::plannedactivitymembers::Entity)
+            .order_by_asc(crate::plannedactivitymembers::Column::Added)
+            .count(connection)
+            .await? as usize
     }
 
     pub fn join_link(&self) -> String {
