@@ -64,6 +64,39 @@ macro_rules! render_template {
     };
 }
 
+/// Like render_template, but also render the error text if any error happens during template rendering.
+#[allow(
+    clippy::crate_in_macro_def,
+    reason = "We refer to this specific TEMPLATES instance in this specific crate"
+)]
+#[macro_export]
+macro_rules! render_template_or_err {
+    ($template:expr) => {
+        {
+            let res = crate::TEMPLATES.render($template, &tera::Context::new());
+            if let Ok(item) = res {
+                item
+            } else {
+                format!("🐛 {}", crate::error_chain_to_string(&res.unwrap_err()))
+            }
+        }
+    };
+    ($template:expr, $(($key:expr,$value:expr)),+) => {
+        {
+            let mut context = tera::Context::new();
+            $(
+                context.insert($key, $value);
+            )*
+            let res = crate::TEMPLATES.render($template, &context);
+            if let Ok(item) = res {
+                item
+            } else {
+                format!("🐛 {}", crate::error_chain_to_string(&res.unwrap_err()))
+            }
+        }
+    };
+}
+
 pub type BotConnection = DatabaseConnection;
 
 /// Establish a database connection using the entity crate

@@ -3,7 +3,7 @@
 {{ event.details }}
 {% endif %}
 {% for member in event.members -%}
-{{ member.icon }} {{ member.psn_name }} (t.me/{{ member.telegram_name }})
+{% include "list/member" %}
 {% endfor %}
 ⏰ <b>{{ event.time }}</b>
 {#- join_prompt -#}

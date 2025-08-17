@@ -161,13 +161,10 @@ pub struct ScheduleNextDay;
 pub struct ScheduleNextWeek;
 
 impl Message<ScheduleNextMinute> for ReminderActor {
-    type Reply = ();
+    type Reply = anyhow::Result<()>;
 
-    async fn handle(
-        &mut self,
-        _msg: ScheduleNextMinute,
-        ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    #[throws(anyhow::Error)]
+    async fn handle(&mut self, _msg: ScheduleNextMinute, ctx: &mut Context<Self, Self::Reply>) {
         let target_time = (reference_date() + chrono::Duration::minutes(1))
             .with_second(0)
             .unwrap();
@@ -177,7 +174,7 @@ impl Message<ScheduleNextMinute> for ReminderActor {
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            let _ = ctx.actor_ref().tell(Reminders).await;
+            ctx.actor_ref().tell(Reminders).try_send()?;
         }
     }
 }

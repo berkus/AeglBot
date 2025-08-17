@@ -269,20 +269,13 @@ impl Model {
     ) -> Option<plannedactivitymembers::Model> {
         if let Some(g) = guardian {
             return plannedactivitymembers::Entity::find()
-                .filter(plannedactivitymembers::Column::Id.eq(g.id))
+                .filter(plannedactivitymembers::Column::UserId.eq(g.id))
                 .filter(plannedactivitymembers::Column::PlannedActivityId.eq(self.id))
                 .one(connection)
                 .await?;
         }
         None
     }
-
-    // // Makes a telegram Html formatted display.
-    // pub fn to_string(&self, connection: &DatabaseConnection, g: Option<&Guardian>) -> String {
-    //     let event = self.to_template(g, connection);
-    //     render_template!("list/event", ("event", &event))
-    //         .expect("Failed to render list event template")
-    // }
 }
 
 // #[cfg(test)]

@@ -1,2 +1,6 @@
-To join a fireteam provide fireteam id
-Fireteam IDs are available from the output of `/list` command.
+Join planned activity by its number
+
+Activity IDs are available from the output of `/list` command.
+
+`/join ActivityID`
+    Join planned activity by its number.

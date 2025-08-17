@@ -1,0 +1,3 @@
+{% if event.fireteam_joined -%}
+Enter `{{ event.leave_link }}` to leave this group.
+{% endif -%}

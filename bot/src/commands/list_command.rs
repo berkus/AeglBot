@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        render_template, BotCommand,
+        render_template_or_err, BotCommand,
     },
     entity::prelude::PlannedActivities,
     futures::future::try_join_all,
@@ -39,13 +39,7 @@ impl Message<ActorUpdateMessage> for ListCommand {
                     .map(|event| event.to_template(connection, Some(&guardian)));
                 let events_data = try_join_all(futures).await?;
 
-                let output = render_template!("list/planned", ("events", &events_data));
-
-                let output = if let Ok(item) = output {
-                    item
-                } else {
-                    output.unwrap_err()
-                };
+                let output = render_template_or_err!("list/planned", ("events", &events_data));
 
                 self.send_reply_with_format(&message, output, Format::Html)
                     .await;
