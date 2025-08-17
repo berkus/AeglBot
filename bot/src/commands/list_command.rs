@@ -1,13 +1,12 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format},
+        actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        datetime::reference_date,
         render_template, BotCommand,
     },
-    entity::plannedactivities,
+    entity::prelude::PlannedActivities,
+    futures::future::try_join_all,
     kameo::message::Context,
-    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 command_actor!(ListCommand, [ActorUpdateMessage]);
@@ -23,7 +22,7 @@ impl BotCommand for ListCommand {
 }
 
 impl Message<ActorUpdateMessage> for ListCommand {
-    type Reply = ();
+    type Reply = anyhow::Result<()>;
 
     async fn handle(
         &mut self,
@@ -33,26 +32,28 @@ impl Message<ActorUpdateMessage> for ListCommand {
         let connection = self.connection();
 
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            if let Some(_guardian) = validate_username(&self.bot_ref, &message, connection).await {
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
                 // let count = self.activity(connection).max_fireteam_size as usize
                 //     - self.members_count(connection);
 
-                let events_data: Vec<_> = PlannedActivity::upcoming_activities(&connection)
+                let events_data = PlannedActivities::upcoming_activities(connection).await;
+                let futures = events_data
                     .iter()
-                    .map(|event| event.to_template(Some(&guardian), &connection))
-                    .collect();
+                    .map(|event| event.to_template(Some(&guardian), connection));
+                let events_data = try_join_all(futures).await?;
 
                 let output = render_template!("list/planned", ("events", &events_data));
 
-                let output = if output.is_err() {
-                    output.unwrap_err()
+                let output = if let Ok(item) = output {
+                    item
                 } else {
-                    output.unwrap()
+                    output.unwrap_err()
                 };
 
                 self.send_reply_with_format(&message, output, Format::Html)
                     .await;
             }
         }
+        Ok(())
     }
 }

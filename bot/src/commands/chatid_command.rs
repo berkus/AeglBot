@@ -1,4 +1,4 @@
-use crate::{bot_actor::ActorUpdateMessage, commands::match_command, BotCommand};
+use crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand};
 
 command_actor!(ChatidCommand, [ActorUpdateMessage]);
 

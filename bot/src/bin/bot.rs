@@ -5,7 +5,7 @@
 
 use {
     aegl_bot::{
-        bot_actor::{ActorUpdateMessage, BotActor},
+        actors::bot_actor::{ActorUpdateMessage, BotActor},
         establish_db_connection,
     },
     dotenv::dotenv,
@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
-    aegl_bot::datetime::bot_start_time(); // Mark start timestamp
+    libbot::datetime::bot_start_time(); // Mark start timestamp
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");

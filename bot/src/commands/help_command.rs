@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, ListCommands},
+        actors::bot_actor::{ActorUpdateMessage, ListCommands},
         commands::match_command,
         BotCommand,
     },

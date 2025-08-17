@@ -1,7 +1,7 @@
 #[cfg(target_os = "linux")]
 use procfs::process::Process;
 use {
-    crate::{bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
+    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
     kameo::message::Context,
 };
 
@@ -50,7 +50,7 @@ impl Message<ActorUpdateMessage> for UptimeCommand {
         _ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            let uptime = crate::datetime::format_uptime();
+            let uptime = libbot::datetime::format_uptime();
             let message = format!("- ⏰ Started {uptime}\n{}", get_process_info());
             self.send_reply(&msg, message).await;
         }

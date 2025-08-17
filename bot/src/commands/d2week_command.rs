@@ -1,11 +1,11 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format},
+        actors::bot_actor::{ActorUpdateMessage, Format},
         commands::match_command,
-        services::destiny_schedule::this_week_in_d2,
         BotCommand,
     },
     kameo::message::Context,
+    libbot::services::destiny_schedule::this_week_in_d2,
 };
 
 command_actor!(D2weekCommand, [ActorUpdateMessage]);

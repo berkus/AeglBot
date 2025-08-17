@@ -1,9 +1,9 @@
 use {
     crate::{
-        commands::*,
-        services::reminder_actor::{
+        actors::reminder_actor::{
             ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
+        commands::*,
         BotCommand, BotConnection,
     },
     kameo::{

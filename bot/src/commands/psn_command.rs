@@ -1,5 +1,5 @@
 use {
-    crate::{bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
+    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
     entity::guardians,
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},

@@ -1,6 +1,6 @@
 use {
     crate::{
-        bot_actor::ActorUpdateMessage,
+        actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command, validate_username},
         BotCommand,
     },

@@ -10,7 +10,6 @@ use {
     },
     chrono::Duration,
     culpa::throws,
-    futures::future::try_join_all,
     libbot::datetime::{format_start_time, reference_date},
     sea_orm::{entity::prelude::*, QueryOrder},
 };
@@ -145,12 +144,12 @@ impl Model {
 
         let count = activity.max_fireteam_size as usize - self.members_count(connection).await?;
 
-        let members = self
-            .members(connection)
-            .await?
-            .into_iter()
-            .map(|m| m.to_template(connection));
-        let members = try_join_all(members).await?;
+        let members = self.members(connection).await?;
+        let mut memvec = Vec::new();
+        for x in members {
+            memvec.push(x.to_template(connection).await?);
+        }
+        let members = memvec;
 
         PlannedActivityTemplate {
             id: self.id,
