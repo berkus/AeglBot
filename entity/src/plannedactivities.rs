@@ -137,12 +137,10 @@ impl Model {
     #[throws(sea_orm::DbErr)]
     pub async fn to_template(
         &self,
-        guardian: Option<&guardians::Model>,
         connection: &DatabaseConnection,
+        guardian: Option<&guardians::Model>,
     ) -> PlannedActivityTemplate {
         let activity = self.activity(connection).await?.unwrap(); // use Relation
-
-        let count = activity.max_fireteam_size as usize - self.members_count(connection).await?;
 
         let members = self.members(connection).await?;
         let mut memvec = Vec::new();
@@ -150,6 +148,8 @@ impl Model {
             memvec.push(x.to_template(connection).await?);
         }
         let members = memvec;
+
+        let count = activity.max_fireteam_size as usize - members.len();
 
         PlannedActivityTemplate {
             id: self.id,
@@ -159,8 +159,8 @@ impl Model {
             count,
             time: format_start_time(self.start.into(), reference_date()),
             fireteam_full: count == 0,
-            join_link: self.join_prompt(connection).await?,
             fireteam_joined: self.find_member(connection, guardian).await?.is_some(),
+            join_link: self.join_link(),
             leave_link: self.cancel_link(),
         }
     }

@@ -10,3 +10,4 @@ run:
 alias d := deploy
 alias b := build
 alias t := test
+alias r := run

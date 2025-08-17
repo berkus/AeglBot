@@ -33,13 +33,10 @@ impl Message<ActorUpdateMessage> for ListCommand {
 
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
             if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
-                // let count = self.activity(connection).max_fireteam_size as usize
-                //     - self.members_count(connection);
-
                 let events_data = PlannedActivities::upcoming_activities(connection).await;
                 let futures = events_data
                     .iter()
-                    .map(|event| event.to_template(Some(&guardian), connection));
+                    .map(|event| event.to_template(connection, Some(&guardian)));
                 let events_data = try_join_all(futures).await?;
 
                 let output = render_template!("list/planned", ("events", &events_data));
