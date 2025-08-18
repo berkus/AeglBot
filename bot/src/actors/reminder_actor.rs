@@ -1,8 +1,5 @@
 use {
-    crate::{
-        actors::bot_actor::{Format, Notify, SendMessage},
-        BotConnection,
-    },
+    crate::actors::bot_actor::{Format, Notify, SendMessage},
     chrono::Timelike,
     culpa::throws,
     entity::prelude::*,
@@ -11,6 +8,7 @@ use {
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
         services::destiny_schedule::{this_week_in_d1, this_week_in_d2},
     },
+    sea_orm::DatabaseConnection,
     teloxide::types::ChatId,
 };
 
@@ -18,7 +16,7 @@ use {
 pub struct ReminderActor {
     bot_ref: ActorRef<crate::actors::bot_actor::BotActor>,
     lfg_chat: i64,
-    connection_pool: BotConnection,
+    connection_pool: DatabaseConnection,
 }
 
 impl Actor for ReminderActor {
@@ -34,7 +32,7 @@ impl ReminderActor {
     pub fn new(
         bot_ref: ActorRef<crate::actors::bot_actor::BotActor>,
         lfg_chat: i64,
-        connection_pool: BotConnection,
+        connection_pool: DatabaseConnection,
     ) -> Self {
         Self {
             bot_ref,
@@ -43,7 +41,7 @@ impl ReminderActor {
         }
     }
 
-    fn connection(&self) -> &BotConnection {
+    fn connection(&self) -> &DatabaseConnection {
         &self.connection_pool
     }
 }
