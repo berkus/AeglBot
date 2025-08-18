@@ -2,23 +2,12 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::match_command,
-        BotCommand,
     },
     kameo::message::Context,
     libbot::services::destiny_schedule::this_week_in_d1,
 };
 
-command_actor!(D1weekCommand, [ActorUpdateMessage]);
-
-impl BotCommand for D1weekCommand {
-    fn prefix() -> &'static str {
-        "/dweek"
-    }
-
-    fn description() -> &'static str {
-        "Show current Destiny 1 week"
-    }
-}
+command_actor!(D1weekCommand, "/dweek", "Show current Destiny 1 week");
 
 impl Message<ActorUpdateMessage> for D1weekCommand {
     type Reply = ();

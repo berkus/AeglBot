@@ -1,29 +1,18 @@
 use {
     crate::{
         actors::bot_actor::ActorUpdateMessage, commands::match_command, render_template_or_err,
-        BotCommand,
     },
     entity::guardians,
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
-command_actor!(PsnCommand, [ActorUpdateMessage]);
+command_actor!(PsnCommand, "/psn", "Link your telegram user to PSN");
 
 impl PsnCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(message, render_template_or_err!("psn/usage"))
             .await;
-    }
-}
-
-impl BotCommand for PsnCommand {
-    fn prefix() -> &'static str {
-        "/psn"
-    }
-
-    fn description() -> &'static str {
-        "Link your telegram user to PSN"
     }
 }
 

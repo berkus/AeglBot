@@ -2,29 +2,23 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command, validate_username},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     entity::guardians,
     kameo::message::Context,
     sea_orm::{ActiveModelTrait, Set},
 };
 
-command_actor!(EditGuardianCommand, [ActorUpdateMessage]);
+command_actor!(
+    EditGuardianCommand,
+    "/editguar",
+    "Edit information about registered guardians"
+);
 
 impl EditGuardianCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(message, render_template_or_err!("editguar/usage"))
             .await;
-    }
-}
-
-impl BotCommand for EditGuardianCommand {
-    fn prefix() -> &'static str {
-        "/editguar"
-    }
-
-    fn description() -> &'static str {
-        "Edit information about registered guardians"
     }
 }
 

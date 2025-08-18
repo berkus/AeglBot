@@ -2,24 +2,14 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     entity::prelude::PlannedActivities,
     futures::future::try_join_all,
     kameo::message::Context,
 };
 
-command_actor!(ListCommand, [ActorUpdateMessage]);
-
-impl BotCommand for ListCommand {
-    fn prefix() -> &'static str {
-        "/list"
-    }
-
-    fn description() -> &'static str {
-        "List current events"
-    }
-}
+command_actor!(ListCommand, "/list", "List current events");
 
 impl Message<ActorUpdateMessage> for ListCommand {
     type Reply = anyhow::Result<()>;

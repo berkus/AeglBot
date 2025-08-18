@@ -2,22 +2,11 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, ListCommands},
         commands::match_command,
-        BotCommand,
     },
     kameo::message::Context,
 };
 
-command_actor!(HelpCommand, [ActorUpdateMessage]);
-
-impl BotCommand for HelpCommand {
-    fn prefix() -> &'static str {
-        "/help"
-    }
-
-    fn description() -> &'static str {
-        "List available commands"
-    }
-}
+command_actor!(HelpCommand, "/help", "List available commands");
 
 impl Message<ActorUpdateMessage> for HelpCommand {
     type Reply = ();

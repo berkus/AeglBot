@@ -1,16 +1,6 @@
-use crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand};
+use crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command};
 
-command_actor!(ChatidCommand, [ActorUpdateMessage]);
-
-impl BotCommand for ChatidCommand {
-    fn prefix() -> &'static str {
-        "/chatid"
-    }
-
-    fn description() -> &'static str {
-        "Figure out the numeric chat ID"
-    }
-}
+command_actor!(ChatidCommand, "/chatid", "Figure out the numeric chat ID");
 
 impl Message<ActorUpdateMessage> for ChatidCommand {
     type Reply = ();

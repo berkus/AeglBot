@@ -1,5 +1,3 @@
-// #![feature(nll)] // features from edition-2018
-// #![feature(type_alias_enum_variants)]
 // #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![warn(unused_imports)] // during development
 #![feature(type_ascription)]
@@ -40,16 +38,12 @@ pub fn error_chain_to_string(err: &dyn Error) -> String {
     result
 }
 
-#[allow(
-    clippy::crate_in_macro_def,
-    reason = "We refer to this specific TEMPLATES instance in this specific crate"
-)]
 #[macro_export]
 macro_rules! render_template {
     ($template:expr) => {
         {
-            crate::TEMPLATES.render($template, &tera::Context::new())
-                .map_err(|e| format!("{}", crate::error_chain_to_string(&e)))
+            $crate::TEMPLATES.render($template, &tera::Context::new())
+                .map_err(|e| format!("{}", $crate::error_chain_to_string(&e)))
         }
     };
     ($template:expr, $(($key:expr => $value:expr)),+) => {
@@ -58,26 +52,22 @@ macro_rules! render_template {
             $(
                 context.insert($key, $value);
             )*
-            crate::TEMPLATES.render($template, &context)
-                .map_err(|e| format!("{}", crate::error_chain_to_string(&e)))
+            $crate::TEMPLATES.render($template, &context)
+                .map_err(|e| format!("{}", $crate::error_chain_to_string(&e)))
         }
     };
 }
 
 /// Like render_template, but also render the error text if any error happens during template rendering.
-#[allow(
-    clippy::crate_in_macro_def,
-    reason = "We refer to this specific TEMPLATES instance in this specific crate"
-)]
 #[macro_export]
 macro_rules! render_template_or_err {
     ($template:expr) => {
         {
-            let res = crate::TEMPLATES.render($template, &tera::Context::new());
+            let res = $crate::TEMPLATES.render($template, &tera::Context::new());
             if let Ok(item) = res {
                 item
             } else {
-                format!("🐛 {}", crate::error_chain_to_string(&res.unwrap_err()))
+                format!("🐛 {}", $crate::error_chain_to_string(&res.unwrap_err()))
             }
         }
     };
@@ -87,11 +77,11 @@ macro_rules! render_template_or_err {
             $(
                 context.insert($key, $value);
             )*
-            let res = crate::TEMPLATES.render($template, &context);
+            let res = $crate::TEMPLATES.render($template, &context);
             if let Ok(item) = res {
                 item
             } else {
-                format!("🐛 {}", crate::error_chain_to_string(&res.unwrap_err()))
+                format!("🐛 {}", $crate::error_chain_to_string(&res.unwrap_err()))
             }
         }
     };

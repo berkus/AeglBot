@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     chrono::Local,
     chrono_tz::Europe::Moscow,
@@ -12,22 +12,12 @@ use {
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
-command_actor!(LfgCommand, [ActorUpdateMessage]);
+command_actor!(LfgCommand, "/lfg", "Create a new Looking For Group event");
 
 impl LfgCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply_with_format(message, render_template_or_err!("lfg/usage"), Format::Html)
             .await;
-    }
-}
-
-impl BotCommand for LfgCommand {
-    fn prefix() -> &'static str {
-        "/lfg"
-    }
-
-    fn description() -> &'static str {
-        "Create a new Looking For Group event"
     }
 }
 

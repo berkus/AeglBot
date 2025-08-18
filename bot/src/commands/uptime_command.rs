@@ -1,11 +1,11 @@
 #[cfg(target_os = "linux")]
 use procfs::process::Process;
 use {
-    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
+    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command},
     kameo::message::Context,
 };
 
-command_actor!(UptimeCommand, [ActorUpdateMessage]);
+command_actor!(UptimeCommand, "/uptime", "Show bot uptime and statistics");
 
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {
@@ -29,16 +29,6 @@ fn get_process_info() -> String {
 #[cfg(not(target_os = "linux"))]
 fn get_process_info() -> String {
     "- Process info only available on Linux hosts.".to_string()
-}
-
-impl BotCommand for UptimeCommand {
-    fn prefix() -> &'static str {
-        "/uptime"
-    }
-
-    fn description() -> &'static str {
-        "Show bot uptime and statistics"
-    }
 }
 
 impl Message<ActorUpdateMessage> for UptimeCommand {

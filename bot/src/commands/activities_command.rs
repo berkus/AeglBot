@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{admin_check, match_command},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     entity::{activities, activityshortcuts},
     itertools::Itertools,
@@ -13,22 +13,16 @@ use {
     std::collections::HashMap,
 };
 
-command_actor!(ActivitiesCommand, [ActorUpdateMessage]);
+command_actor!(
+    ActivitiesCommand,
+    "/activities",
+    "List available activity shortcuts"
+);
 
 impl ActivitiesCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(message, render_template_or_err!("activities/usage"))
             .await;
-    }
-}
-
-impl BotCommand for ActivitiesCommand {
-    fn prefix() -> &'static str {
-        "/activities"
-    }
-
-    fn description() -> &'static str {
-        "List available activity shortcuts"
     }
 }
 

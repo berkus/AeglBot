@@ -2,37 +2,18 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     entity::guardians,
     sea_orm::{ActiveModelTrait, Set},
 };
 
-// #[derive(Clone)]
-// struct ListAdminsSubcommand;
-//
-// #[derive(Clone)]
-// struct AddAdminSubcommand;
-//
-// #[derive(Clone)]
-// struct RemoveAdminSubcommand;
-
-command_actor!(ManageCommand, [ActorUpdateMessage]);
+command_actor!(ManageCommand, "/manage", "Manage bot users (admin-only)");
 
 impl ManageCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(message, render_template_or_err!("manage/usage"))
             .await;
-    }
-}
-
-impl BotCommand for ManageCommand {
-    fn prefix() -> &'static str {
-        "/manage"
-    }
-
-    fn description() -> &'static str {
-        "Manage bot users (admin-only)"
     }
 }
 

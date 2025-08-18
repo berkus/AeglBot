@@ -2,24 +2,11 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{guardian_lookup, match_command, validate_username},
-        BotCommand,
     },
     kameo::message::Context,
 };
 
-command_actor!(WhoisCommand, [ActorUpdateMessage]);
-
-impl WhoisCommand {}
-
-impl BotCommand for WhoisCommand {
-    fn prefix() -> &'static str {
-        "/whois"
-    }
-
-    fn description() -> &'static str {
-        "Query telegram or PSN id"
-    }
-}
+command_actor!(WhoisCommand, "/whois", "Query telegram or PSN id");
 
 impl Message<ActorUpdateMessage> for WhoisCommand {
     type Reply = ();

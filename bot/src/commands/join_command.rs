@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{decapitalize, match_command, validate_username},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     chrono::Duration,
     culpa::throws,
@@ -12,22 +12,12 @@ use {
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
-command_actor!(JoinCommand, [ActorUpdateMessage]);
+command_actor!(JoinCommand, "/join", "Join existing activity from the list");
 
 impl JoinCommand {
     async fn join_usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(message, render_template_or_err!("join/usage"))
             .await;
-    }
-}
-
-impl BotCommand for JoinCommand {
-    fn prefix() -> &'static str {
-        "/join"
-    }
-
-    fn description() -> &'static str {
-        "Join existing activity from the list"
     }
 }
 

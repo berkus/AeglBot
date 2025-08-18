@@ -7,10 +7,11 @@ use {
 
 #[macro_export]
 macro_rules! command_actor {
-    ($name:ident, [ $($msgs:ident),* ]) => {
+    ($name:ident, $prefix:literal, $help:literal) => {
         use {
             kameo::{actor::ActorRef, error::Infallible, message::*, Actor},
             sea_orm::DatabaseConnection,
+            $crate::BotCommand,
         };
 
         #[derive(Clone)]
@@ -18,6 +19,16 @@ macro_rules! command_actor {
             bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
             bot_name: String,
             connection_pool: DatabaseConnection,
+        }
+
+        impl BotCommand for $name {
+            fn prefix() -> &'static str {
+                $prefix
+            }
+
+            fn description() -> &'static str {
+                $help
+            }
         }
 
         impl $name {

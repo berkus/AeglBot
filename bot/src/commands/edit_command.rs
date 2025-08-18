@@ -2,7 +2,7 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{match_command, validate_username},
-        render_template_or_err, BotCommand,
+        render_template_or_err,
     },
     chrono::{prelude::*, Duration},
     chrono_tz::Europe::Moscow,
@@ -12,22 +12,12 @@ use {
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
-command_actor!(EditCommand, [ActorUpdateMessage]);
+command_actor!(EditCommand, "/edit", "Edit existing activity");
 
 impl EditCommand {
     async fn usage(&self, message: &ActorUpdateMessage) {
         self.send_reply(message, render_template_or_err!("edit/usage"))
             .await;
-    }
-}
-
-impl BotCommand for EditCommand {
-    fn prefix() -> &'static str {
-        "/edit"
-    }
-
-    fn description() -> &'static str {
-        "Edit existing activity"
     }
 }
 
