@@ -7,11 +7,11 @@ use {
 
 #[macro_export]
 macro_rules! command_actor {
-    ($name:ident, [ $($msgs:ident),* ]) => {
+    ($name:ident, $prefix:literal, $help:literal) => {
         use {
             kameo::{actor::ActorRef, error::Infallible, message::*, Actor},
             sea_orm::DatabaseConnection,
-            $crate::BotConnection,
+            $crate::BotCommand,
         };
 
         #[derive(Clone)]
@@ -19,6 +19,16 @@ macro_rules! command_actor {
             bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
             bot_name: String,
             connection_pool: DatabaseConnection,
+        }
+
+        impl BotCommand for $name {
+            fn prefix() -> &'static str {
+                concat!("/", $prefix)
+            }
+
+            fn description() -> &'static str {
+                $help
+            }
         }
 
         impl $name {
@@ -36,6 +46,14 @@ macro_rules! command_actor {
 
             pub fn connection(&self) -> &DatabaseConnection {
                 &self.connection_pool
+            }
+
+            pub async fn usage(&self, message: &$crate::actors::bot_actor::ActorUpdateMessage) {
+                self.send_reply(
+                    message,
+                    $crate::render_template_or_err!(concat!($prefix, "/usage")),
+                )
+                .await;
             }
 
             #[allow(dead_code, reason = "help_command doesn't use those")]
