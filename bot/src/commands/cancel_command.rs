@@ -129,10 +129,10 @@ impl Message<ActorUpdateMessage> for CancelCommand {
                     &message,
                     render_template_or_err!(
                         "cancel/left",
-                        ("guardian_name", &guardian.telegram_name),
-                        ("activity_name", &act_name),
-                        ("activity_time", &act_time),
-                        ("suffix", &suffix)
+                        ("guardian_name" => &guardian.telegram_name),
+                        ("activity_name" => &act_name),
+                        ("activity_time" => &act_time),
+                        ("suffix" => &suffix)
                     ),
                 )
                 .await;

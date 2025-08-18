@@ -39,7 +39,7 @@ impl Message<ActorUpdateMessage> for ListCommand {
                     .map(|event| event.to_template(connection, Some(&guardian)));
                 let events_data = try_join_all(futures).await?;
 
-                let output = render_template_or_err!("list/planned", ("events", &events_data));
+                let output = render_template_or_err!("list/planned", ("events" => &events_data));
 
                 self.send_reply_with_format(&message, output, Format::Html)
                     .await;

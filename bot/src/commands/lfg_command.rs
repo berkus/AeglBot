@@ -141,13 +141,13 @@ impl Message<ActorUpdateMessage> for LfgCommand {
                     &message,
                     render_template_or_err!(
                         "lfg/created",
-                        ("guarName", &guardian.to_string()),
-                        ("groupName", &activity.format_name()),
+                        ("guarName" => &guardian.to_string()),
+                        ("groupName" => &activity.format_name()),
                         (
-                            "onTime",
+                            "onTime" =>
                             &format_start_time(start_time.to_utc(), reference_date())
                         ),
-                        ("actId", &planned_activity.id)
+                        ("actId" => &planned_activity.id)
                     ),
                 )
                 .await;

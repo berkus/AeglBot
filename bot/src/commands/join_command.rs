@@ -117,11 +117,11 @@ impl Message<ActorUpdateMessage> for JoinCommand {
 
                 let text = render_template_or_err!(
                     "join/joined",
-                    ("guardian", &guar_name),
-                    ("activity_name", &act_name),
-                    ("activity_time", &act_time),
-                    ("other_guardians", &other_guars),
-                    ("join_prompt", &join_prompt)
+                    ("guardian" => &guar_name),
+                    ("activity_name" => &act_name),
+                    ("activity_time" => &act_time),
+                    ("other_guardians" => &other_guars),
+                    ("join_prompt" => &join_prompt)
                 );
 
                 self.send_reply(&message, text).await;

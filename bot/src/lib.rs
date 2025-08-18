@@ -52,7 +52,7 @@ macro_rules! render_template {
                 .map_err(|e| format!("{}", crate::error_chain_to_string(&e)))
         }
     };
-    ($template:expr, $(($key:expr,$value:expr)),+) => {
+    ($template:expr, $(($key:expr => $value:expr)),+) => {
         {
             let mut context = tera::Context::new();
             $(
@@ -81,7 +81,7 @@ macro_rules! render_template_or_err {
             }
         }
     };
-    ($template:expr, $(($key:expr,$value:expr)),+) => {
+    ($template:expr, $(($key:expr => $value:expr)),+) => {
         {
             let mut context = tera::Context::new();
             $(
