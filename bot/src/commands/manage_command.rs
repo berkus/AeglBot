@@ -2,20 +2,12 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command},
-        render_template_or_err,
     },
     entity::guardians,
     sea_orm::{ActiveModelTrait, Set},
 };
 
-command_actor!(ManageCommand, "/manage", "Manage bot users (admin-only)");
-
-impl ManageCommand {
-    async fn usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(message, render_template_or_err!("manage/usage"))
-            .await;
-    }
-}
+command_actor!(ManageCommand, "manage", "Manage bot users (admin-only)");
 
 impl Message<ActorUpdateMessage> for ManageCommand {
     type Reply = ();

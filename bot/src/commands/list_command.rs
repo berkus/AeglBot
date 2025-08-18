@@ -9,7 +9,7 @@ use {
     kameo::message::Context,
 };
 
-command_actor!(ListCommand, "/list", "List current events");
+command_actor!(ListCommand, "list", "List current events");
 
 impl Message<ActorUpdateMessage> for ListCommand {
     type Reply = anyhow::Result<()>;

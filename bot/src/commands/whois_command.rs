@@ -6,7 +6,7 @@ use {
     kameo::message::Context,
 };
 
-command_actor!(WhoisCommand, "/whois", "Query telegram or PSN id");
+command_actor!(WhoisCommand, "whois", "Query telegram or PSN id");
 
 impl Message<ActorUpdateMessage> for WhoisCommand {
     type Reply = ();
@@ -22,14 +22,7 @@ impl Message<ActorUpdateMessage> for WhoisCommand {
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if name.is_none() {
-                // usage()
-                return self
-                    .send_reply(
-                        &message,
-                        // TODO: usage
-                        "To query user provide his @TelegramId (starting with @) or PsnId",
-                    )
-                    .await;
+                return self.usage(&message).await;
             }
 
             let name = name.unwrap();

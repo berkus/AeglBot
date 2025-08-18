@@ -5,7 +5,7 @@ use {
     kameo::message::Context,
 };
 
-command_actor!(UptimeCommand, "/uptime", "Show bot uptime and statistics");
+command_actor!(UptimeCommand, "uptime", "Show bot uptime and statistics");
 
 #[cfg(target_os = "linux")]
 fn get_process_info() -> String {

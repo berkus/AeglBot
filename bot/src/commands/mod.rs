@@ -23,7 +23,7 @@ macro_rules! command_actor {
 
         impl BotCommand for $name {
             fn prefix() -> &'static str {
-                $prefix
+                concat!("/", $prefix)
             }
 
             fn description() -> &'static str {
@@ -46,6 +46,14 @@ macro_rules! command_actor {
 
             pub fn connection(&self) -> &DatabaseConnection {
                 &self.connection_pool
+            }
+
+            pub async fn usage(&self, message: &$crate::actors::bot_actor::ActorUpdateMessage) {
+                self.send_reply(
+                    message,
+                    $crate::render_template_or_err!(concat!($prefix, "/usage")),
+                )
+                .await;
             }
 
             #[allow(dead_code, reason = "help_command doesn't use those")]

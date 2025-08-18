@@ -1,6 +1,6 @@
 use crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command};
 
-command_actor!(ChatidCommand, "/chatid", "Figure out the numeric chat ID");
+command_actor!(ChatidCommand, "chatid", "Figure out the numeric chat ID");
 
 impl Message<ActorUpdateMessage> for ChatidCommand {
     type Reply = ();

@@ -12,14 +12,7 @@ use {
     sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
-command_actor!(CancelCommand, "/cancel", "Leave joined activity");
-
-impl CancelCommand {
-    async fn cancel_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(message, render_template_or_err!("cancel/usage"))
-            .await;
-    }
-}
+command_actor!(CancelCommand, "cancel", "Leave joined activity");
 
 impl Message<ActorUpdateMessage> for CancelCommand {
     type Reply = anyhow::Result<()>;
@@ -32,12 +25,12 @@ impl Message<ActorUpdateMessage> for CancelCommand {
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
-                return self.cancel_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap().parse::<i32>();
             if activity_id.is_err() {
-                return self.cancel_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap();

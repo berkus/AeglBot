@@ -7,7 +7,7 @@ use {
     libbot::services::destiny_schedule::this_week_in_d2,
 };
 
-command_actor!(D2weekCommand, "/d2week", "Show current Destiny 2 week");
+command_actor!(D2weekCommand, "d2week", "Show current Destiny 2 week");
 
 impl Message<ActorUpdateMessage> for D2weekCommand {
     type Reply = ();

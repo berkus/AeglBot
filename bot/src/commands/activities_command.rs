@@ -2,7 +2,6 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{admin_check, match_command},
-        render_template_or_err,
     },
     entity::{activities, activityshortcuts},
     itertools::Itertools,
@@ -15,16 +14,9 @@ use {
 
 command_actor!(
     ActivitiesCommand,
-    "/activities",
+    "activities",
     "List available activity shortcuts"
 );
-
-impl ActivitiesCommand {
-    async fn usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(message, render_template_or_err!("activities/usage"))
-            .await;
-    }
-}
 
 impl ActivitiesCommand {
     async fn all_activities_list(

@@ -6,7 +6,7 @@ use {
     kameo::message::Context,
 };
 
-command_actor!(HelpCommand, "/help", "List available commands");
+command_actor!(HelpCommand, "help", "List available commands");
 
 impl Message<ActorUpdateMessage> for HelpCommand {
     type Reply = ();

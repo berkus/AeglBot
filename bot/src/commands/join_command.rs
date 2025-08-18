@@ -12,14 +12,7 @@ use {
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
 };
 
-command_actor!(JoinCommand, "/join", "Join existing activity from the list");
-
-impl JoinCommand {
-    async fn join_usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(message, render_template_or_err!("join/usage"))
-            .await;
-    }
-}
+command_actor!(JoinCommand, "join", "Join existing activity from the list");
 
 impl Message<ActorUpdateMessage> for JoinCommand {
     type Reply = anyhow::Result<()>;
@@ -32,12 +25,12 @@ impl Message<ActorUpdateMessage> for JoinCommand {
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if activity_id.is_none() {
-                return self.join_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap().parse::<i32>();
             if activity_id.is_err() {
-                return self.join_usage(&message).await;
+                return self.usage(&message).await;
             }
 
             let activity_id = activity_id.unwrap();
