@@ -2,13 +2,12 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{admin_check, match_command},
+        render_template_or_err,
     },
     entity::{activities, activityshortcuts},
     itertools::Itertools,
     kameo::message::Context,
-    sea_orm::{
-        ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set,
-    },
+    sea_orm::{ActiveModelTrait, EntityTrait, QueryOrder, Set},
     std::collections::HashMap,
 };
 
@@ -25,44 +24,39 @@ impl ActivitiesCommand {
         message: &ActorUpdateMessage,
     ) {
         let games = activityshortcuts::Entity::find()
-            .select_only()
-            .column(activityshortcuts::Column::Game)
-            .distinct()
+            .find_also_related(activities::Entity)
             .order_by_asc(activityshortcuts::Column::Game)
+            .order_by_asc(activityshortcuts::Column::Name)
             .all(connection)
             .await
             .expect("Failed to load activity shortcuts");
 
-        let mut text = "Activities: use a short name:\n".to_owned();
-
-        for game_row in games {
-            let game_name = game_row.game;
-            text += &format!("*** <b>{0}</b>:\n", game_name);
-            let shortcuts = activityshortcuts::Entity::find()
-                .filter(activityshortcuts::Column::Game.eq(&game_name))
-                .order_by_asc(activityshortcuts::Column::Name)
-                .all(connection)
-                .await
-                .expect("TEMP loading @FIXME");
-
-            for shortcut in shortcuts {
-                let link_activity = activities::Entity::find_by_id(shortcut.link)
-                    .one(connection)
-                    .await
-                    .expect("Failed to load activity")
-                    .expect("Activity not found");
-
-                text += &format!(
-                    "<b>{name}</b>\t{link}\n",
-                    name = shortcut.name,
-                    link = link_activity.format_name(),
-                );
-            }
-            text += "\n";
+        #[derive(serde::Serialize)]
+        struct Game {
+            game: String,
+            shortcut: String,
+            activity: String,
         }
 
-        self.send_reply_with_format(message, text, Format::Html)
-            .await;
+        let games: Vec<Game> = games
+            .into_iter()
+            .map(|game| {
+                let link_activity = game.1.expect("Activity not found");
+
+                Game {
+                    game: game.0.game,
+                    shortcut: game.0.name,
+                    activity: link_activity.format_name(),
+                }
+            })
+            .collect();
+
+        self.send_reply_with_format(
+            message,
+            render_template_or_err!("activities/list", ("games" => &games)),
+            Format::Html,
+        )
+        .await;
     }
 
     async fn activities_ids_list(
