@@ -97,11 +97,9 @@ macro_rules! render_template_or_err {
     };
 }
 
-pub type BotConnection = DatabaseConnection;
-
 /// Establish a database connection using the entity crate
 #[throws(DbErr)]
-pub async fn establish_db_connection() -> BotConnection {
+pub async fn establish_db_connection() -> DatabaseConnection {
     entity::establish_db_connection().await?
 }
 

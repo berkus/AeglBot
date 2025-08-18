@@ -1,11 +1,8 @@
 use {
-    crate::{
-        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        BotConnection,
-    },
+    crate::actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
     entity::guardians,
     kameo::actor::ActorRef,
-    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
+    sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter},
 };
 
 #[macro_export]
@@ -13,21 +10,21 @@ macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
         use {
             kameo::{actor::ActorRef, error::Infallible, message::*, Actor},
-            $crate::BotConnection,
+            sea_orm::DatabaseConnection,
         };
 
         #[derive(Clone)]
         pub struct $name {
             bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
             bot_name: String,
-            connection_pool: BotConnection,
+            connection_pool: DatabaseConnection,
         }
 
         impl $name {
             pub fn new(
                 bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
                 bot_name: String,
-                connection_pool: BotConnection,
+                connection_pool: DatabaseConnection,
             ) -> Self {
                 Self {
                     bot_ref,
@@ -36,7 +33,7 @@ macro_rules! command_actor {
                 }
             }
 
-            pub fn connection(&self) -> &BotConnection {
+            pub fn connection(&self) -> &DatabaseConnection {
                 &self.connection_pool
             }
 
@@ -133,7 +130,7 @@ pub fn decapitalize(s: &str) -> String {
 pub async fn validate_username(
     bot: &ActorRef<crate::actors::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
-    connection: &BotConnection,
+    connection: &DatabaseConnection,
 ) -> Option<guardians::Model> {
     let username = match message.update.from.as_ref().unwrap().username {
         None => {
@@ -186,7 +183,7 @@ pub async fn validate_username(
 pub async fn admin_check(
     bot: &ActorRef<crate::actors::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
-    connection: &BotConnection,
+    connection: &DatabaseConnection,
 ) -> Option<guardians::Model> {
     if let Some(user) = validate_username(bot, message, connection).await {
         if user.is_admin {
@@ -201,7 +198,7 @@ pub async fn admin_check(
 
 pub async fn guardian_lookup(
     name: &str,
-    connection: &BotConnection,
+    connection: &DatabaseConnection,
 ) -> Result<Option<guardians::Model>, sea_orm::DbErr> {
     if let Some(name) = name.strip_prefix('@') {
         guardians::Entity::find()

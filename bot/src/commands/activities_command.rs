@@ -8,8 +8,7 @@ use {
     itertools::Itertools,
     kameo::message::Context,
     sea_orm::{
-        ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-        QuerySelect, Set,
+        ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set,
     },
     std::collections::HashMap,
 };

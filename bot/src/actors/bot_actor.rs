@@ -4,7 +4,7 @@ use {
             ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
         commands::*,
-        BotCommand, BotConnection,
+        BotCommand,
     },
     kameo::{
         actor::ActorRef,
@@ -12,6 +12,7 @@ use {
         message::{Context, Message},
         Actor,
     },
+    sea_orm::DatabaseConnection,
     std::fmt::Formatter,
     teloxide::{
         prelude::*,
@@ -25,7 +26,7 @@ pub struct BotActor {
     bot_name: String,
     lfg_chat_id: i64,
     update_sender: broadcast::Sender<ActorUpdateMessage>,
-    connection_pool: BotConnection,
+    connection_pool: DatabaseConnection,
     commands_list: Vec<(String, String)>,
 }
 
