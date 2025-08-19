@@ -22,11 +22,10 @@ impl MigrationTrait for Migration {
         let update = Query::update()
             .table(Guardians::Table)
             .value(Guardians::IsSuperadmin, true)
-            .and_where(Expr::col(Guardians::TelegramName).eq("berkus"));
+            .and_where(Expr::col(Guardians::TelegramName).eq("berkus"))
+            .to_owned();
 
-        let builder = manager.get_database_backend();
-        let update = builder.build(update);
-        manager.get_db().update(update).await
+        manager.exec_stmt(update).await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {

@@ -19,11 +19,12 @@ impl MigrationTrait for Migration {
             )
             .await?;
         // update guardians set is_admin = true where telegram_name = 'berkus';
-        entity::Guardians::update_one();
-        let update = sea_orm::Update::one()
+        // entity::Guardians::update_one();
+        let update = Query::update()
             .table(Guardians::Table)
             .value(Guardians::IsAdmin, true)
-            .and_where(Expr::col(Guardians::TelegramName).eq("berkus"));
+            .and_where(Expr::col(Guardians::TelegramName).eq("berkus"))
+            .to_owned();
         manager.exec_stmt(update).await
     }
 

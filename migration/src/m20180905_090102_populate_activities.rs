@@ -1,6 +1,9 @@
 use {
     crate::{Activities, ActivityShortcuts},
-    sea_orm_migration::{prelude::*, sea_orm::TransactionTrait},
+    sea_orm_migration::{
+        prelude::*,
+        sea_orm::{TransactionTrait, Value},
+    },
 };
 
 #[derive(DeriveMigrationName)]
@@ -40,13 +43,17 @@ impl MigrationTrait for Migration {
                     Activities::MinLevel,
                 ])
                 .values_panic([
-                    act.0,
+                    act.0.into(),
                     act.1.into(),
                     act.2.into(),
                     act.3.into(),
-                    act.4,
-                    act.5.into(), // unwrap_or(Expr::value("null")),
-                    act.6.into(), // unwrap_or(Expr::value("null")),
+                    act.4.into(),
+                    act.5
+                        .map(|v| v.into())
+                        .unwrap_or(Expr::value(Value::Int(None))),
+                    act.6
+                        .map(|v| v.into())
+                        .unwrap_or(Expr::value(Value::Int(None))),
                 ])
                 .to_owned();
 
