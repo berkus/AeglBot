@@ -5,10 +5,87 @@
 use {
     culpa::throws,
     sea_orm::{DatabaseConnection, DbErr},
+    std::{error::Error, fmt::Write},
 };
 
 pub mod actors;
 pub mod commands;
+
+static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
+    std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates"));
+
+pub(crate) static TEMPLATES: std::sync::LazyLock<tera::Tera> = std::sync::LazyLock::new(|| {
+    let mut tera = tera::Tera::default();
+    for file in TEMPLATE_FILES.find("**/*.tera").unwrap() {
+        if let Some(template) = file.as_file() {
+            tera.add_raw_template(
+                template.path().with_extension("").to_str().unwrap(), // drop .tera extension
+                template.contents_utf8().unwrap(),
+            )
+            .unwrap();
+        }
+    }
+    tera
+});
+
+pub fn error_chain_to_string(err: &dyn Error) -> String {
+    let mut result = format!("Error: {}", err);
+    let mut current = err.source();
+    while let Some(source) = current {
+        write!(&mut result, "\n- caused by: {}", source).unwrap();
+        current = source.source();
+    }
+    result
+}
+
+#[macro_export]
+macro_rules! render_template {
+    ($template:expr) => {
+        {
+            $crate::TEMPLATES.render($template, &tera::Context::new())
+                .map_err(|e| format!("{}", $crate::error_chain_to_string(&e)))
+        }
+    };
+    ($template:expr, $(($key:expr => $value:expr)),+) => {
+        {
+            let mut context = tera::Context::new();
+            $(
+                context.insert($key, $value);
+            )*
+            $crate::TEMPLATES.render($template, &context)
+                .map_err(|e| format!("{}", $crate::error_chain_to_string(&e)))
+        }
+    };
+}
+
+/// Like render_template, but also render the error text if any error happens during template rendering.
+#[macro_export]
+macro_rules! render_template_or_err {
+    ($template:expr) => {
+        {
+            let res = $crate::TEMPLATES.render($template, &tera::Context::new());
+            if let Ok(item) = res {
+                item
+            } else {
+                format!("🐛 {}", $crate::error_chain_to_string(&res.unwrap_err()))
+            }
+        }
+    };
+    ($template:expr, $(($key:expr => $value:expr)),+) => {
+        {
+            let mut context = tera::Context::new();
+            $(
+                context.insert($key, $value);
+            )*
+            let res = $crate::TEMPLATES.render($template, &context);
+            if let Ok(item) = res {
+                item
+            } else {
+                format!("🐛 {}", $crate::error_chain_to_string(&res.unwrap_err()))
+            }
+        }
+    };
+}
 
 /// Establish a database connection using the entity crate
 #[throws(DbErr)]
