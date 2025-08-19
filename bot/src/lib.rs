@@ -64,10 +64,6 @@ pub async fn establish_db_connection() -> BotConnection {
     entity::establish_db_connection().await?
 }
 
-pub trait NamedActor {
-    fn actor_name() -> String;
-}
-
 pub trait BotCommand {
     /// Print command usage instructions.
     // fn usage(&self, bot: &BotMenu, message: &UpdateWithCx<AutoSend<Bot>, Message>);

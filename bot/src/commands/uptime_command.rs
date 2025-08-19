@@ -1,12 +1,8 @@
 #[cfg(target_os = "linux")]
 use procfs::process::Process;
 use {
-    crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::match_command,
-        BotCommand,
-    },
-    riker::actors::Tell,
+    crate::{bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
+    kameo::message::Context,
 };
 
 command_actor!(UptimeCommand, [ActorUpdateMessage]);
@@ -45,17 +41,18 @@ impl BotCommand for UptimeCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for UptimeCommand {
-    type Msg = UptimeCommandMsg;
+impl Message<ActorUpdateMessage> for UptimeCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &mut self,
+        msg: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
             let uptime = crate::datetime::format_uptime();
             let message = format!("- ⏰ Started {uptime}\n{}", get_process_info());
-            self.bot_ref.tell(
-                SendMessageReply(message, msg, Format::Plain, Notify::Off),
-                None,
-            );
+            self.send_reply(&msg, message).await;
         }
     }
 }

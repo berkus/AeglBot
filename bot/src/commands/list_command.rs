@@ -1,28 +1,16 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
         datetime::reference_date,
         render_template, BotCommand,
     },
     entity::plannedactivities,
-    riker::actors::Tell,
+    kameo::message::Context,
     sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 command_actor!(ListCommand, [ActorUpdateMessage]);
-
-impl ListCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
-            None,
-        );
-    }
-}
 
 impl BotCommand for ListCommand {
     fn prefix() -> &'static str {
@@ -34,18 +22,14 @@ impl BotCommand for ListCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for ListCommand {
-    type Msg = ListCommandMsg;
+impl Message<ActorUpdateMessage> for ListCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        tokio::runtime::Handle::current().block_on(async {
-            self.handle_message(message).await;
-        });
-    }
-}
-
-impl ListCommand {
-    async fn handle_message(&self, message: ActorUpdateMessage) {
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
         let connection = self.connection();
 
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
@@ -72,7 +56,8 @@ impl ListCommand {
                 let output = render_template!("list/planned", ("events", &events_data))
                     .expect("Rendering failed");
 
-                self.send_reply(&message, output, Format::Html);
+                self.send_reply_with_format(&message, output, Format::Html)
+                    .await;
             }
         }
     }

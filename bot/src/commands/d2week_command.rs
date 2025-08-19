@@ -1,11 +1,11 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, Format},
         commands::match_command,
-        services::this_week_in_d2,
+        services::destiny_schedule::this_week_in_d2,
         BotCommand,
     },
-    riker::actors::Tell,
+    kameo::message::Context,
 };
 
 command_actor!(D2weekCommand, [ActorUpdateMessage]);
@@ -20,15 +20,17 @@ impl BotCommand for D2weekCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for D2weekCommand {
-    type Msg = D2weekCommandMsg;
+impl Message<ActorUpdateMessage> for D2weekCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
-        if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(
-                SendMessageReply(this_week_in_d2(), msg, Format::Markdown, Notify::Off),
-                None,
-            );
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
+            self.send_reply_with_format(&message, this_week_in_d2(), Format::Markdown)
+                .await;
         }
     }
 }

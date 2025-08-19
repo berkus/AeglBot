@@ -1,12 +1,12 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
         datetime::{format_start_time, reference_date},
         BotCommand,
     },
     entity::{activities, activityshortcuts, plannedactivities, plannedactivitymembers},
-    riker::actors::Tell,
+    kameo::message::Context,
     sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set},
     two_timer::parse,
 };
@@ -14,25 +14,16 @@ use {
 command_actor!(LfgCommand, [ActorUpdateMessage]);
 
 impl LfgCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
-            None,
-        );
-    }
-
-    fn usage(&self, message: &ActorUpdateMessage) {
-        self.send_reply(
+    async fn usage(&self, message: &ActorUpdateMessage) {
+        self.send_reply_with_format(
             message,
             "LFG usage: /lfg <b>activity</b> YYYY-MM-DD HH:MM
 For a list of activity codes: /activities
 Example: /lfg kf 2018-09-10 23:00
 Times are in Moscow (MSK) timezone.",
             Format::Html,
-        );
+        )
+        .await;
     }
 }
 
@@ -46,13 +37,15 @@ impl BotCommand for LfgCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for LfgCommand {
-    type Msg = LfgCommandMsg;
+impl Message<ActorUpdateMessage> for LfgCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        tokio::runtime::Handle::current().block_on(async {
-            self.handle_message(message).await;
-        });
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        self.handle_message(message).await;
     }
 }
 
@@ -66,7 +59,7 @@ impl LfgCommand {
             log::info!("args are {:?}", args);
 
             if args.is_none() {
-                return self.usage(&message);
+                return self.usage(&message).await;
             }
 
             // Split args in two:
@@ -76,7 +69,7 @@ impl LfgCommand {
             let args: Vec<&str> = args.splitn(2, ' ').collect();
 
             if args.len() != 2 {
-                return self.usage(&message);
+                return self.usage(&message).await;
             }
 
             let activity = args[0];
@@ -92,25 +85,24 @@ impl LfgCommand {
                     .expect("Failed to load Activity shortcut");
 
                 if act.is_none() {
-                    return self.send_reply(
-                        &message,
-                        format!(
-                            "Activity {} was not found. Use /activities to see the list.",
-                            activity
-                        ),
-                        Format::Plain,
-                    );
+                    return self
+                        .send_reply(
+                            &message,
+                            format!(
+                                "Activity {} was not found. Use /activities to see the list.",
+                                activity
+                            ),
+                        )
+                        .await;
                 }
                 // Parse input in MSK timezone...
                 let start_time = parse(timespec, None);
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 
                 if start_time.is_err() {
-                    return self.send_reply(
-                        &message,
-                        format!("Failed to parse time {}", timespec),
-                        Format::Plain,
-                    );
+                    return self
+                        .send_reply(&message, format!("Failed to parse time {}", timespec))
+                        .await;
                 }
 
                 // ...then convert back to UTC.
@@ -162,8 +154,8 @@ Enter `/edit{actId} details <free form description text>` to specify more detail
                         onTime = format_start_time(start_time, reference_date()),
                         actId = planned_activity.id
                     ),
-                    Format::Plain,
-                );
+                )
+                .await;
             }
         }
     }

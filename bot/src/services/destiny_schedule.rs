@@ -1,11 +1,13 @@
 use {
     crate::{
-        bot_actor::{BotActorMsg, Format, Notify, SendMessage},
+        bot_actor::{Format, Notify, SendMessage},
         datetime::{reference_date, BotDateTime},
     },
     chrono::{DateTime, Duration, TimeZone, Utc},
-    riker::{actor::Tell, actors::ActorRef},
+    culpa::throws,
+    kameo::prelude::*,
     std::sync::LazyLock,
+    teloxide::types::ChatId,
 };
 // use plurals::{Lang, Plural};
 
@@ -41,11 +43,15 @@ fn raid_week_number(now: BotDateTime) -> i64 {
 // };
 
 // 1. Daily resets at 20:00 MSK (17:00 UTC) every day
-pub fn daily_reset(bot: ActorRef<BotActorMsg>, chat_id: teloxide::types::ChatId) {
-    bot.tell(
-        SendMessage("⚡️ Daily reset".into(), chat_id, Format::Plain, Notify::Off),
-        None,
-    );
+#[throws(kameo::error::SendError<crate::bot_actor::SendMessage>)]
+pub async fn daily_reset(bot: ActorRef<crate::bot_actor::BotActor>, lfg_chat: ChatId) {
+    bot.tell(SendMessage(
+        "⚡️ Daily reset".into(),
+        lfg_chat,
+        Format::Plain,
+        Notify::Off,
+    ))
+    .await?;
 }
 
 pub fn dreaming_city_cycle() -> String {
@@ -102,16 +108,15 @@ pub fn ascendant_challenge_cycle() -> String {
 //    dreaming city on 3-week schedule
 // 7. On main reset: change in Dreaming City Ascendant Challenges
 //    dreaming city challenges on 6-week schedule
-pub fn major_weekly_reset(bot: ActorRef<BotActorMsg>, chat_id: teloxide::types::ChatId) {
+#[throws(kameo::error::SendError<crate::bot_actor::SendMessage>)]
+pub async fn major_weekly_reset(bot: ActorRef<crate::bot_actor::BotActor>, lfg_chat: ChatId) {
     let msg = format!(
         "⚡️ Weekly reset:\n\n{d1week}\n\n{d2week}",
         d1week = this_week_in_d1(),
         d2week = this_week_in_d2(),
     );
-    bot.tell(
-        SendMessage(msg, chat_id, Format::Markdown, Notify::Off),
-        None,
-    );
+    bot.tell(SendMessage(msg, lfg_chat, Format::Markdown, Notify::Off))
+        .await?;
 }
 
 pub fn this_week_in_d1() -> String {

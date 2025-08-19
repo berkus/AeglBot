@@ -1,25 +1,15 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        bot_actor::ActorUpdateMessage,
         commands::{guardian_lookup, match_command, validate_username},
         BotCommand,
     },
-    riker::actors::Tell,
+    kameo::message::Context,
 };
 
 command_actor!(WhoisCommand, [ActorUpdateMessage]);
 
-impl WhoisCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
-        );
-    }
-}
+impl WhoisCommand {}
 
 impl BotCommand for WhoisCommand {
     fn prefix() -> &'static str {
@@ -31,13 +21,15 @@ impl BotCommand for WhoisCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for WhoisCommand {
-    type Msg = WhoisCommandMsg;
+impl Message<ActorUpdateMessage> for WhoisCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
-        tokio::runtime::Handle::current().block_on(async {
-            self.handle_message(message).await;
-        });
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        self.handle_message(message).await;
     }
 }
 
@@ -50,10 +42,12 @@ impl WhoisCommand {
         {
             if name.is_none() {
                 // usage()
-                return self.send_reply(
-                    &message,
-                    "To query user provide his @TelegramId (starting with @) or PsnId",
-                );
+                return self
+                    .send_reply(
+                        &message,
+                        "To query user provide his @TelegramId (starting with @) or PsnId",
+                    )
+                    .await;
             }
 
             let name = name.unwrap();
@@ -76,13 +70,16 @@ impl WhoisCommand {
                             telegram_name = guardian.telegram_name,
                             psn_name = guardian.psn_name
                         ),
-                    );
+                    )
+                    .await;
                 }
                 Ok(None) => {
-                    self.send_reply(&message, format!("Guardian {} was not found.", name));
+                    self.send_reply(&message, format!("Guardian {} was not found.", name))
+                        .await;
                 }
                 Err(_) => {
-                    self.send_reply(&message, "Error querying guardian name.");
+                    self.send_reply(&message, "Error querying guardian name.")
+                        .await;
                 }
             }
         }

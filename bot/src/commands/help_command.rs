@@ -4,7 +4,7 @@ use {
         commands::match_command,
         BotCommand,
     },
-    riker::actors::Tell,
+    kameo::message::Context,
 };
 
 command_actor!(HelpCommand, [ActorUpdateMessage]);
@@ -19,12 +19,16 @@ impl BotCommand for HelpCommand {
     }
 }
 
-impl Receive<ActorUpdateMessage> for HelpCommand {
-    type Msg = HelpCommandMsg;
+impl Message<ActorUpdateMessage> for HelpCommand {
+    type Reply = ();
 
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(ListCommands(message), None);
+            let _ = self.bot_ref.tell(ListCommands(message)).await;
         }
     }
 }
