@@ -4,7 +4,10 @@
 // Use https://lib.rs/crates/two_timer
 
 use {
-    aegl_bot::bot_actor::{ActorUpdateMessage, BotActor},
+    aegl_bot::{
+        bot_actor::{ActorUpdateMessage, BotActor},
+        establish_db_connection,
+    },
     dotenv::dotenv,
     migration::{Migrator, MigratorTrait},
     // riker::prelude::*, doesn't work here!
@@ -73,15 +76,11 @@ fn setup_logging() -> Result<(), fern::InitError> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
     aegl_bot::datetime::bot_start_time(); // Mark start timestamp
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let connection = sea_orm::Database::connect(&database_url).await?;
-    Migrator::up(&connection, None).await?;
 
     // TimeZone.setDefault(TimeZone.getTimeZone(config.getString("bot.timezone")))
     let bot_name = env::var("TELEGRAM_BOT_NAME").expect("TELEGRAM_BOT_NAME must be set");
@@ -91,6 +90,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
 
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+
+    let connection = establish_db_connection().await?;
+    Migrator::up(&connection, None).await?;
+
     let sys = ActorSystem::new().unwrap();
 
     let tgbot = Bot::new(token);

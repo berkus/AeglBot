@@ -150,7 +150,7 @@ impl ActorFactoryArgs<(String, Bot, ChannelRef<ActorUpdateMessage>, i64)> for Bo
     fn create_args(
         (bot_name, bot, chan, lfg_chat): (String, Bot, ChannelRef<ActorUpdateMessage>, i64),
     ) -> Self {
-        let rt = tokio::runtime::Builder::new_current_thread()
+        let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap();
