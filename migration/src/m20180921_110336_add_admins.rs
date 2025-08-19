@@ -19,11 +19,12 @@ impl MigrationTrait for Migration {
             )
             .await?;
         // update guardians set is_admin = true where telegram_name = 'berkus';
-        let update = Query::update()
+        entity::Guardians::update_one();
+        let update = sea_orm::Update::one()
             .table(Guardians::Table)
             .value(Guardians::IsAdmin, true)
             .and_where(Expr::col(Guardians::TelegramName).eq("berkus"));
-        manager.exec_stmt(update).await?;
+        manager.exec_stmt(update).await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
