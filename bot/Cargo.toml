@@ -6,6 +6,8 @@ version = "0.4.0"
 
 [dependencies]
 anyhow.workspace = true
+chrono-tz.workspace = true
+chrono.workspace = true
 dotenv.workspace = true
 entity.workspace = true
 fern.workspace = true
@@ -23,8 +25,6 @@ serde.workspace = true
 serde_json.workspace = true
 teloxide.workspace = true
 tera.workspace = true
-time-tz.workspace = true
-time.workspace = true
 tokio-util.workspace = true
 tokio.workspace = true
 two_timer.workspace = true
