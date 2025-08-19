@@ -1,9 +1,9 @@
 use {
     crate::{
+        BotCommand,
         actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{admin_check, match_command},
         models::{Activity, ActivityShortcut, NewActivity, NewActivityShortcut},
-        BotCommand,
     },
     diesel::{self, prelude::*},
     diesel_derives_traits::{Model, NewModel},
@@ -431,8 +431,11 @@ fn parse_kv_args(args: &str) -> Option<HashMap<&str, &str>> {
 
     match fragments.len() {
         x if x < 2 => None,
-        2 =>         // only single parameter
-            Some(final_collect(fragments)),
+        2 =>
+        // only single parameter
+        {
+            Some(final_collect(fragments))
+        }
         _ => {
             // ['max_fireteam_size', '1', 'name', '6', 'mode', '"Last Wish, Enhance"']
             let subfrags = fragments[1..fragments.len() - 1]

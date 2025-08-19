@@ -1,8 +1,8 @@
 use {
     crate::{
+        BotCommand,
         actors::bot_actor::{ActorUpdateMessage, ListCommands},
         commands::match_command,
-        BotCommand,
     },
     riker::actors::Tell,
 };

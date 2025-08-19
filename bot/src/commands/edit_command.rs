@@ -1,12 +1,12 @@
 use {
     crate::{
+        BotCommand,
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
         models::{ActivityShortcut, PlannedActivity},
-        BotCommand,
     },
-    chrono::{prelude::*, Duration},
-    chrono_english::{parse_date_string, Dialect},
+    chrono::{Duration, prelude::*},
+    chrono_english::{Dialect, parse_date_string},
     chrono_tz::Europe::Moscow,
     diesel_derives_traits::Model,
     riker::actors::Tell,

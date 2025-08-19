@@ -1,53 +1,31 @@
 use {
     crate::actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
     entity::guardians,
-    riker::actors::{ActorRef, Tell},
-    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
+    kameo::actor::ActorRef,
+    sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter},
 };
 
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use $crate::{bot_actor::BotActorMsg, NamedActor};
-        use paste::paste;
-        use riker::actors::{
-            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
+        use {
+            kameo::{actor::ActorRef, error::Infallible, message::*, Actor},
+            sea_orm::DatabaseConnection,
+            $crate::BotConnection,
         };
-        use sea_orm::DatabaseConnection;
 
         #[derive(Clone)]
-        #[actor($($msgs)*)]
         pub struct $name {
             bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
             bot_name: String,
             connection_pool: DatabaseConnection,
         }
 
-        impl NamedActor for $name {
-            fn actor_name() -> String { std::stringify!($name).into() }
-        }
-
         impl $name {
-             pub fn new(
-                 bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
-                 bot_name: String,
-                connection_pool: DatabaseConnection,
-             ) -> Self {
-                 Self {
-                     bot_ref,
-                     bot_name,
-                     connection_pool,
-                 }
-             }
-
-            pub fn connection(&self) -> &DatabaseConnection {
-                &self.connection_pool
-            }
-
             pub fn new(
                 bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
                 bot_name: String,
-                connection_pool: BotConnection,
+                connection_pool: DatabaseConnection,
             ) -> Self {
                 Self {
                     bot_ref,
@@ -56,7 +34,7 @@ macro_rules! command_actor {
                 }
             }
 
-            pub fn connection(&self) -> &BotConnection {
+            pub fn connection(&self) -> &DatabaseConnection {
                 &self.connection_pool
             }
 
@@ -98,16 +76,14 @@ macro_rules! command_actor {
         }
 
         impl Actor for $name {
-            type Msg = paste! { [<$name Msg>] };
+            type Args = Self;
+            type Error = Infallible;
 
-            fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
-                self.receive(ctx, msg, sender);
-            }
-        }
-
-        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String, DbConnPool)> for $name {
-            fn create_args((bot_ref, bot_name, connection_pool): (ActorRef<BotActorMsg>, String, DbConnPool)) -> Self {
-                Self { bot_ref, bot_name, connection_pool }
+            async fn on_start(
+                args: Self::Args,
+                _actor_ref: ActorRef<Self>,
+            ) -> Result<Self, Self::Error> {
+                Ok(args)
             }
         }
     };
@@ -159,16 +135,15 @@ pub async fn validate_username(
 ) -> Option<guardians::Model> {
     let username = match message.update.from.as_ref().unwrap().username {
         None => {
-            let _ = bot.tell(
-                SendMessageReply(
+            let _ = bot
+                .tell(SendMessageReply(
                     "❌ You have no telegram username, register your telegram account first."
                         .into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
-            );
+                ))
+                .await;
             return None;
         }
         Some(ref name) => name.clone(),
@@ -182,27 +157,25 @@ pub async fn validate_username(
     match db_user {
         Ok(Some(user)) => Some(user),
         Ok(None) => {
-            let _ = bot.tell(
-                SendMessageReply(
+            let _ = bot
+                .tell(SendMessageReply(
                     "❌ You need to link your PSN account first: use /psn command".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
-            );
+                ))
+                .await;
             None
         }
         Err(_) => {
-            let _ = bot.tell(
-                SendMessageReply(
+            let _ = bot
+                .tell(SendMessageReply(
                     "❌ Error querying guardian info.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
-            );
+                ))
+                .await;
             None
         }
     }
@@ -244,7 +217,7 @@ pub async fn guardian_lookup(
 /// @returns A pair of matched command and remainder of the message text.
 /// (None, None) if command did not match,
 /// (command, and Some remaining text after command otherwise).
-fn match_command(
+pub fn match_command(
     text: Option<&str>,
     command: &str,
     bot_name: &str,

@@ -1,10 +1,11 @@
 use {
     crate::{
+        BotCommand,
         bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
         datetime::nowtz,
         models::PlannedActivity,
-        render_template, BotCommand,
+        render_template,
     },
     riker::actors::Tell,
 };

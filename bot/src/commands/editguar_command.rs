@@ -1,8 +1,9 @@
 use {
     crate::{
+        BotCommand,
         actors::bot_actor::ActorUpdateMessage,
         commands::{admin_check, guardian_lookup, match_command, validate_username},
-        render_template, BotCommand,
+        render_template,
     },
     riker::actors::Tell,
 };

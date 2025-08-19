@@ -3,7 +3,6 @@ use {
         actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
         commands::{match_command, validate_username},
         models::{Activity, ActivityShortcut, NewPlannedActivity, NewPlannedActivityMember},
-        BotCommand,
     },
     chrono::prelude::*,
     chrono_english::{parse_date_string, Dialect},

@@ -1,10 +1,7 @@
-use {
-    crate::{
-        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::match_command,
-        BotCommand,
-    },
-    riker::actors::Tell,
+use crate::{
+    BotCommand,
+    actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+    commands::match_command,
 };
 
 command_actor!(ChatidCommand, [ActorUpdateMessage]);
