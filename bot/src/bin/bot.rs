@@ -9,11 +9,11 @@ use {
         establish_db_connection,
     },
     dotenv::dotenv,
+    kameo::Actor,
     migration::{Migrator, MigratorTrait},
-    // riker::prelude::*, doesn't work here!
-    riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
     std::env,
-    teloxide::{prelude::*, requests::ResponseResult},
+    teloxide::{prelude::*, requests::ResponseResult, types::Message as TelegramMessage},
+    tokio::sync::broadcast,
 };
 
 fn setup_logging() -> Result<(), fern::InitError> {
@@ -94,32 +94,26 @@ async fn main() -> anyhow::Result<()> {
     let connection = establish_db_connection().await?;
     Migrator::up(&connection, None).await?;
 
-    let sys = ActorSystem::new().unwrap();
-
     let tgbot = Bot::new(token);
 
-    let chan: ChannelRef<ActorUpdateMessage> = channel("commands", &sys).unwrap();
+    let (update_sender, _) = broadcast::channel::<ActorUpdateMessage>(1000);
 
-    let _bot_ref = sys
-        .actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone(), lfg_chat))
-        .expect("Couldn't start the bot");
+    let bot_actor =
+        BotActor::create(bot_name, tgbot.clone(), update_sender.clone(), lfg_chat).await;
+    let _bot_ref = BotActor::spawn(bot_actor);
 
-    teloxide::repl(tgbot.clone(), move |bot: Bot, message: Message| {
-        let chan = chan.clone();
+    teloxide::repl(tgbot.clone(), move |bot: Bot, message: TelegramMessage| {
+        let update_sender = update_sender.clone();
         async move {
             log::debug!("Processing message {}", message.id);
-            chan.tell(
-                Publish {
-                    msg: ActorUpdateMessage {
-                        requester: bot,
-                        update: message,
-                    },
-                    topic: "raw-commands".into(),
-                },
-                None,
-            );
+            let _ = update_sender.send(ActorUpdateMessage {
+                requester: bot,
+                update: message,
+            });
             ResponseResult::<()>::Ok(())
         }
     })
     .await;
+
+    Ok(())
 }

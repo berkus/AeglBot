@@ -12,13 +12,13 @@ entity = { version = "0.4", path = "./entity" }
 fern = { version = "0.7", features = ["colored"] }
 include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
+kameo = "0.17"
 libbot = { path = "./lib" }
 log = "0.4"
 migration = { version = "0.4", path = "./migration" }
 paste = "1"
 # plurals = "0.3"
 regex = "1"
-riker = "0.4"
 sea-orm = { version = "1.1", features = [
     "macros",
     "runtime-tokio-rustls",

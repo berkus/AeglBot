@@ -67,3 +67,9 @@ Remember to use `async fn`!!
 
 Send function:
 - https://github.com/bytesnake/telebot/blob/master/telebot-derive/src/lib.rs#L239
+
+Update riker to kameo:
+- [x] https://tqwewe.com/blog/comparing-rust-actor-libraries/
+
+A version of two-timer that can use "in x hours" and supports timezones (default doesn't work with TZs properly):
+- https://github.com/JellyWX/two-timer/tree/master
