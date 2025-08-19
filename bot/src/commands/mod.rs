@@ -1,51 +1,84 @@
 use {
     crate::{
-        bot_actor::{ActorUpdateMessage, BotActorMsg, Format, Notify, SendMessageReply},
-        DbConnection,
+        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        BotConnection,
     },
     entity::guardians,
-    riker::actors::{ActorRef, Tell},
+    kameo::actor::ActorRef,
     sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use $crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
-        use riker::actors::{
-            actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
+        use {
+            kameo::{actor::ActorRef, error::Infallible, message::*, Actor},
+            $crate::BotConnection,
         };
-        use paste::paste;
 
         #[derive(Clone)]
-        #[actor($($msgs)*)]
         pub struct $name {
-            bot_ref: ActorRef<BotActorMsg>,
+            bot_ref: ActorRef<$crate::bot_actor::BotActor>,
             bot_name: String,
-            connection_pool: DbConnPool,
+            connection_pool: BotConnection,
         }
 
         impl $name {
+            pub fn new(
+                bot_ref: ActorRef<$crate::bot_actor::BotActor>,
+                bot_name: String,
+                connection_pool: BotConnection,
+            ) -> Self {
+                Self {
+                    bot_ref,
+                    bot_name,
+                    connection_pool,
+                }
+            }
+
             pub fn connection(&self) -> &BotConnection {
                 &self.connection_pool
             }
-        }
 
-        impl NamedActor for $name {
-            fn actor_name() -> String { std::stringify!($name).into() }
-        }
+            #[allow(dead_code, reason = "help_command doesn't use those")]
+            async fn send_reply_with_format<S>(
+                &self,
+                message: &$crate::bot_actor::ActorUpdateMessage,
+                reply: S,
+                format: $crate::bot_actor::Format,
+            ) where
+                S: Into<String>,
+            {
+                let _ = self
+                    .bot_ref
+                    .tell($crate::bot_actor::SendMessageReply(
+                        reply.into(),
+                        message.clone(),
+                        format,
+                        $crate::bot_actor::Notify::Off,
+                    ))
+                    .await;
+            }
 
-        impl Actor for $name {
-            type Msg = paste! { [<$name Msg>] };
-
-            fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
-                self.receive(ctx, msg, sender);
+            #[allow(dead_code, reason = "help_command doesn't use those")]
+            async fn send_reply<S>(&self, message: &$crate::bot_actor::ActorUpdateMessage, reply: S)
+            where
+                S: Into<String>,
+            {
+                self.send_reply_with_format(message, reply, $crate::bot_actor::Format::Plain)
+                    .await;
             }
         }
 
-        impl ActorFactoryArgs<(ActorRef<BotActorMsg>, String, DbConnPool)> for $name {
-            fn create_args((bot_ref, bot_name, connection_pool): (ActorRef<BotActorMsg>, String, DbConnPool)) -> Self {
-                Self { bot_ref, bot_name, connection_pool }
+        impl Actor for $name {
+            type Args = Self;
+            type Error = Infallible;
+
+            async fn on_start(
+                args: Self::Args,
+                _actor_ref: ActorRef<Self>,
+            ) -> Result<Self, Self::Error> {
+                Ok(args)
             }
         }
     };
@@ -91,21 +124,20 @@ pub fn decapitalize(s: &str) -> String {
 
 /// Return a guardian record if message author is registered in Guardians table, `None` otherwise.
 pub async fn validate_username(
-    bot: &ActorRef<BotActorMsg>,
+    bot: &ActorRef<crate::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
-    connection: &DbConnection,
+    connection: &BotConnection,
 ) -> Option<guardians::Model> {
     let username = match message.update.from.as_ref().unwrap().username {
         None => {
-            bot.tell(
-                SendMessageReply(
+            let _ = bot
+                .tell(SendMessageReply(
                     "You have no telegram username, register your telegram account first.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
-            );
+                ))
+                .await;
             return None;
         }
         Some(ref name) => name.clone(),
@@ -119,27 +151,25 @@ pub async fn validate_username(
     match db_user {
         Ok(Some(user)) => Some(user),
         Ok(None) => {
-            bot.tell(
-                SendMessageReply(
+            let _ = bot
+                .tell(SendMessageReply(
                     "You need to link your PSN account first: use /psn command".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
-            );
+                ))
+                .await;
             None
         }
         Err(_) => {
-            bot.tell(
-                SendMessageReply(
+            let _ = bot
+                .tell(SendMessageReply(
                     "Error querying guardian info.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
-                ),
-                None,
-            );
+                ))
+                .await;
             None
         }
     }
@@ -147,9 +177,9 @@ pub async fn validate_username(
 
 /// Return a guardian record if message author is an admin user, `None` otherwise.
 pub async fn admin_check(
-    bot: &ActorRef<BotActorMsg>,
+    bot: &ActorRef<crate::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
-    connection: &DbConnection,
+    connection: &BotConnection,
 ) -> Option<guardians::Model> {
     if let Some(user) = validate_username(bot, message, connection).await {
         if user.is_admin {
@@ -164,7 +194,7 @@ pub async fn admin_check(
 
 pub async fn guardian_lookup(
     name: &str,
-    connection: &DbConnection,
+    connection: &BotConnection,
 ) -> Result<Option<guardians::Model>, sea_orm::DbErr> {
     if let Some(name) = name.strip_prefix('@') {
         guardians::Entity::find()
@@ -187,7 +217,7 @@ pub async fn guardian_lookup(
 /// @returns A pair of matched command and remainder of the message text.
 /// (None, None) if command did not match,
 /// (command, and Some remaining text after command otherwise).
-fn match_command(
+pub fn match_command(
     text: Option<&str>,
     command: &str,
     bot_name: &str,

@@ -1,16 +1,20 @@
 use {
     crate::{
-        bot_actor::{BotActorMsg, Format, Notify, SendMessage},
+        bot_actor::{Format, Notify, SendMessage},
         datetime::reference_date,
         BotConnection,
     },
     entity::plannedactivities,
-    riker::{actor::Tell, actors::ActorRef},
+    kameo::prelude::*,
     sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
     teloxide::types::ChatId,
 };
 
-pub async fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_id: ChatId) {
+pub async fn check(
+    bot: ActorRef<crate::bot_actor::BotActor>,
+    connection: BotConnection,
+    chat_id: ChatId,
+) {
     // log::info!("reminder check at {}", reference_date());
 
     let reference = reference_date();
@@ -42,5 +46,7 @@ pub async fn check(bot: ActorRef<BotActorMsg>, connection: BotConnection, chat_i
             acc + &format!("Activity {} starting soon\n\n", event.id)
         });
 
-    bot.tell(SendMessage(text, chat_id, Format::Html, Notify::On), None);
+    let _ = bot
+        .tell(SendMessage(text, chat_id, Format::Html, Notify::On))
+        .await;
 }
