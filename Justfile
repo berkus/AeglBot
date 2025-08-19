@@ -4,6 +4,8 @@ build:
     cargo build --release
 test:
     cargo test
+run:
+    cargo run --bin bot
 
 alias d := deploy
 alias b := build
