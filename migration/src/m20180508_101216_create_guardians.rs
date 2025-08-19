@@ -12,8 +12,8 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Guardians::Table) // create table guardians (
                     .if_not_exists()
+                    .table(Guardians::Table) // create table guardians (
                     .col(pk_auto(Guardians::Id)) // id serial primary key not null,
                     .col(string_uniq(Guardians::TelegramName)) // telegram_name text not null unique,
                     .col(big_integer_uniq(Guardians::TelegramId)) // telegram_id bigint not null unique,

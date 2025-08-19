@@ -12,6 +12,7 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
+                    .if_not_exists()
                     .table(Activities::Table) // create table activities (
                     .col(pk_auto(Activities::Id)) // id serial primary key not null,
                     .col(string(Activities::Name)) // name text not null,
@@ -27,6 +28,7 @@ impl MigrationTrait for Migration {
         manager
             .create_index(
                 Index::create()
+                    .if_not_exists()
                     .name("activities_name_idx")
                     .table(Activities::Table)
                     .col(Activities::Name)
@@ -37,6 +39,7 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
+                    .if_not_exists()
                     .table(ActivityShortcuts::Table) // create table activityshortcuts (
                     .col(pk_auto(ActivityShortcuts::Id)) // id serial primary key not null,
                     .col(string_uniq(ActivityShortcuts::Name)) // name text not null unique,

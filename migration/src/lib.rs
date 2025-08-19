@@ -14,8 +14,11 @@ pub use tables::*;
 
 pub struct Migrator;
 
-#[async_trait::async_trait]
 impl MigratorTrait for Migrator {
+    fn migration_table_name() -> DynIden {
+        "__seaql_migrations".into_iden()
+    }
+
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
             Box::new(m20180508_101204_create_alerts::Migration),
