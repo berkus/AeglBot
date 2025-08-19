@@ -1,31 +1,31 @@
 use {
     crate::{
-        actors::reminder_actor::{
+        commands::*,
+        establish_db_connection,
+        services::reminder_actor::{
             ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
         },
-        commands::*,
-        BotCommand, BotConnection,
+        BotCommand, DbConnPool, NamedActor,
     },
-    kameo::{
-        actor::ActorRef,
-        error::Infallible,
-        message::{Context, Message},
-        Actor,
+    riker::actors::{
+        actor, Actor, ActorFactoryArgs, ActorRefFactory, BasicActorRef, ChannelRef, Context,
+        Receive, Sender, Subscribe, Tell,
     },
     std::fmt::Formatter,
     teloxide::{
         prelude::*,
         types::{ChatId, ParseMode},
     },
-    tokio::sync::broadcast,
 };
 
+#[derive(Clone)]
+#[actor(SendMessage, SendMessageReply, ListCommands)]
 pub struct BotActor {
     pub bot: Bot,
     bot_name: String,
     lfg_chat_id: i64,
-    update_sender: broadcast::Sender<ActorUpdateMessage>,
-    connection_pool: BotConnection,
+    update_channel: ChannelRef<ActorUpdateMessage>,
+    connection_pool: DbConnPool,
     commands_list: Vec<(String, String)>,
 }
 
@@ -37,34 +37,33 @@ impl std::fmt::Debug for BotActor {
     }
 }
 
-#[derive(Debug, Clone)]
 pub struct ActorUpdateMessage {
-    pub requester: Bot,
-    pub update: teloxide::types::Message,
+pub requester: Bot,
+pub update: Message,
 }
 
 impl ActorUpdateMessage {
-    pub fn new(requester: Bot, update: teloxide::types::Message) -> Self {
-        Self { requester, update }
+pub fn new(requester: Bot, update: Message) -> Self {
+    Self { requester, update }
     }
 }
 
 impl BotActor {
     // Public API
 
-    pub async fn new(
+pub async fn new(
         name: &str,
         bot: Bot,
-        update_sender: broadcast::Sender<ActorUpdateMessage>,
+        chan: ChannelRef<ActorUpdateMessage>,
         lfg_chat_id: i64,
     ) -> Self {
-        let connection_pool = crate::establish_db_connection().await.unwrap();
+    let connection_pool = crate::establish_db_connection().await.unwrap();
         BotActor {
             bot,
             bot_name: name.to_string(),
             lfg_chat_id,
-            update_sender,
-            connection_pool,
+            update_channel: chan,
+        connection_pool,
             commands_list: vec![],
         }
     }
@@ -92,82 +91,66 @@ impl BotActor {
     // }
 }
 
-use crate::commands::match_command;
-
 impl Actor for BotActor {
-    type Args = Self;
-    type Error = Infallible;
+    type Msg = BotActorMsg;
 
-    async fn on_start(args: Self::Args, actor_ref: ActorRef<Self>) -> Result<Self, Self::Error> {
+    /// Register all bot commands and subscribe them to the system notification channel.
+    fn pre_start(&mut self, ctx: &Context<Self::Msg>) {
         macro_rules! new_command {
-            ($T:ident, $args:expr) => {
-                let cmd = $T::spawn($T::new(
-                    actor_ref.clone(),
-                    $args.bot_name.clone(),
-                    $args.connection_pool.clone(),
-                ));
-                $args
-                    .commands_list
-                    .push(($T::prefix().into(), $T::description().into()));
-
-                // Subscribe to updates
-                let mut update_receiver = $args.update_sender.subscribe();
-                let cmd_clone = cmd.clone();
-                let bot_name = $args.bot_name.clone();
-                tokio::spawn(async move {
-                    while let Ok(msg) = update_receiver.recv().await {
-                        if let (Some(_), _) =
-                            match_command(msg.update.text(), $T::prefix(), &bot_name)
-                        {
-                            let _ = cmd_clone.tell(msg).await;
-                        }
-                    }
-                });
-            };
+            ($T:ident) => {
+                let cmd = ctx
+                    .actor_of_args::<$T, _>(&$T::actor_name(), (ctx.myself().clone(), self.bot_name.clone(), self.connection_pool.clone()))
+                    .unwrap(); // FIXME: panics in pre_start do not cause actor restart, so this is faulty!
+                self.commands_list.push(($T::prefix().into(), $T::description().into()));
+                self.update_channel.tell(
+                    Subscribe {
+                        actor: Box::new(cmd),
+                        topic: "raw-commands".into(),
+                    },
+                    None,
+                );
+            }
         }
 
-        let mut bot_actor = args;
-
-        new_command!(ActivitiesCommand, bot_actor);
-        new_command!(CancelCommand, bot_actor);
-        new_command!(ChatidCommand, bot_actor);
-        new_command!(D1weekCommand, bot_actor);
-        new_command!(D2weekCommand, bot_actor);
-        new_command!(EditCommand, bot_actor);
-        new_command!(EditGuardianCommand, bot_actor);
-        new_command!(HelpCommand, bot_actor);
-        new_command!(JoinCommand, bot_actor);
-        new_command!(LfgCommand, bot_actor);
-        new_command!(ListCommand, bot_actor);
-        new_command!(ManageCommand, bot_actor);
-        new_command!(PsnCommand, bot_actor);
-        new_command!(UptimeCommand, bot_actor);
-        new_command!(WhoisCommand, bot_actor);
+        new_command!(ActivitiesCommand);
+        new_command!(CancelCommand);
+        new_command!(ChatidCommand);
+        new_command!(D1weekCommand);
+        new_command!(D2weekCommand);
+        new_command!(EditCommand);
+        new_command!(EditGuardianCommand);
+        new_command!(HelpCommand);
+        new_command!(JoinCommand);
+        new_command!(LfgCommand);
+        new_command!(ListCommand);
+        new_command!(ManageCommand);
+        new_command!(PsnCommand);
+        new_command!(UptimeCommand);
+        new_command!(WhoisCommand);
 
         // Create reminder tasks actor
-        let reminders = ReminderActor::spawn(ReminderActor::new(
-            actor_ref.clone(),
-            bot_actor.lfg_chat_id,
-            bot_actor.connection_pool.clone(),
-        ));
-
+        let reminders = ctx
+            .actor_of_args::<ReminderActor, _>(
+                "reminders",
+                (ctx.myself(), self.lfg_chat_id, self.connection_pool.clone()),
+            )
+            .unwrap();
         // Schedule first run, the actor handler will reschedule.
-        let _ = reminders.tell(ScheduleNextMinute).await;
-        let _ = reminders.tell(ScheduleNextDay).await;
-        let _ = reminders.tell(ScheduleNextWeek).await;
+        reminders.tell(ScheduleNextMinute, None);
+        reminders.tell(ScheduleNextDay, None);
+        reminders.tell(ScheduleNextWeek, None);
+    }
 
-        Ok(bot_actor)
+    fn recv(&mut self, ctx: &Context<Self::Msg>, msg: Self::Msg, sender: Sender) {
+        self.receive(ctx, msg, sender);
     }
 }
 
-impl BotActor {
-    pub async fn create(
-        bot_name: String,
-        bot: Bot,
-        update_sender: broadcast::Sender<ActorUpdateMessage>,
-        lfg_chat: i64,
+impl ActorFactoryArgs<(String, Bot, ChannelRef<ActorUpdateMessage>, i64)> for BotActor {
+    fn create_args(
+        (bot_name, bot, chan, lfg_chat): (String, Bot, ChannelRef<ActorUpdateMessage>, i64),
     ) -> Self {
-        Self::new(&bot_name, bot, update_sender, lfg_chat).await
+        Self::new(&bot_name, bot, chan, lfg_chat)
     }
 }
 
@@ -193,14 +176,10 @@ pub struct SendMessageReply(pub String, pub ActorUpdateMessage, pub Format, pub 
 #[derive(Clone, Debug)]
 pub struct ListCommands(pub ActorUpdateMessage);
 
-impl Message<SendMessage> for BotActor {
-    type Reply = ();
+impl Receive<SendMessage> for BotActor {
+    type Msg = BotActorMsg;
 
-    async fn handle(
-        &mut self,
-        msg: SendMessage,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: SendMessage, _sender: Sender) {
         log::debug!("SendMessage: {}", &msg.0);
         let resp = self
             .bot
@@ -209,13 +188,13 @@ impl Message<SendMessage> for BotActor {
                 Notify::On => false,
                 Notify::Off => true,
             })
-            .link_preview_options(teloxide::types::LinkPreviewOptions {
-                is_disabled: true,
-                url: None,
-                prefer_small_media: false,
-                prefer_large_media: false,
-                show_above_text: false,
-            });
+        .link_preview_options(teloxide::types::LinkPreviewOptions {
+            is_disabled: true,
+            url: None,
+            prefer_small_media: false,
+            prefer_large_media: false,
+            show_above_text: false,
+        });
 
         let resp = match msg.2 {
             Format::Html => resp.parse_mode(ParseMode::Html),
@@ -223,36 +202,37 @@ impl Message<SendMessage> for BotActor {
             Format::Plain => resp,
         };
 
-        let _ = resp.send().await;
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        rt.block_on(resp.send()).unwrap();
     }
 }
 
-impl Message<SendMessageReply> for BotActor {
-    type Reply = ();
+impl Receive<SendMessageReply> for BotActor {
+    type Msg = BotActorMsg;
 
-    async fn handle(
-        &mut self,
-        msg: SendMessageReply,
-        _ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: SendMessageReply, _sender: Sender) {
         log::debug!("SendMessageReply: {}", &msg.0);
         let message = msg.1;
 
         let fut = self
             .bot
-            .send_message(message.update.chat.id, msg.0)
-            .reply_parameters(teloxide::types::ReplyParameters::new(message.update.id))
+        .send_message(message.update.chat.id, msg.0)
+        .reply_parameters(teloxide::types::ReplyParameters::new(message.update.id))
             .disable_notification(match msg.3 {
                 Notify::On => false,
                 Notify::Off => true,
             })
-            .link_preview_options(teloxide::types::LinkPreviewOptions {
-                is_disabled: true,
-                url: None,
-                prefer_small_media: false,
-                prefer_large_media: false,
-                show_above_text: false,
-            });
+        .link_preview_options(teloxide::types::LinkPreviewOptions {
+            is_disabled: true,
+            url: None,
+            prefer_small_media: false,
+            prefer_large_media: false,
+            show_above_text: false,
+        });
 
         let fut = match msg.2 {
             Format::Html => fut.parse_mode(ParseMode::Html),
@@ -260,18 +240,19 @@ impl Message<SendMessageReply> for BotActor {
             Format::Plain => fut,
         };
 
-        let _ = fut.send().await;
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        rt.block_on(fut.send()).unwrap();
     }
 }
 
-impl Message<ListCommands> for BotActor {
-    type Reply = ();
+impl Receive<ListCommands> for BotActor {
+    type Msg = BotActorMsg;
 
-    async fn handle(
-        &mut self,
-        msg: ListCommands,
-        ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    fn receive(&mut self, ctx: &Context<Self::Msg>, msg: ListCommands, _sender: Sender) {
         log::debug!("ListCommands");
         let message = msg.0;
 
@@ -282,9 +263,9 @@ impl Message<ListCommands> for BotActor {
             |acc, pair| format!("{}{} — {}\n\n", acc, pair.0, pair.1),
         );
 
-        let _ = ctx
-            .actor_ref()
-            .tell(SendMessageReply(reply, message, Format::Html, Notify::Off))
-            .try_send(); // @todo use unbounded mailbox for bot_actor? prolly not
+        ctx.myself.tell(
+            SendMessageReply(reply, message, Format::Html, Notify::Off),
+            None,
+        );
     }
 }
