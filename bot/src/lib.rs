@@ -5,19 +5,16 @@
 #![feature(type_ascription)]
 #![expect(non_local_definitions)] // Old diesel macros
 
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_derives_extra;
-
-use {diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool};
+use {
+    diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool,
+    sea_orm::DatabaseConnection,
+};
 
 pub mod bot_actor;
 pub mod commands;
 pub mod datetime;
-pub mod models;
-pub mod schema;
 pub mod services;
+pub mod templates;
 
 static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates"));
