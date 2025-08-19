@@ -27,7 +27,7 @@ pub struct Model {
     pub id: i32,
     pub planned_activity_id: i32,
     pub user_id: i32,
-    pub added: TimeDateTimeWithTimeZone,
+    pub added: ChronoDateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

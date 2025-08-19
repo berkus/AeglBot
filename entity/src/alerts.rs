@@ -4,8 +4,9 @@
 //-------------------------------------------------------------------------------------------------
 
 use {
+    chrono::Duration,
     sea_orm::entity::prelude::*,
-    std::{fmt, sync::LazyLock, time::Duration},
+    std::{fmt, sync::LazyLock},
 };
 
 // Old diesel schema for reference:
@@ -35,9 +36,9 @@ pub struct Model {
     #[sea_orm(column_type = "Text", column_name = "type")]
     pub kind: String,
     #[sea_orm(column_name = "startdate")]
-    pub start_date: TimeDateTimeWithTimeZone,
+    pub start_date: ChronoDateTimeWithTimeZone,
     #[sea_orm(column_name = "expirydate")]
-    pub expiry_date: Option<TimeDateTimeWithTimeZone>,
+    pub expiry_date: Option<ChronoDateTimeWithTimeZone>,
     #[sea_orm(column_type = "Text", nullable)]
     pub faction: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
@@ -68,7 +69,7 @@ impl Model {
             || self.is_orokin_reactor()
             || self
                 .expiry_date
-                .map(|exp| exp - self.start_date >= Duration::from_mins(90))
+                .map(|exp| exp - self.start_date >= Duration::minutes(90))
                 .unwrap_or(false)
     }
 

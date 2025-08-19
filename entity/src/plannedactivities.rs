@@ -28,7 +28,7 @@ pub struct Model {
     pub activity_id: i32, // refs Activities
     #[sea_orm(column_type = "Text", nullable)]
     pub details: Option<String>,
-    pub start: TimeDateTimeWithTimeZone,
+    pub start: ChronoDateTimeWithTimeZone,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

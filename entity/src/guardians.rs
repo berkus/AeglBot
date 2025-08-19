@@ -39,9 +39,9 @@ pub struct Model {
     pub email: Option<String>,
     #[sea_orm(column_type = "Text", nullable)]
     pub psn_clan: Option<String>,
-    pub created_at: TimeDateTimeWithTimeZone,
-    pub updated_at: TimeDateTimeWithTimeZone,
-    pub deleted_at: Option<TimeDateTimeWithTimeZone>,
+    pub created_at: ChronoDateTimeWithTimeZone,
+    pub updated_at: ChronoDateTimeWithTimeZone,
+    pub deleted_at: Option<ChronoDateTimeWithTimeZone>,
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub tokens: Option<Json>,
     #[sea_orm(column_type = "Text", nullable)]
