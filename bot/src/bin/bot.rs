@@ -104,13 +104,16 @@ async fn main() -> anyhow::Result<()> {
         .actor_of_args::<BotActor, _>("bot", (bot_name, tgbot.clone(), chan.clone(), lfg_chat))
         .expect("Couldn't start the bot");
 
-    teloxide::repl(tgbot.clone(), move |message: UpdateMessage| {
+    teloxide::repl(tgbot.clone(), move |bot: Bot, message: Message| {
         let chan = chan.clone();
         async move {
-            log::debug!("Processing message {}", message.update.id);
+            log::debug!("Processing message {}", message.id);
             chan.tell(
                 Publish {
-                    msg: message.into(),
+                    msg: ActorUpdateMessage {
+                        requester: bot,
+                        update: message,
+                    },
                     topic: "raw-commands".into(),
                 },
                 None,
