@@ -155,7 +155,8 @@ pub async fn validate_username(
         None => {
             let _ = bot
                 .tell(SendMessageReply(
-                    "You have no telegram username, register your telegram account first.".into(),
+                    "❌ You have no telegram username, register your telegram account first."
+                        .into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
@@ -176,7 +177,7 @@ pub async fn validate_username(
         Ok(None) => {
             let _ = bot
                 .tell(SendMessageReply(
-                    "You need to link your PSN account first: use /psn command".into(),
+                    "❌ You need to link your PSN account first: use /psn command".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
@@ -187,7 +188,7 @@ pub async fn validate_username(
         Err(_) => {
             let _ = bot
                 .tell(SendMessageReply(
-                    "Error querying guardian info.".into(),
+                    "❌ Error querying guardian info.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
@@ -204,15 +205,9 @@ pub async fn admin_check(
     message: &ActorUpdateMessage,
     connection: &DatabaseConnection,
 ) -> Option<guardians::Model> {
-    if let Some(user) = validate_username(bot, message, connection).await {
-        if user.is_admin {
-            Some(user)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    validate_username(bot, message, connection)
+        .await
+        .filter(|u| u.is_admin)
 }
 
 pub async fn guardian_lookup(
@@ -230,11 +225,11 @@ pub async fn guardian_lookup(
             .one(connection)
             .await
     }
-    // @todo: lookup by integer id, positive
+    // @todo: lookup by integer id, positive (tg user id)
 }
 
 /// Match command in both variations (with bot name and without bot name).
-/// @param msg Input message received from Telegram.
+/// @param text Input message received from Telegram.
 /// @param command Command name with leading slash, if it's a root command. FIXME: Is it correct?
 /// @param bot_name Registered bot name.
 /// @returns A pair of matched command and remainder of the message text.
@@ -247,7 +242,7 @@ pub fn match_command(
 ) -> (Option<String>, Option<String>) {
     // Take first token in the text - that must be the command, if any.
     // Split it by @ to see if we have a bot name attached
-    // If we do - it must match out bot name completely.
+    // If we do - it must match our bot name completely.
     // Strip trailing numeric digits from the left side - this might be part of the command argument, remember it.
     // The rest of the left side must match EXACTLY, not as a prefix.
     text.and_then(|input| {
