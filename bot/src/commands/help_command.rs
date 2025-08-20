@@ -2,29 +2,20 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, ListCommands},
         commands::match_command,
-        BotCommand,
     },
-    riker::actors::Tell,
+    culpa::throws,
+    kameo::message::Context,
 };
 
-command_actor!(HelpCommand, [ActorUpdateMessage]);
+command_actor!(HelpCommand, "help", "List available commands");
 
-impl BotCommand for HelpCommand {
-    fn prefix() -> &'static str {
-        "/help"
-    }
+impl Message<ActorUpdateMessage> for HelpCommand {
+    type Reply = anyhow::Result<()>;
 
-    fn description() -> &'static str {
-        "List available commands"
-    }
-}
-
-impl Receive<ActorUpdateMessage> for HelpCommand {
-    type Msg = HelpCommandMsg;
-
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    #[throws(anyhow::Error)]
+    async fn handle(&mut self, message: ActorUpdateMessage, _ctx: &mut Context<Self, Self::Reply>) {
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
-            self.bot_ref.tell(ListCommands(message), None);
+            self.bot_ref.tell(ListCommands(message)).await?;
         }
     }
 }
