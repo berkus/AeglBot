@@ -31,3 +31,4 @@ two_timer.workspace = true
 
 [target.'cfg(target_os="linux")'.dependencies]
 procfs = "0.17"
+thousands = "0.2"

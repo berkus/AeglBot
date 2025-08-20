@@ -28,9 +28,11 @@ dependencies = [
  "dotenv",
  "entity",
  "fern",
+ "futures",
  "include_dir",
  "itertools 0.14.0",
  "kameo",
+ "libbot",
  "log",
  "migration",
  "paste",
@@ -40,6 +42,7 @@ dependencies = [
  "serde",
  "teloxide",
  "tera",
+ "thousands",
  "tokio",
  "two_timer",
 ]
@@ -789,6 +792,8 @@ dependencies = [
  "chrono",
  "culpa",
  "dotenv",
+ "futures",
+ "libbot",
  "regex",
  "sea-orm",
  "serde",
@@ -1584,6 +1589,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 dependencies = [
  "spin",
+]
+
+[[package]]
+name = "libbot"
+version = "0.4.0"
+dependencies = [
+ "chrono",
+ "chrono-tz 0.10.4",
+ "culpa",
 ]
 
 [[package]]
@@ -3512,6 +3526,12 @@ dependencies = [
  "quote",
  "syn 2.0.106",
 ]
+
+[[package]]
+name = "thousands"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
 
 [[package]]
 name = "thread_local"
