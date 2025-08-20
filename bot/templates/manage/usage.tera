@@ -1,0 +1,10 @@
+Manage command help:
+
+/manage list-admins
+    List currently registered admins.
+
+/manage add-admin <id|@telegram|PSN>
+    Grant admin rights to guardian.
+
+/manage remove-admin <id|@telegram|PSN>
+    Remove admin rights from guardian.

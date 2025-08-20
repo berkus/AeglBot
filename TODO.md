@@ -73,3 +73,14 @@ Update riker to kameo:
 
 A version of two-timer that can use "in x hours" and supports timezones (default doesn't work with TZs properly):
 - https://github.com/JellyWX/two-timer/tree/master
+
+// in manage_command:
+// Need to invent some sort of match string format for matching subcommands
+// Some are `/command subcommand [args]`, some are `/command arg subcommand args` etc.
+// Can encode this string in prefix() for subcommands and make them match, maybe even directly?
+// i.e. add subcommands together with master command to the general list of commands (need to sort properly too)
+//        if match_subcommand(message, ListAdminsSubcommand) {
+//            return ListAdminsSubcommand::execute();
+//        } else if match_subcommand(message, AddAdminSubcommand) {
+//            return AddAdminSubcommand::execute();
+//        }

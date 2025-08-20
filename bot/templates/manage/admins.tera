@@ -1,0 +1,5 @@
+Existing admins:
+
+{% for admin in admins %}
+{{admin}}
+{% endfor -%}
