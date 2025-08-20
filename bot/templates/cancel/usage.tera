@@ -1,0 +1,4 @@
+Cancel command help:
+
+/cancel ActivityID
+    Leave planned activity by its number.
