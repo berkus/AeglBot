@@ -1,29 +1,26 @@
 use {
-    crate::{
-        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        models::Guardian,
-        schema::guardians::dsl::*,
-        DbConnection,
-    },
-    diesel::prelude::*,
+    crate::actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+    entity::guardians,
     riker::actors::{ActorRef, Tell},
+    sea_orm::{ColumnTrait, EntityTrait, QueryFilter},
 };
 
 #[macro_export]
 macro_rules! command_actor {
     ($name:ident, [ $($msgs:ident),* ]) => {
-        use $crate::{bot_actor::BotActorMsg, NamedActor, DbConnPool, BotConnection};
+        use $crate::{bot_actor::BotActorMsg, NamedActor};
+        use paste::paste;
         use riker::actors::{
             actor, Actor, ActorFactoryArgs, ActorRef, BasicActorRef, Context, Sender, Receive,
         };
-        use paste::paste;
+        use sea_orm::DatabaseConnection;
 
         #[derive(Clone)]
         #[actor($($msgs)*)]
         pub struct $name {
             bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
             bot_name: String,
-            connection_pool: DbConnPool,
+            connection_pool: DatabaseConnection,
         }
 
         impl NamedActor for $name {
@@ -31,8 +28,20 @@ macro_rules! command_actor {
         }
 
         impl $name {
-            pub fn connection(&self) -> BotConnection {
-                self.connection_pool.get().unwrap()
+             pub fn new(
+                 bot_ref: ActorRef<$crate::actors::bot_actor::BotActor>,
+                 bot_name: String,
+                connection_pool: DatabaseConnection,
+             ) -> Self {
+                 Self {
+                     bot_ref,
+                     bot_name,
+                     connection_pool,
+                 }
+             }
+
+            pub fn connection(&self) -> &DatabaseConnection {
+                &self.connection_pool
             }
 
             pub fn new(
@@ -146,13 +155,14 @@ pub fn decapitalize(s: &str) -> String {
 pub async fn validate_username(
     bot: &ActorRef<crate::actors::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
-    connection: &DbConnection,
-) -> Option<Guardian> {
-    let username = match message.update.from().as_ref().unwrap().username {
+    connection: &DatabaseConnection,
+) -> Option<guardians::Model> {
+    let username = match message.update.from.as_ref().unwrap().username {
         None => {
-            bot.tell(
+            let _ = bot.tell(
                 SendMessageReply(
-                    "You have no telegram username, register your telegram account first.".into(),
+                    "❌ You have no telegram username, register your telegram account first."
+                        .into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
@@ -164,17 +174,17 @@ pub async fn validate_username(
         Some(ref name) => name.clone(),
     };
 
-    let db_user = guardians
-        .filter(telegram_name.eq(&username)) // @todo Fix with tg-id
-        .first::<Guardian>(connection)
-        .optional();
+    let db_user = guardians::Entity::find()
+        .filter(guardians::Column::TelegramName.eq(&username)) // @todo Fix with tg-id
+        .one(connection)
+        .await;
 
     match db_user {
         Ok(Some(user)) => Some(user),
         Ok(None) => {
-            bot.tell(
+            let _ = bot.tell(
                 SendMessageReply(
-                    "You need to link your PSN account first: use /psn command".into(),
+                    "❌ You need to link your PSN account first: use /psn command".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
@@ -184,9 +194,9 @@ pub async fn validate_username(
             None
         }
         Err(_) => {
-            bot.tell(
+            let _ = bot.tell(
                 SendMessageReply(
-                    "Error querying guardian info.".into(),
+                    "❌ Error querying guardian info.".into(),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
@@ -202,31 +212,33 @@ pub async fn validate_username(
 pub async fn admin_check(
     bot: &ActorRef<crate::actors::bot_actor::BotActor>,
     message: &ActorUpdateMessage,
-    connection: &DbConnection,
-) -> Option<Guardian> {
-    validate_username(bot, message, connection).filter(|g| g.is_admin)
+    connection: &DatabaseConnection,
+) -> Option<guardians::Model> {
+    validate_username(bot, message, connection)
+        .await
+        .filter(|u| u.is_admin)
 }
 
-pub fn guardian_lookup(
+pub async fn guardian_lookup(
     name: &str,
-    connection: &DbConnection,
-) -> Result<Option<Guardian>, diesel::result::Error> {
+    connection: &DatabaseConnection,
+) -> Result<Option<guardians::Model>, sea_orm::DbErr> {
     if let Some(name) = name.strip_prefix('@') {
-        guardians
-            .filter(telegram_name.eq(name))
-            .first::<Guardian>(connection)
-            .optional()
+        guardians::Entity::find()
+            .filter(guardians::Column::TelegramName.eq(name))
+            .one(connection)
+            .await
     } else {
-        guardians
-            .filter(psn_name.ilike(&name))
-            .first::<Guardian>(connection)
-            .optional()
+        guardians::Entity::find()
+            .filter(guardians::Column::PsnName.contains(name))
+            .one(connection)
+            .await
     }
-    // @todo: lookup by integer id, positive
+    // @todo: lookup by integer id, positive (tg user id)
 }
 
 /// Match command in both variations (with bot name and without bot name).
-/// @param msg Input message received from Telegram.
+/// @param text Input message received from Telegram.
 /// @param command Command name with leading slash, if it's a root command. FIXME: Is it correct?
 /// @param bot_name Registered bot name.
 /// @returns A pair of matched command and remainder of the message text.
@@ -239,7 +251,7 @@ fn match_command(
 ) -> (Option<String>, Option<String>) {
     // Take first token in the text - that must be the command, if any.
     // Split it by @ to see if we have a bot name attached
-    // If we do - it must match out bot name completely.
+    // If we do - it must match our bot name completely.
     // Strip trailing numeric digits from the left side - this might be part of the command argument, remember it.
     // The rest of the left side must match EXACTLY, not as a prefix.
     text.and_then(|input| {
