@@ -1,5 +1,5 @@
 [workspace]
-members = ["bot", "entity"]
+members = ["bot", "entity", "migration"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -14,6 +14,7 @@ include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
 libbot = { path = "./lib" }
 log = "0.4"
+migration = { version = "0.4", path = "./migration" }
 paste = "1"
 # plurals = "0.3"
 regex = "1"

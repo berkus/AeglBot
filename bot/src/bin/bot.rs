@@ -9,6 +9,7 @@ use {
         establish_db_connection,
     },
     dotenv::dotenv,
+    migration::{Migrator, MigratorTrait},
     // riker::prelude::*, doesn't work here!
     riker::actors::{channel, ActorRefFactory, ActorSystem, ChannelRef, Publish, Tell},
     std::env,
@@ -75,7 +76,7 @@ fn setup_logging() -> Result<(), fern::InitError> {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     setup_logging().expect("failed to initialize logging");
 
@@ -89,6 +90,10 @@ async fn main() {
         .expect("BOT_LFG_CHAT_ID must be a valid telegram chat id");
 
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN must be set");
+
+    let connection = establish_db_connection().await?;
+    Migrator::up(&connection, None).await?;
+
     let sys = ActorSystem::new().unwrap();
 
     let tgbot = Bot::new(token);
