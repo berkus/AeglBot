@@ -10,6 +10,7 @@ culpa = "1.0"
 dotenv = "0.15"
 entity = { version = "0.4", path = "./entity" }
 fern = { version = "0.7", features = ["colored"] }
+futures = "0.3"
 include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
 kameo = "0.17"
