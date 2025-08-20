@@ -1,0 +1,29 @@
+Activities command help:
+
+/activities
+    Lists all available activities shortcuts.
+
+🔑 Admin-only mode:
+
+/activities ids
+    Lists IDs of all activities.
+/activities add KV
+    Create new activity from KV pairs (see below).
+/activities edit ID KV
+    Modify activity with given ID by updating all given KVs.
+/activities addsc ID shortcut <Game Name>
+    Add activity shortcut for activity ID.
+/activities delete ID
+    Remove activity if it doesn't have any activities planned.
+
+KV pairs are space-separated pairs of key=value elements
+String arguments may be in quotes, but this is optional.
+
+Supported KV pairs for add/edit commands:
+
+name=activity name (e.g. Crucible)    <mandatory>
+mode=activity mode (e.g. Iron Banner) <optional>
+min_fireteam_size=n                   <mandatory>
+max_fireteam_size=n                   <mandatory>
+min_light=n                           <optional>
+min_level=n                           <optional>
