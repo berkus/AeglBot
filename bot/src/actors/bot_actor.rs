@@ -131,7 +131,7 @@ impl Actor for BotActor {
 
         new_command!(ActivitiesCommand, bot_actor);
         new_command!(CancelCommand, bot_actor);
-        new_command!(ChatidCommand, bot_actor);
+        new_command!(ChatIdCommand, bot_actor);
         new_command!(D1weekCommand, bot_actor);
         new_command!(D2weekCommand, bot_actor);
         new_command!(EditCommand, bot_actor);
