@@ -1,0 +1,10 @@
+📝 Planned activities:
+
+{% for event in events -%}
+{% include "list/event" %}
+{%- if not loop.last %}
+𑗌 {#- Siddham Section Mark With Rays And Dotted Crescents #}
+{% endif %}
+{% else -%}
+No activities planned, add something with `/lfg`
+{% endfor %}

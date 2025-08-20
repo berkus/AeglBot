@@ -1,0 +1,5 @@
+{%- if event.fireteam_full %}
+This activity fireteam is full.
+{% else %}
+Enter `{{ event.join_link }}` to join this group. Up to {{ event.count }} more can join.
+{% endif -%}
