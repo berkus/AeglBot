@@ -24,6 +24,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "chrono-tz 0.10.4",
+ "culpa",
  "dotenv",
  "entity",
  "fern",
