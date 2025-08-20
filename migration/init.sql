@@ -1,0 +1,2 @@
+CREATE ROLE aeglbot WITH LOGIN PASSWORD 'whatever';
+CREATE DATABASE aeglbot OWNER aeglbot;
