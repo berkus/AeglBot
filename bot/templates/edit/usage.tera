@@ -1,0 +1,13 @@
+Edit command help:
+
+/edit <ActivityID> time <new time>
+    Change scheduled time for activity. Time format examples:
+    \"tomorrow at 21:00\" or \"Friday at 9 pm\" or \"21:00\"
+
+/edit <ActivityID> details <new description>
+    Change details/description for activity.
+    Use 'delete' as description text to remove details.
+
+/edit <ActivityID> activity <new activity shortcut>
+    Change type of activity, list of shortcuts
+    is available from output of `/activities` command.
