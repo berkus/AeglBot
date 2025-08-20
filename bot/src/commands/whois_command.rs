@@ -1,75 +1,60 @@
 use {
     crate::{
-        BotCommand,
         actors::bot_actor::ActorUpdateMessage,
         commands::{guardian_lookup, match_command, validate_username},
     },
-    riker::actors::Tell,
+    kameo::message::Context,
 };
 
-command_actor!(WhoisCommand, [ActorUpdateMessage]);
+command_actor!(WhoisCommand, "whois", "Query telegram or PSN id");
 
-impl WhoisCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), Format::Plain, Notify::Off),
-            None,
-        );
-    }
-}
+impl Message<ActorUpdateMessage> for WhoisCommand {
+    type Reply = ();
 
-impl BotCommand for WhoisCommand {
-    fn prefix() -> &'static str {
-        "/whois"
-    }
-
-    fn description() -> &'static str {
-        "Query telegram or PSN id"
-    }
-}
-
-impl Receive<ActorUpdateMessage> for WhoisCommand {
-    type Msg = WhoisCommandMsg;
-
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
         if let (Some(_), name) =
             match_command(message.update.text(), Self::prefix(), &self.bot_name)
         {
             if name.is_none() {
-                return self.send_reply(
-                    &message,
-                    "To query user provide his @TelegramId (starting with @) or PsnId",
-                );
+                return self.usage(&message).await;
             }
 
             let name = name.unwrap();
+
             let connection = self.connection();
 
-            if validate_username(&self.bot_ref, &message, &connection).is_none() {
+            if validate_username(&self.bot_ref, &message, connection)
+                .await
+                .is_none()
+            {
                 return; // TODO: say something?
             }
 
-            let guardian = guardian_lookup(&name, &connection);
+            let guardian = guardian_lookup(&name, connection).await;
 
             match guardian {
                 Ok(Some(guardian)) => {
                     self.send_reply(
                         &message,
                         format!(
-                            "Guardian @{telegram_name} PSN {psn_name}",
+                            "✅ Guardian @{telegram_name} PSN {psn_name}",
                             telegram_name = guardian.telegram_name,
                             psn_name = guardian.psn_name
                         ),
-                    );
+                    )
+                    .await;
                 }
                 Ok(None) => {
-                    self.send_reply(&message, format!("Guardian {} was not found.", name));
+                    self.send_reply(&message, format!("❌ Guardian {name} was not found."))
+                        .await;
                 }
                 Err(_) => {
-                    self.send_reply(&message, "Error querying guardian name.");
+                    self.send_reply(&message, "❌ Error querying guardian name.")
+                        .await;
                 }
             }
         }
