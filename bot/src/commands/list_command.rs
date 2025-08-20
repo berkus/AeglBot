@@ -1,59 +1,40 @@
 use {
     crate::{
-        BotCommand,
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        datetime::nowtz,
-        models::PlannedActivity,
-        render_template,
+        render_template_or_err,
     },
-    riker::actors::Tell,
+    entity::prelude::PlannedActivities,
+    futures::future::try_join_all,
+    kameo::message::Context,
 };
 
-command_actor!(ListCommand, [ActorUpdateMessage]);
+command_actor!(ListCommand, "list", "List current events");
 
-impl ListCommand {
-    fn send_reply<S>(&self, message: &ActorUpdateMessage, reply: S, format: Format)
-    where
-        S: Into<String>,
-    {
-        self.bot_ref.tell(
-            SendMessageReply(reply.into(), message.clone(), format, Notify::Off),
-            None,
-        );
-    }
-}
+impl Message<ActorUpdateMessage> for ListCommand {
+    type Reply = anyhow::Result<()>;
 
-impl BotCommand for ListCommand {
-    fn prefix() -> &'static str {
-        "/list"
-    }
-
-    fn description() -> &'static str {
-        "List current events"
-    }
-}
-
-impl Receive<ActorUpdateMessage> for ListCommand {
-    type Msg = ListCommandMsg;
-
-    fn receive(&mut self, _ctx: &Context<Self::Msg>, message: ActorUpdateMessage, _sender: Sender) {
+    async fn handle(
+        &mut self,
+        message: ActorUpdateMessage,
+        _ctx: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
         if let (Some(_), _) = match_command(message.update.text(), Self::prefix(), &self.bot_name) {
             let connection = self.connection();
 
-            if let Some(guardian) = validate_username(&self.bot_ref, &message, &connection) {
-                // let count = self.activity(connection).max_fireteam_size as usize
-                //     - self.members_count(connection);
-                let upcoming_events: Vec<_> = PlannedActivity::upcoming_activities(&connection)
+            if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
+                let events_data = PlannedActivities::upcoming_activities(connection).await;
+                let futures = events_data
                     .iter()
-                    .map(|s| s.to_template(Some(&guardian), &connection))
-                    .collect();
+                    .map(|event| event.to_template(connection, Some(&guardian)));
+                let events_data = try_join_all(futures).await?;
 
-                let output = render_template!("list/planned", ("events", &upcoming_events))
-                    .expect("Rendering failed");
+                let output = render_template_or_err!("list/planned", ("events" => &events_data));
 
-                self.send_reply(&message, output, Format::Html);
+                self.send_reply_with_format(&message, output, Format::Html)
+                    .await;
             }
         }
+        Ok(())
     }
 }
