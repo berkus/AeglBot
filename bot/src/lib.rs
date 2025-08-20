@@ -1,20 +1,20 @@
 // #![allow(proc_macro_derive_resolution_fallback)] // see https://github.com/rust-lang/rust/issues/50504
 #![warn(unused_imports)] // during development
 #![feature(type_ascription)]
-#![expect(non_local_definitions)] // Old diesel macros
 
 use {
-    diesel::pg::PgConnection, diesel_logger::LoggingConnection, r2d2::Pool,
-    sea_orm::DatabaseConnection,
+    culpa::throws,
+    sea_orm::{DatabaseConnection, DbErr},
 };
 
 pub mod actors;
 pub mod commands;
 
-// TODO: only BotConnection should be public
-pub type DbConnection = LoggingConnection<PgConnection>;
-pub type DbConnPool = Pool<diesel::r2d2::ConnectionManager<DbConnection>>;
-pub type BotConnection = r2d2::PooledConnection<diesel::r2d2::ConnectionManager<DbConnection>>;
+/// Establish a database connection using the entity crate
+#[throws(DbErr)]
+pub async fn establish_db_connection() -> DatabaseConnection {
+    entity::establish_db_connection().await?
+}
 
 pub trait NamedActor {
     fn actor_name() -> String;
@@ -28,20 +28,6 @@ pub trait BotCommand {
     fn prefix() -> &'static str;
     /// Return command description.
     fn description() -> &'static str;
-}
-
-/// Establish a pool of connections with DB.
-pub fn establish_db_connection() -> DbConnPool {
-    dotenv::dotenv().ok();
-
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = diesel::r2d2::ConnectionManager::new(database_url.clone());
-
-    r2d2::Pool::builder()
-        .min_idle(Some(1))
-        .max_size(15)
-        .build(manager)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
 // https://chaoslibrary.blot.im/rust-cloning-a-trait-object/
