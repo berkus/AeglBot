@@ -2,13 +2,13 @@ use {
     crate::{
         actors::bot_actor::ActorUpdateMessage,
         commands::{decapitalize, match_command, validate_username},
-        models::PlannedActivity,
         BotCommand,
     },
     chrono::Duration,
-    diesel_derives_traits::Model,
+    entity::{plannedactivities, plannedactivitymembers},
     libbot::datetime::{format_start_time, reference_date},
     riker::actors::Tell,
+    sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter},
 };
 
 command_actor!(CancelCommand, [ActorUpdateMessage]);
