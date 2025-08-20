@@ -1,0 +1,8 @@
+LFG usage: /lfg <activity shortcut> <start date>
+
+For a list of activity codes see `/activities`
+Start date can be specified as absolute date YYYY-MM-DD HH:MM or
+as an open text "in 3 hours" or "next sunday".
+
+Example: /lfg kf 2018-09-10 23:00
+Times are in Moscow (MSK) timezone.
