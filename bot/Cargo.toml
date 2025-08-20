@@ -17,6 +17,7 @@ include_dir.workspace = true
 itertools.workspace = true
 libbot.workspace = true
 log.workspace = true
+migration.workspace = true
 paste.workspace = true
 regex.workspace = true
 riker.workspace = true
