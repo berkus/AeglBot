@@ -1,0 +1,6 @@
+Join planned activity by its number
+
+Activity IDs are available from the output of `/list` command.
+
+`/join ActivityID`
+    Join planned activity by its number.
