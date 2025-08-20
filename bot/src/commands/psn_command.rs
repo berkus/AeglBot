@@ -1,11 +1,5 @@
 use {
-    crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::match_command,
-        models::{Guardian, NewGuardian},
-        schema::guardians::dsl::*,
-        BotCommand,
-    },
+    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
     diesel::{self, prelude::*},
     riker::actors::Tell,
 };

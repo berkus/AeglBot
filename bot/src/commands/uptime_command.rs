@@ -1,11 +1,7 @@
 #[cfg(target_os = "linux")]
 use procfs::process::Process;
 use {
-    crate::{
-        bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
-        commands::match_command,
-        BotCommand,
-    },
+    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command, BotCommand},
     riker::actors::Tell,
 };
 
@@ -50,7 +46,7 @@ impl Receive<ActorUpdateMessage> for UptimeCommand {
 
     fn receive(&mut self, _ctx: &Context<Self::Msg>, msg: ActorUpdateMessage, _sender: Sender) {
         if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            let uptime = crate::datetime::format_uptime();
+            let uptime = libbot::datetime::format_uptime();
             let message = format!("- ⏰ Started {uptime}\n{}", get_process_info());
             self.bot_ref.tell(
                 SendMessageReply(message, msg, Format::Plain, Notify::Off),
