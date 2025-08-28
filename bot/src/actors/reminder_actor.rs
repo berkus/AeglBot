@@ -1,8 +1,5 @@
 use {
-    crate::{
-        actors::bot_actor::{Format, Notify, SendMessage},
-        BotConnection,
-    },
+    crate::actors::bot_actor::{Format, Notify, SendMessage},
     chrono::Timelike,
     culpa::throws,
     entity::prelude::*,
@@ -11,6 +8,7 @@ use {
         datetime::{d2_reset_time, reference_date, start_at_time, start_at_weekday_time},
         services::destiny_schedule::{this_week_in_d1, this_week_in_d2},
     },
+    sea_orm::DatabaseConnection,
     teloxide::types::ChatId,
 };
 
@@ -18,7 +16,7 @@ use {
 pub struct ReminderActor {
     bot_ref: ActorRef<crate::actors::bot_actor::BotActor>,
     lfg_chat: i64,
-    connection_pool: BotConnection,
+    connection_pool: DatabaseConnection,
 }
 
 impl Actor for ReminderActor {
@@ -34,7 +32,7 @@ impl ReminderActor {
     pub fn new(
         bot_ref: ActorRef<crate::actors::bot_actor::BotActor>,
         lfg_chat: i64,
-        connection_pool: BotConnection,
+        connection_pool: DatabaseConnection,
     ) -> Self {
         Self {
             bot_ref,
@@ -43,7 +41,7 @@ impl ReminderActor {
         }
     }
 
-    fn connection(&self) -> &BotConnection {
+    fn connection(&self) -> &DatabaseConnection {
         &self.connection_pool
     }
 }
@@ -59,6 +57,7 @@ pub struct WeeklyReset;
 
 impl Message<Reminders> for ReminderActor {
     type Reply = ();
+
     async fn handle(
         &mut self,
         _msg: Reminders,
@@ -107,14 +106,10 @@ pub async fn daily_reset(bot: ActorRef<crate::actors::bot_actor::BotActor>, lfg_
 impl Message<DailyReset> for ReminderActor {
     type Reply = anyhow::Result<()>;
 
-    async fn handle(
-        &mut self,
-        _msg: DailyReset,
-        ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    #[throws(anyhow::Error)]
+    async fn handle(&mut self, _msg: DailyReset, ctx: &mut Context<Self, Self::Reply>) {
         daily_reset(self.bot_ref.clone(), ChatId(self.lfg_chat)).await?;
         ctx.actor_ref().tell(ScheduleNextDay).await?;
-        Ok(())
     }
 }
 
@@ -140,14 +135,10 @@ pub async fn major_weekly_reset(
 impl Message<WeeklyReset> for ReminderActor {
     type Reply = anyhow::Result<()>;
 
-    async fn handle(
-        &mut self,
-        _msg: WeeklyReset,
-        ctx: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+    #[throws(anyhow::Error)]
+    async fn handle(&mut self, _msg: WeeklyReset, ctx: &mut Context<Self, Self::Reply>) {
         major_weekly_reset(self.bot_ref.clone(), ChatId(self.lfg_chat)).await?;
         ctx.actor_ref().tell(ScheduleNextWeek).await?;
-        Ok(())
     }
 }
 
@@ -168,13 +159,14 @@ impl Message<ScheduleNextMinute> for ReminderActor {
         let target_time = (reference_date() + chrono::Duration::minutes(1))
             .with_second(0)
             .unwrap();
+        let actor_ref = ctx.actor_ref().clone();
 
         let now = std::time::SystemTime::now();
         let target_system_time =
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            ctx.actor_ref().tell(Reminders).try_send()?;
+            actor_ref.tell(Reminders).try_send()?;
         }
     }
 }
@@ -187,13 +179,14 @@ impl Message<ScheduleNextDay> for ReminderActor {
         ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
         let target_time = start_at_time(reference_date(), d2_reset_time());
+        let actor_ref = ctx.actor_ref().clone();
 
         let now = std::time::SystemTime::now();
         let target_system_time =
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            let _ = ctx.actor_ref().tell(DailyReset).await;
+            let _ = actor_ref.tell(DailyReset).await;
         }
     }
 }
@@ -207,13 +200,14 @@ impl Message<ScheduleNextWeek> for ReminderActor {
     ) -> Self::Reply {
         let target_time =
             start_at_weekday_time(reference_date(), chrono::Weekday::Tue, d2_reset_time());
+        let actor_ref = ctx.actor_ref().clone();
 
         let now = std::time::SystemTime::now();
         let target_system_time =
             std::time::UNIX_EPOCH + std::time::Duration::from_secs(target_time.timestamp() as u64);
         if let Ok(duration) = target_system_time.duration_since(now) {
             tokio::time::sleep(duration).await;
-            let _ = ctx.actor_ref().tell(WeeklyReset).await;
+            let _ = actor_ref.tell(WeeklyReset).await;
         }
     }
 }
