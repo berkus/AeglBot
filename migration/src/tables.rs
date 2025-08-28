@@ -69,4 +69,6 @@ pub enum Guardians {
     PendingActivationCode,
     IsAdmin,
     IsSuperadmin,
+    RisingUid,
+    RisingNickname,
 }

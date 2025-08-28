@@ -41,9 +41,10 @@ impl Message<ActorUpdateMessage> for WhoisCommand {
                     self.send_reply(
                         &message,
                         format!(
-                            "✅ Guardian @{telegram_name} PSN {psn_name}",
+                            "✅ Guardian @{telegram_name} PSN {psn_name} {rising}",
                             telegram_name = guardian.telegram_name,
-                            psn_name = guardian.psn_name
+                            psn_name = guardian.psn_name,
+                            rising = guardian.format_destiny_rising_id(),
                         ),
                     )
                     .await;

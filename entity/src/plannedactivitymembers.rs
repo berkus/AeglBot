@@ -68,6 +68,7 @@ impl ActiveModelBehavior for ActiveModel {}
 pub struct ActivityMemberTemplate {
     pub psn_name: String,
     pub telegram_name: String,
+    pub rising_uid_and_nick: String,
     pub icon: String,
 }
 
@@ -95,9 +96,11 @@ impl Model {
             .ok_or(DbErr::RecordNotFound("Guardian not found".to_string()))?;
 
         let (telegram_name, psn_name) = guardian.names();
+        let rising_uid_and_nick = guardian.format_destiny_rising_id();
         ActivityMemberTemplate {
             psn_name,
             telegram_name,
+            rising_uid_and_nick,
             icon: self.icon(),
         }
     }
