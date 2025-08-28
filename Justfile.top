@@ -1,0 +1,22 @@
+rebot: update build stop deploy start status
+
+update:
+  (cd bot-src; git pull)
+
+build:
+  (cd bot-src; just build)
+
+deploy:
+  (cd bot-src; just deploy)
+
+stop:
+  sudo service aeglbot stop
+
+start:
+  sudo service aeglbot start
+
+status:
+  sudo service aeglbot status
+
+dbdump:
+  pg_dump -U aeglbot -d aeglbot -f aeglbot.sql

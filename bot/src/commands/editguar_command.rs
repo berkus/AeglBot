@@ -79,7 +79,7 @@ impl Message<ActorUpdateMessage> for EditGuardianCommand {
 
             if args.len() == 1 {
                 let info = format!(
-                    "{clan}{name} {email} {admin}",
+                    "{clan}{name} {email} {admin} {rising}",
                     clan = guardian
                         .psn_clan
                         .clone()
@@ -94,6 +94,7 @@ impl Message<ActorUpdateMessage> for EditGuardianCommand {
                     } else {
                         ""
                     },
+                    rising = guardian.format_destiny_rising_id(),
                 );
                 return self.send_reply(&message, info).await;
             }
@@ -123,6 +124,60 @@ impl Message<ActorUpdateMessage> for EditGuardianCommand {
                         return self.send_reply(&message, "❌ Failed to update clan").await;
                     }
                     self.send_reply(&message, "✅ Updated guardian clan").await;
+                }
+                "rising" => {
+                    if value.is_empty() {
+                        return self
+                            .send_reply(
+                                &message,
+                                "❌ Rising needs at least an UID, but better UID and nickname",
+                            )
+                            .await;
+                    }
+
+                    let split = value.split_once(' ');
+                    if split.is_none() {
+                        let Ok(uid) = value.parse::<i64>() else {
+                            return self
+                                .send_reply(&message, "❌ Destiny: Rising uid must be a number")
+                                .await;
+                        };
+
+                        let mut guardian: guardians::ActiveModel = guardian.into();
+                        guardian.rising_uid = Set(Some(uid));
+                        if guardian.update(connection).await.is_err() {
+                            return self
+                                .send_reply(&message, "❌ Failed to update Destiny: Rising uid")
+                                .await;
+                        }
+                        return self
+                            .send_reply(&message, "✅ Updated guardian Destiny: Rising uid")
+                            .await;
+                    }
+                    let (uid, nickname) = split.unwrap();
+                    let Ok(uid) = uid.parse::<i64>() else {
+                        return self
+                            .send_reply(&message, "❌ Destiny: Rising uid must be a number")
+                            .await;
+                    };
+
+                    let mut guardian: guardians::ActiveModel = guardian.into();
+                    guardian.rising_uid = Set(Some(uid));
+                    guardian.rising_nickname = Set(Some(nickname.to_string()));
+
+                    if guardian.update(connection).await.is_err() {
+                        return self
+                            .send_reply(
+                                &message,
+                                "❌ Failed to update Destiny: Rising uid and nickname",
+                            )
+                            .await;
+                    }
+                    self.send_reply(
+                        &message,
+                        "✅ Updated guardian Destiny: Rising uid and nickname",
+                    )
+                    .await;
                 }
                 "email" => {
                     let email_value = if value == "delete" {

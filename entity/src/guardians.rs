@@ -21,6 +21,7 @@ use {sea_orm::entity::prelude::*, std::fmt};
 //         pending_activation_code -> Nullable<Text>,
 //         is_admin -> Bool,
 //         is_superadmin -> Bool,
+//         rising_uid -> Nullable<Int8>,
 //     }
 // }
 
@@ -48,6 +49,8 @@ pub struct Model {
     pub pending_activation_code: Option<String>,
     pub is_admin: bool,
     pub is_superadmin: bool,
+    pub rising_uid: Option<i64>,
+    pub rising_nickname: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -80,7 +83,24 @@ impl fmt::Display for Model {
 
 impl Model {
     pub fn format_name(&self) -> String {
-        format!("{} (t.me/{})", self.psn_name, self.telegram_name)
+        format!(
+            "{} (t.me/{}) {}",
+            self.psn_name,
+            self.telegram_name,
+            self.format_destiny_rising_id()
+        )
+    }
+
+    pub fn format_destiny_rising_id(&self) -> String {
+        if let Some(uid) = self.rising_uid {
+            if let Some(nickname) = &self.rising_nickname {
+                format!("(D:R uid {} nickname {})", uid, nickname)
+            } else {
+                format!("(D:R uid {})", uid)
+            }
+        } else {
+            String::new()
+        }
     }
 
     pub fn names(&self) -> (String, String) {
