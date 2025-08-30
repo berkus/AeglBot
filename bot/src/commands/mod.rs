@@ -185,10 +185,10 @@ pub async fn validate_username(
                 .await;
             None
         }
-        Err(_) => {
+        Err(e) => {
             let _ = bot
                 .tell(SendMessageReply(
-                    "❌ Error querying guardian info.".into(),
+                    format!("❌ Error querying guardian info. {e}"),
                     message.clone(),
                     Format::Plain,
                     Notify::Off,
