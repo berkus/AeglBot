@@ -7,7 +7,6 @@ use {
     culpa::throws,
     sea_orm::entity::prelude::*,
     serde::{Deserialize, Serialize},
-    std::sync::LazyLock,
 };
 
 // Old diesel schema for reference:
@@ -101,28 +100,7 @@ impl Model {
             psn_name,
             telegram_name,
             rising_uid_and_nick,
-            icon: self.icon(),
+            icon: guardian.icon(),
         }
-    }
-
-    pub fn icon(&self) -> String {
-        static ICON_POOL: LazyLock<Vec<&str>> = LazyLock::new(|| {
-            vec![
-                "💂🏻",
-                "🕵🏼",
-                "🧑🏽‍🏭",
-                "🧑‍💻",
-                "🧑🏼‍🚒",
-                "🧑🏾‍🚀",
-                "🥷🏾",
-                "🥷🏻",
-                "🧙🏽",
-                "🧝🏼",
-                "🧌",
-                "🧛🏼",
-                "🧟",
-            ]
-        });
-        ICON_POOL[self.user_id.unsigned_abs() as usize % ICON_POOL.len()].into()
     }
 }

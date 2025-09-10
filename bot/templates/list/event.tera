@@ -3,7 +3,7 @@
 {{ event.details }}
 {% endif %}
 {% for member in event.members -%}
-{% include "list/member" %}
+{% include "list/member" -%}
 {% endfor %}
 ⏰ <b>{{ event.time }}</b>
 {#- join_prompt -#}
