@@ -3,7 +3,10 @@
 // Guardian
 //-------------------------------------------------------------------------------------------------
 
-use {sea_orm::entity::prelude::*, std::fmt};
+use {
+    sea_orm::entity::prelude::*,
+    std::{fmt, sync::LazyLock},
+};
 
 // Old diesel schema for reference:
 // table! {
@@ -84,7 +87,8 @@ impl fmt::Display for Model {
 impl Model {
     pub fn format_name(&self) -> String {
         format!(
-            "{} (t.me/{}) {}",
+            "{} {} (t.me/{}) {}",
+            self.icon(),
             self.psn_name,
             self.telegram_name,
             self.format_destiny_rising_id()
@@ -94,7 +98,7 @@ impl Model {
     pub fn format_destiny_rising_id(&self) -> String {
         if let Some(uid) = self.rising_uid {
             if let Some(nickname) = &self.rising_nickname {
-                format!("(D:R uid {} nickname {})", uid, nickname)
+                format!("(D:R uid {} / {})", uid, nickname)
             } else {
                 format!("(D:R uid {})", uid)
             }
@@ -105,6 +109,27 @@ impl Model {
 
     pub fn names(&self) -> (String, String) {
         (self.telegram_name.clone(), self.psn_name.clone())
+    }
+
+    pub fn icon(&self) -> String {
+        static ICON_POOL: LazyLock<Vec<&str>> = LazyLock::new(|| {
+            vec![
+                "💂🏻",
+                "🕵🏼",
+                "🧑🏽‍🏭",
+                "🧑‍💻",
+                "🧑🏼‍🚒",
+                "🧑🏾‍🚀",
+                "🥷🏾",
+                "🥷🏻",
+                "🧙🏽",
+                "🧝🏼",
+                "🧌",
+                "🧛🏼",
+                "🧟",
+            ]
+        });
+        ICON_POOL[self.telegram_id.unsigned_abs() as usize % ICON_POOL.len()].into()
     }
 }
 
