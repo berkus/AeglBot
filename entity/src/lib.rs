@@ -1,5 +1,3 @@
-#![feature(duration_constructors_lite)]
-
 use {
     culpa::throws,
     sea_orm::{Database, DatabaseConnection, DbErr},
