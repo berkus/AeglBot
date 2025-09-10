@@ -9,6 +9,7 @@ mod m20180905_090102_populate_activities;
 mod m20180921_110336_add_admins;
 mod m20180922_104727_add_superadmins;
 mod m20250828_224244_add_destiny_rising_uids;
+mod m20250910_152923_rename_tables;
 mod tables;
 
 pub use tables::*;
@@ -31,6 +32,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20180921_110336_add_admins::Migration),
             Box::new(m20180922_104727_add_superadmins::Migration),
             Box::new(m20250828_224244_add_destiny_rising_uids::Migration),
+            Box::new(m20250910_152923_rename_tables::Migration),
         ]
     }
 }
