@@ -27,3 +27,7 @@ min_fireteam_size=n                   <mandatory>
 max_fireteam_size=n                   <mandatory>
 min_light=n                           <optional>
 min_level=n                           <optional>
+
+For add only (adds a shortcut):
+shortcut=s                            <optional>
+game=s                                <optional>

@@ -134,44 +134,51 @@ impl ActivitiesCommand {
             ..Default::default()
         };
 
-        for (key, val) in argmap {
-            match key {
-                "min_light" => {
-                    let val = val.parse::<i32>();
-                    if val.is_err() {
-                        return self
-                            .send_reply(message, "❌ min_light must be a number")
-                            .await;
-                    }
-                    act.min_light = Set(Some(val.unwrap()));
-                }
-                "min_level" => {
-                    let val = val.parse::<i32>();
-                    if val.is_err() {
-                        return self
-                            .send_reply(message, "❌ min_level must be a number")
-                            .await;
-                    }
-                    act.min_level = Set(Some(val.unwrap()));
-                }
-                "mode" => act.mode = Set(Some(val.to_string())),
-                _ => {
-                    return self
-                        .send_reply(message, format!("❌ Unknown field name {}", key))
-                        .await;
-                }
+        let min_light = argmap.remove("min_light");
+        if let Some(min_light) = min_light {
+            let val = min_light.parse::<i32>();
+            if val.is_err() {
+                return self
+                    .send_reply(message, "❌ min_light must be a number")
+                    .await;
             }
+            act.min_light = Set(Some(val.unwrap()));
         }
 
-        match act.insert(connection).await {
+        let min_level = argmap.remove("min_level");
+        if let Some(min_level) = min_level {
+            let val = min_level.parse::<i32>();
+            if val.is_err() {
+                return self
+                    .send_reply(message, "❌ min_level must be a number")
+                    .await;
+            }
+            act.min_level = Set(Some(val.unwrap()));
+        }
+
+        let mode = argmap.remove("mode");
+        if let Some(mode) = mode {
+            act.mode = Set(Some(mode.to_string()));
+        }
+
+        let link = match act.insert(connection).await {
             Ok(act) => {
                 self.send_reply(message, format!("✅ Activity {} added.", act.format_name()))
-                    .await
+                    .await;
+                act.id
             }
             Err(e) => {
-                self.send_reply(message, format!("❌ Error creating activity. {:?}", e))
-                    .await
+                return self
+                    .send_reply(message, format!("❌ Error creating activity. {:?}", e))
+                    .await;
             }
+        };
+
+        if argmap.contains_key("shortcut") && argmap.contains_key("game") {
+            let game = argmap.remove("game").unwrap().to_string();
+            let shortcut = argmap.remove("shortcut").unwrap().to_string();
+            self.activity_add_shortcut(connection, message, link, shortcut, game)
+                .await;
         }
     }
 
