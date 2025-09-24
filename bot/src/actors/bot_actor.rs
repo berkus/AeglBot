@@ -1,8 +1,6 @@
 use {
     crate::{
-        actors::reminder_actor::{
-            ReminderActor, ScheduleNextDay, ScheduleNextMinute, ScheduleNextWeek,
-        },
+        actors::reminder_actor::{ReminderActor, Reminders, ScheduleNextDay, ScheduleNextWeek},
         commands::*,
         BotCommand,
     },
@@ -29,6 +27,7 @@ pub struct BotActor {
     update_sender: broadcast::Sender<ActorUpdateMessage>,
     connection_pool: DatabaseConnection,
     commands_list: Vec<(String, String)>,
+    reminders: Option<ActorRef<ReminderActor>>, // we must keep a ref, but late init
 }
 
 unsafe impl Send for BotActor {}
@@ -68,6 +67,7 @@ impl BotActor {
             update_sender,
             connection_pool,
             commands_list: vec![],
+            reminders: None,
         }
     }
 
@@ -156,9 +156,12 @@ impl Actor for BotActor {
         ));
 
         // Schedule first run, the actor handler will reschedule.
-        let _ = reminders.tell(ScheduleNextMinute).await;
+        log::trace!("Scheduling first tick to {reminders:?}");
+        let _ = reminders.tell(Reminders).await;
         let _ = reminders.tell(ScheduleNextDay).await;
         let _ = reminders.tell(ScheduleNextWeek).await;
+
+        bot_actor.reminders = Some(reminders);
 
         Ok(bot_actor)
     }
