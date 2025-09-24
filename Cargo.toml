@@ -1,6 +1,6 @@
 [workspace]
-members = ["bot", "entity", "migration"]
 resolver = "2"
+members = ["bot", "entity", "migration"]
 
 [workspace.dependencies]
 anyhow = "1"
@@ -8,31 +8,32 @@ chrono = "0.4"
 chrono-tz = "0.10"
 culpa = "1.0"
 dotenv = "0.15"
-entity = { version = "0.4", path = "./entity" }
+entity = { path = "./entity", version = "0.4" }
 fern = { version = "0.7", features = ["colored"] }
 futures = "0.3"
 include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
 itertools = "0.14"
-kameo = "0.17"
+kameo = "0.18"
 libbot = { path = "./lib" }
 log = "0.4"
-migration = { version = "0.4", path = "./migration" }
+migration = { path = "./migration", version = "0.4" }
 paste = "1"
 # plurals = "0.3"
 regex = "1"
 sea-orm = { version = "1.1", features = [
-    "macros",
-    "runtime-tokio-rustls",
-    "sqlx-postgres",
-    "with-chrono",
+  "macros",
+  "runtime-tokio-rustls",
+  "sqlx-postgres",
+  "with-chrono",
 ] }
 sea-orm-migration = { version = "1.1", features = [
-    "runtime-tokio-rustls",
-    "sqlx-postgres",
-    "with-chrono",
+  "runtime-tokio-rustls",
+  "sqlx-postgres",
+  "with-chrono",
 ] }
 serde = { version = "1.0", features = ["derive"] }
 teloxide = { version = "0.17", features = ["macros"] }
 tera = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-two_timer = { version = "2.2", git = "https://github.com/berkus/two-timer.git", branch = "updated" }
+two_timer = { git = "https://github.com/berkus/two-timer.git", branch = "updated", version = "2.2" }
+
