@@ -6,6 +6,7 @@ use {
         commands::*,
         BotCommand,
     },
+    culpa::throws,
     kameo::{
         actor::ActorRef,
         error::Infallible,
@@ -134,6 +135,8 @@ impl Actor for BotActor {
         new_command!(ChatIdCommand, bot_actor);
         new_command!(D1weekCommand, bot_actor);
         new_command!(D2weekCommand, bot_actor);
+        #[cfg(debug_assertions)]
+        new_command!(DebugCommand, bot_actor);
         new_command!(EditCommand, bot_actor);
         new_command!(EditGuardianCommand, bot_actor);
         new_command!(HelpCommand, bot_actor);
@@ -184,6 +187,9 @@ pub enum Notify {
     Off,
     On,
 }
+
+#[derive(Clone, Debug)]
+pub struct Debug;
 
 #[derive(Clone, Debug)]
 pub struct SendMessage(pub String, pub ChatId, pub Format, pub Notify);
@@ -287,5 +293,19 @@ impl Message<ListCommands> for BotActor {
             .actor_ref()
             .tell(SendMessageReply(reply, message, Format::Html, Notify::Off))
             .try_send(); // @todo use unbounded mailbox for bot_actor? prolly not
+    }
+}
+
+impl Message<Debug> for BotActor {
+    type Reply = anyhow::Result<String>;
+
+    #[throws(anyhow::Error)]
+    async fn handle(&mut self, _msg: Debug, _ctx: &mut Context<Self, Self::Reply>) -> String {
+        log::debug!("Debug");
+
+        self.reminders.as_ref().unwrap().kill();
+
+        let res = self.reminders.as_ref().is_some_and(|r| r.is_alive());
+        format!("{res}")
     }
 }

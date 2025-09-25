@@ -115,6 +115,8 @@ mod chatid_command;
 pub use self::chatid_command::*;
 mod d2week_command;
 pub use self::d2week_command::*;
+mod debug_command;
+pub use self::debug_command::*;
 mod dweek_command;
 pub use self::dweek_command::*;
 mod edit_command;
