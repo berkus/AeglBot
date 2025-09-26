@@ -1,0 +1,3 @@
+{% if event.fireteam_joined -%}
+Нажмите {{ event.leave_link }} чтобы покинуть это событие.
+{% endif -%}

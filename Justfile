@@ -1,16 +1,20 @@
 @default:
     just --list
 
-deploy: build
+deploy: build-ru
     cp target/release/bot ../aegl-bot/
-build:
-    cargo build --release
+build-ru:
+    BOT_LANGUAGE=ru cargo build --release
+build-en:
+    BOT_LANGUAGE=en cargo build --release
 test:
-    cargo test
+    BOT_LANGUAGE=en cargo test
+run-ru:
+    BOT_LANGUAGE=ru cargo run --bin bot
 run:
-    cargo run --bin bot
+    BOT_LANGUAGE=en cargo run --bin bot
 
 alias d := deploy
-alias b := build
+alias b := build-ru
 alias t := test
-alias r := run
+alias r := run-ru

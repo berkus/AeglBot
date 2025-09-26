@@ -11,8 +11,10 @@ use {
 pub mod actors;
 pub mod commands;
 
-static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> =
-    std::sync::LazyLock::new(|| include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates/en"));
+// Must have BOT_LANGUAGE env var set! Use Justfile to set it correctly.
+static TEMPLATE_FILES: std::sync::LazyLock<include_dir::Dir<'_>> = std::sync::LazyLock::new(|| {
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/templates/$BOT_LANGUAGE")
+});
 
 pub(crate) static TEMPLATES: std::sync::LazyLock<tera::Tera> = std::sync::LazyLock::new(|| {
     let mut tera = tera::Tera::default();

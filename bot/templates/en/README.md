@@ -1,1 +1,1 @@
-Template files for english version.
+Template files for English version.

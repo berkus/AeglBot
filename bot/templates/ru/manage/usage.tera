@@ -1,0 +1,10 @@
+Помощь команды Manage:
+
+/manage list-admins
+    Посмотреть список существующих админов бота.
+
+/manage add-admin <id|@telegram|PSN>
+    Добавить админа.
+
+/manage remove-admin <id|@telegram|PSN>
+    Удалить админа.

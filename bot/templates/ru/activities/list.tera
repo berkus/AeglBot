@@ -1,0 +1,13 @@
+Список типов событий:
+
+(используйте короткое имя для /lfg)
+
+{%- set_global prevgame = "" -%}
+{% for game in games -%}
+{% if prevgame != game.game -%}
+{% set_global prevgame = game.game %}
+
+*** {{ game.game }}:
+{% endif %}
+<b>{{game.shortcut}}</b> {{game.activity}}
+{%- endfor %}

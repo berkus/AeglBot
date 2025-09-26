@@ -1,0 +1,10 @@
+📝 Приближающиеся события:
+
+{% for event in events -%}
+{% include "list/event" %}
+{%- if not loop.last %}
+𑗌 {#- Siddham Section Mark With Rays And Dotted Crescents #}
+{% endif %}
+{% else -%}
+Ничего не запланировано, добавьте новое событие командой `/lfg`
+{% endfor %}

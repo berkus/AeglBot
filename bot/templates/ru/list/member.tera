@@ -1,0 +1,1 @@
+{{ member.icon }} {{ member.psn_name }} (t.me/{{ member.telegram_name }}) {{ member.rising_uid_and_nick }}

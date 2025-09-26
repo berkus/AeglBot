@@ -1,0 +1,7 @@
+{{guardian}} присоединяется к группе для похода в {{activity_name}}
+
+⏰ {{activity_time}}
+
+Еще идут {{other_guardians}}
+
+{{join_prompt}}{# join link and a few ifs? #}

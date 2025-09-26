@@ -1,1 +1,1 @@
-Шаблонные файлы для русской версии.
+Template files for Russian version.

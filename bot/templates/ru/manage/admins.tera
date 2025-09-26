@@ -1,0 +1,5 @@
+Существующие админы:
+
+{% for admin in admins %}
+{{admin}}
+{% endfor -%}
