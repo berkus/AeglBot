@@ -2,10 +2,8 @@ use {
     crate::{
         actors::bot_actor::{ActorUpdateMessage, Format},
         commands::{match_command, validate_username},
-        render_template_or_err,
     },
     entity::prelude::PlannedActivities,
-    futures::future::try_join_all,
     kameo::message::Context,
 };
 
@@ -24,12 +22,14 @@ impl Message<ActorUpdateMessage> for ListCommand {
 
             if let Some(guardian) = validate_username(&self.bot_ref, &message, connection).await {
                 let events_data = PlannedActivities::upcoming_activities(connection).await;
-                let futures = events_data
-                    .iter()
-                    .map(|event| event.to_template(connection, Some(&guardian)));
-                let events_data = try_join_all(futures).await?;
 
-                let output = render_template_or_err!("list/planned", ("events" => &events_data));
+                let output = super::render_events_list(
+                    &events_data,
+                    connection,
+                    Some(&guardian),
+                    "list/planned",
+                )
+                .await?;
 
                 self.send_reply_with_format(&message, output, Format::Html)
                     .await;

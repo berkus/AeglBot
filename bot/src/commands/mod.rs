@@ -1,6 +1,10 @@
 use {
-    crate::actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+    crate::{
+        actors::bot_actor::{ActorUpdateMessage, Format, Notify, SendMessageReply},
+        render_template_or_err,
+    },
     entity::guardians,
+    futures::future::try_join_all,
     kameo::actor::ActorRef,
     sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter},
 };
@@ -295,6 +299,21 @@ pub fn match_command(
             })
     })
     .unwrap_or((None, None))
+}
+
+/// Render a list of upcoming events, for use in /list and reminders.
+pub async fn render_events_list(
+    events_data: &[entity::plannedactivities::Model],
+    connection: &DatabaseConnection,
+    guardian: Option<&entity::guardians::Model>,
+    template_name: &str,
+) -> anyhow::Result<String> {
+    let futures = events_data
+        .iter()
+        .map(|event| event.to_template(connection, guardian));
+    let events_data = try_join_all(futures).await?;
+
+    Ok(render_template_or_err!(template_name, ("events" => &events_data)))
 }
 
 #[cfg(test)]

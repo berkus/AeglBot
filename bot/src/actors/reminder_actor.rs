@@ -251,12 +251,13 @@ impl Message<Reminders> for ReminderActor {
         trace!("Loaded planned activities");
 
         if let Some(upcoming_events) = found {
-            // @Todo: this text should be populated in tera template in `bot`
-            let text = upcoming_events
-                .into_iter()
-                .fold("Activities starting soon:\n\n".to_owned(), |acc, event| {
-                    acc + &format!("Activity {} starting soon\n\n", event.id)
-                });
+            let text = crate::commands::render_events_list(
+                &upcoming_events,
+                connection,
+                None,
+                "reminders/upcoming",
+            )
+            .await?;
 
             let _ = bot_ref
                 .tell(SendMessage(

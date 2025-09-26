@@ -1,0 +1,14 @@
+<b>{{ event.id }}: {{ event.name }}</b>
+{% if event.details -%}
+{{ event.details }}
+{% endif %}
+{% for member in event.members -%}
+{% include "list/member" -%}
+{% endfor %}
+⏰ <b>{{ event.time }}</b>
+{#- join_prompt -#}
+{%- if event.fireteam_full %}
+This activity fireteam is full.
+{% else %}
+Enter `{{ event.join_link }}` to join this group. Up to {{ event.count }} more can join.
+{% endif -%}

@@ -1,0 +1,8 @@
+❇️ Activities starting soon:
+
+{% for event in events -%}
+{% include "reminders/event" %}
+{%- if not loop.last %}
+𑗌 {#- Siddham Section Mark With Rays And Dotted Crescents #}
+{% endif %}
+{% endfor %}
