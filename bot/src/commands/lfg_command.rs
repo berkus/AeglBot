@@ -65,8 +65,8 @@ impl Message<ActorUpdateMessage> for LfgCommand {
                         .await;
                 }
                 // Parse input in MSK timezone...
-                let start_time = libbot::datetime::parse_time_spec(timespec);
                 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
+                let start_time = libbot::datetime::parse_time_spec(timespec);
 
                 if start_time.is_err() {
                     return self
