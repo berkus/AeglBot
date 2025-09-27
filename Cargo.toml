@@ -40,3 +40,5 @@ two_timer = { git = "https://github.com/berkus/two-timer.git", branch = "updated
 [profile.release]
 lto = true
 codegen-units = 1
+# debug = true # for instrumentation
+

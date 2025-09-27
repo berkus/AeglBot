@@ -14,7 +14,11 @@ run-ru:
 run:
     BOT_LANGUAGE=en cargo run --bin bot
 
+instruments:
+    BOT_LANGUAGE=ru cargo instruments -t Allocations --bin bot --release
+
 alias d := deploy
 alias b := build-ru
 alias t := test
 alias r := run-ru
+alias i := instruments
