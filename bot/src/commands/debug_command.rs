@@ -14,9 +14,10 @@ impl Message<ActorUpdateMessage> for DebugCommand {
 
     #[throws(anyhow::Error)]
     async fn handle(&mut self, msg: ActorUpdateMessage, _ctx: &mut Context<Self, Self::Reply>) {
-        if let (Some(_), _) = match_command(msg.update.text(), Self::prefix(), &self.bot_name) {
-            self.send_reply(&msg, format!("Alive: {}", self.bot_ref.ask(Debug).await?))
-                .await;
+        if let (Some(_), Some(t)) = match_command(msg.update.text(), Self::prefix(), &self.bot_name)
+        {
+            let r = libbot::datetime::parse_time_spec(t);
+            self.send_reply(&msg, format!("Date: {r:?}")).await;
         }
     }
 }

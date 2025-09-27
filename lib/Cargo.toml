@@ -14,4 +14,4 @@ chrono.workspace = true
 chrono-tz.workspace = true
 culpa.workspace = true
 # entity.workspace = true
-two_timer.workspace = true
+natural-date-parser.workspace = true
