@@ -1646,7 +1646,7 @@ dependencies = [
  "chrono",
  "chrono-tz 0.10.4",
  "culpa",
- "natural-date-parser",
+ "natural-date-rs",
 ]
 
 [[package]]
@@ -1803,9 +1803,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "natural-date-parser"
-version = "0.1.3"
-source = "git+https://github.com/berkus/natural-date-parser?rev=953d#953d97b6158c85fa45f3d6076eb699b45173f3ae"
+name = "natural-date-rs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06a3037521d5b10d5a959435796f75099782ff6ba1d5dc1a2b02866f760e35ff"
 dependencies = [
  "anyhow",
  "chrono",

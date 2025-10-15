@@ -16,7 +16,7 @@ pub type BotTime = chrono::NaiveTime; // UTC
 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 #[throws(anyhow::Error)]
 pub fn parse_time_spec(timespec: impl AsRef<str>) -> DateTime<Tz> {
-    match natural_date_parser::date_parser::from_string(timespec.as_ref()) {
+    match natural_date_rs::date_parser::from_string(timespec.as_ref()) {
         Ok(start) => start.with_timezone(&Moscow),
         Err(_) => {
             bail!("❌ Failed to parse time {}", timespec.as_ref())
