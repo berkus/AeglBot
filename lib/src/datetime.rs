@@ -18,8 +18,8 @@ pub type BotTime = chrono::NaiveTime; // UTC
 pub fn parse_time_spec(timespec: impl AsRef<str>) -> DateTime<Tz> {
     match natural_date_rs::from_string(timespec.as_ref()) {
         Ok(start) => start.with_timezone(&Moscow),
-        Err(_) => {
-            bail!("❌ Failed to parse time {}", timespec.as_ref())
+        Err(e) => {
+            bail!("❌ Failed to parse time {}: {e}", timespec.as_ref())
         }
     }
 }

@@ -1804,9 +1804,9 @@ dependencies = [
 
 [[package]]
 name = "natural-date-rs"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c74e0fd606a74cc2ceef4080341a3d700d1a7a2597fb78c7149b0ec1228a1b39"
+checksum = "8e7748d2a66327c05230fd99101b25e3db259af2ba2ab37b4e3a5c4a9030b6a0"
 dependencies = [
  "anyhow",
  "chrono",
