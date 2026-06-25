@@ -1,8 +1,5 @@
 use {
-    crate::{
-        actors::bot_actor::{ActorUpdateMessage, Debug},
-        commands::match_command,
-    },
+    crate::{actors::bot_actor::ActorUpdateMessage, commands::match_command},
     culpa::throws,
     kameo::message::Context,
 };

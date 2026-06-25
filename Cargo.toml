@@ -11,13 +11,13 @@ dotenv = "0.15"
 entity = { path = "./entity", version = "0.4" }
 fern = { version = "0.7", features = ["colored"] }
 futures = "0.3"
-include_dir = { version = "0.7.4", features = ["glob", "nightly"] }
-itertools = "0.14"
+include_dir = { version = "0.7.4", features = ["glob"] } # can't have nightly feature
+itertools = "0.15"
 kameo = "0.18"
 libbot = { path = "./lib" }
 log = "0.4"
 migration = { path = "./migration", version = "0.4" }
-natural-date-rs = { version = "0.2" }
+natural-date-rs = { version = "0.3" }
 paste = "1"
 # plurals = "0.3"
 regex = "1"

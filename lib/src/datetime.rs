@@ -16,7 +16,7 @@ pub type BotTime = chrono::NaiveTime; // UTC
 // @todo Honor TELEGRAM_BOT_TIMEZONE envvar
 #[throws(anyhow::Error)]
 pub fn parse_time_spec(timespec: impl AsRef<str>) -> DateTime<Tz> {
-    match natural_date_rs::date_parser::from_string(timespec.as_ref()) {
+    match natural_date_rs::from_string(timespec.as_ref()) {
         Ok(start) => start.with_timezone(&Moscow),
         Err(_) => {
             bail!("❌ Failed to parse time {}", timespec.as_ref())
@@ -308,6 +308,28 @@ mod tests {
                 BotTime::from_hms_opt(18, 30, 0).unwrap()
             ),
             Duration::days(5) + Duration::hours(1)
+        );
+    }
+
+    #[test]
+    fn test_parse_inputs() {
+        let ref_time = Utc.with_ymd_and_hms(2018, 10, 24, 17, 30, 0).unwrap();
+
+        let d1 = parse_time_spec("2018-10-25");
+        let d2 = parse_time_spec("2018-10-25 23:59");
+        let d3 = parse_time_spec("2018-10-25 23:00:27");
+
+        assert_eq!(
+            start_at_time_offset(ref_time, BotTime::from_hms_opt(17, 0, 0).unwrap()),
+            Duration::hours(23) + Duration::minutes(30)
+        );
+        assert_eq!(
+            start_at_time_offset(ref_time, BotTime::from_hms_opt(17, 30, 0).unwrap()),
+            Duration::seconds(0)
+        );
+        assert_eq!(
+            start_at_time_offset(ref_time, BotTime::from_hms_opt(18, 30, 0).unwrap()),
+            Duration::hours(1)
         );
     }
 }

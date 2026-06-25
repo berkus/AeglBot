@@ -30,7 +30,7 @@ dependencies = [
  "fern",
  "futures",
  "include_dir",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "kameo",
  "libbot",
  "log",
@@ -1579,9 +1579,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
 dependencies = [
  "either",
 ]
@@ -1804,9 +1804,9 @@ dependencies = [
 
 [[package]]
 name = "natural-date-rs"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06a3037521d5b10d5a959435796f75099782ff6ba1d5dc1a2b02866f760e35ff"
+checksum = "c74e0fd606a74cc2ceef4080341a3d700d1a7a2597fb78c7149b0ec1228a1b39"
 dependencies = [
  "anyhow",
  "chrono",
