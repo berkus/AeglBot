@@ -6,7 +6,7 @@ use {
     },
     culpa::throws,
     kameo::{
-        actor::ActorRef,
+        actor::{ActorRef, Spawn},
         error::Infallible,
         message::{Context, Message},
         Actor,

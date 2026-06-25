@@ -2,6 +2,12 @@
 resolver = "2"
 members = ["bot", "entity", "migration"]
 
+[workspace.package]
+authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
+edition = "2021"
+version = "0.4.0"
+publish = false
+
 [workspace.dependencies]
 anyhow = "1"
 chrono = "0.4"
@@ -13,7 +19,7 @@ fern = { version = "0.7", features = ["colored"] }
 futures = "0.3"
 include_dir = { version = "0.7.4", features = ["glob"] } # can't have nightly feature
 itertools = "0.15"
-kameo = "0.18"
+kameo = "0.21"
 libbot = { path = "./lib" }
 log = "0.4"
 migration = { path = "./migration", version = "0.4" }
