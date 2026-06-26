@@ -1,6 +1,6 @@
 use {
     crate::{
-        actors::reminder_actor::{ReminderActor, Reminders, ScheduleNextDay, ScheduleNextWeek},
+        actors::reminder_actor::{ReminderActor, Start},
         commands::*,
         BotCommand,
     },
@@ -155,11 +155,7 @@ impl Actor for BotActor {
             bot_actor.connection_pool.clone(),
         ));
 
-        // Schedule first run, the actor handler will reschedule.
-        log::trace!("Scheduling first tick to {reminders:?}");
-        let _ = reminders.tell(Reminders).await;
-        let _ = reminders.tell(ScheduleNextDay).await;
-        let _ = reminders.tell(ScheduleNextWeek).await;
+        let _ = reminders.tell(Start).await;
 
         bot_actor.reminders = Some(reminders);
 

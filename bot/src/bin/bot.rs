@@ -9,7 +9,7 @@ use {
         establish_db_connection,
     },
     dotenv::dotenv,
-    kameo::Actor,
+    kameo::actor::Spawn,
     migration::{Migrator, MigratorTrait},
     std::env,
     teloxide::{prelude::*, requests::ResponseResult, types::Message as TelegramMessage},

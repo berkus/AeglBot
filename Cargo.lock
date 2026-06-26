@@ -23,6 +23,7 @@ dependencies = [
  "include_dir",
  "itertools 0.15.0",
  "kameo",
+ "kameo_actors",
  "libbot",
  "log",
  "migration",
@@ -1595,6 +1596,19 @@ dependencies = [
  "serde",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "kameo_actors"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecac96d16d40eddf8a1e50b597109c223695a5c9ad5f0d6b28cb0475b3fee42f"
+dependencies = [
+ "futures",
+ "glob",
+ "kameo",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

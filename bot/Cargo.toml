@@ -17,6 +17,7 @@ futures.workspace = true
 include_dir.workspace = true
 itertools.workspace = true
 kameo.workspace = true
+kameo_actors.workspace = true
 libbot.workspace = true
 log.workspace = true
 migration.workspace = true
